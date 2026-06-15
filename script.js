@@ -1,5 +1,11 @@
 // SCROLL ANIMATION
 const reveals = document.querySelectorAll(".reveal");
+const glow = document.querySelector(".cursor-glow");
+
+window.addEventListener("mousemove", (e) => {
+  glow.style.left = e.clientX + "px";
+  glow.style.top = e.clientY + "px";
+});
 
 window.addEventListener("scroll", () => {
   reveals.forEach((el) => {
@@ -34,4 +40,5 @@ input.addEventListener("keypress", async (e) => {
 
     input.value = "";
   }
+  
 });
