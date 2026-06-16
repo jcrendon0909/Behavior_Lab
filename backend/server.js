@@ -14,7 +14,9 @@ app.use(express.json());
 app.use(cors({
   origin: [
     'https://behaviorlab.gokulab.mx',
+    'https://api.gokulab.mx',
     'https://gokulab.mx',
+    'https://behavior-lab.onrender.com',
     'http://localhost:3000'   // Para pruebas locales
   ],
   methods: ['GET', 'POST'],
