@@ -9,12 +9,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
   
   <!-- Estilos -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
-  <!-- Cursor Glow -->
-  <div class="cursor-glow"></div>
+  <!-- ========== CANVAS DE PARTÍCULAS (fondo hero) ========== -->
+  <canvas id="particles-canvas"></canvas>
 
   <!-- ========== NAVBAR ========== -->
   <nav class="navbar glass">
@@ -34,12 +34,6 @@
 
   <!-- ========== HERO ========== -->
   <section class="hero" id="hero">
-    <!-- Video de fondo (reemplazar URL) -->
-    <video autoplay muted loop playsinline class="hero-video">
-      <source src="https://media.gokulab.mx/Behavior_Lab/hero-bg.mp4" type="video/mp4" />
-      <!-- Fallback imagen -->
-      <img src="https://media.gokulab.mx/Behavior_Lab/hero-bg.jpg" alt="BehaviorLab" />
-    </video>
     <div class="hero-overlay"></div>
     <div class="container hero-content">
       <div class="hero-badge">🚀 IA Empresarial</div>
@@ -49,6 +43,10 @@
         <strong>Somos tu socio integral de IA.</strong>
       </p>
       <a href="#contacto" class="btn-primary">Agenda una reunión de descubrimiento →</a>
+    </div>
+    <!-- Imagen flotante de IA (opcional, se puede omitir) -->
+    <div class="hero-image">
+      <img src="https://media.gokulab.mx/Behavior_Lab/hero-ai-illustration.png" alt="AI" />
     </div>
   </section>
 
@@ -68,16 +66,16 @@
         </div>
         <div class="about-stats">
           <div class="stat">
-            <span class="stat-number">5+</span>
+            <span class="stat-number" data-target="5">0</span>
             <span class="stat-label">Sectores</span>
           </div>
           <div class="stat">
-            <span class="stat-number">100%</span>
-            <span class="stat-label">Personalizado</span>
+            <span class="stat-number" data-target="100">0</span>
+            <span class="stat-label">% Personalizado</span>
           </div>
           <div class="stat">
-            <span class="stat-number">24/7</span>
-            <span class="stat-label">Operación continua</span>
+            <span class="stat-number" data-target="24">0</span>
+            <span class="stat-label">/7 Operación continua</span>
           </div>
         </div>
       </div>
@@ -89,16 +87,18 @@
     <div class="container">
       <h2 class="section-title">Qué hacemos</h2>
       <div class="services-grid">
+        <!-- Cada tarjeta usa un SVG desde R2 -->
         <div class="service-card glass reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/automation.svg" alt="Automatización" />
+          </div>
+          <h3>Automatización de atención al cliente</h3>
+          <p>Responde 24/7 con IA conversacional que entiende y resuelve.</p>
         </div>
-        <h3>Automatización de atención al cliente</h3>
-        <p>Responde 24/7 con IA conversacional que entiende y resuelve.</p>
-    </div>
-
         <div class="service-card glass reveal">
-          <div class="service-icon">📊</div>
+          <div class="service-icon">
+            <img src="https://media.gokulab.mx/Behavior_Lab/icons/business-intelligence.svg" alt="Inteligencia comercial" />
+          </div>
           <h3>Inteligencia comercial y soporte operativo</h3>
           <p>Analiza datos en tiempo real para optimizar decisiones.</p>
         </div>
@@ -110,13 +110,16 @@
           <p>Extrae, clasifica y valida información automáticamente.</p>
         </div>
         <div class="service-card glass reveal">
-          <div class="service-icon"><img src="https://media.gokulab.mx/Behavior_Lab/icons/analytics.svg" alt="Decisiones" />
+          <div class="service-icon">
+            <img src="https://media.gokulab.mx/Behavior_Lab/icons/decision.svg" alt="Decisiones" />
           </div>
           <h3>Soporte a la toma de decisiones</h3>
           <p>Recomendaciones basadas en datos para ejecutivos.</p>
         </div>
         <div class="service-card glass reveal">
-          <div class="service-icon"><img src="https://media.gokulab.mx/Behavior_Lab/icons/integration.svg" alt="Integración" /></div>
+          <div class="service-icon">
+            <img src="https://media.gokulab.mx/Behavior_Lab/icons/integration.svg" alt="Integración" />
+          </div>
           <h3>Integración con sistemas existentes</h3>
           <p>Conecta vía API con CRM, ERP y core de negocio.</p>
         </div>
@@ -153,20 +156,41 @@
     </div>
   </section>
 
-  <!-- ========== ARQUITECTURA ========== -->
+  <!-- ========== ARQUITECTURA (visual) ========== -->
   <section class="architecture" id="arquitectura">
     <div class="container">
       <h2 class="section-title">Arquitectura de la solución</h2>
-      <div class="arch-diagram glass">
-        <div class="arch-step">📱 Canales (Web, App, WhatsApp, Correo)</div>
+      <div class="arch-diagram">
+        <!-- Cada paso es una tarjeta con ícono y flecha -->
+        <div class="arch-item">
+          <div class="arch-icon">📱</div>
+          <span>Canales</span>
+          <small>Web, App, WhatsApp, Correo</small>
+        </div>
         <div class="arch-arrow">↓</div>
-        <div class="arch-step">🧠 Agente IA (Comprensión, Clasificación, Respuesta)</div>
+        <div class="arch-item">
+          <div class="arch-icon">🧠</div>
+          <span>Agente IA</span>
+          <small>Comprensión, Clasificación, Respuesta</small>
+        </div>
         <div class="arch-arrow">↓</div>
-        <div class="arch-step">⚙️ Orquestación (Reglas, Flujos, Escalamiento)</div>
+        <div class="arch-item">
+          <div class="arch-icon">⚙️</div>
+          <span>Orquestación</span>
+          <small>Reglas, Flujos, Escalamiento</small>
+        </div>
         <div class="arch-arrow">↓</div>
-        <div class="arch-step">🔗 Integración API (CRM, ERP, Core)</div>
+        <div class="arch-item">
+          <div class="arch-icon">🔗</div>
+          <span>Integración API</span>
+          <small>CRM, ERP, Core</small>
+        </div>
         <div class="arch-arrow">↓</div>
-        <div class="arch-step">📊 Analítica, Monitoreo y Supervisión Humana</div>
+        <div class="arch-item">
+          <div class="arch-icon">📊</div>
+          <span>Analítica y Monitoreo</span>
+          <small>Supervisión Humana</small>
+        </div>
       </div>
     </div>
   </section>
@@ -261,10 +285,11 @@
     </div>
   </footer>
 
-  <!-- ========== WIDGET DEL CHAT (flotante) ========== -->
+  <!-- ========== WIDGET DEL CHAT ========== -->
   <script src="js/chat-widget.js"></script>
 
   <!-- ========== SCRIPTS ========== -->
   <script src="js/main.js"></script>
+  <script src="js/particles.js"></script>
 </body>
 </html>
