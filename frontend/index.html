@@ -3,24 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BehaviorLab · Consultoría de IA para Empresas</title>
+  <title>BehaviorLab · IA para operaciones críticas</title>
   
   <!-- Tipografías -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   
   <!-- Estilos -->
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
+  <!-- ========== CANVAS DE PARTÍCULAS ========== -->
+  <canvas id="particles-canvas"></canvas>
+
   <!-- ========== NAVBAR ========== -->
-  <nav class="navbar">
+  <nav class="navbar glass">
     <div class="container">
       <a href="#" class="logo">Behavior<span>Lab</span></a>
       <div class="nav-links">
+        <a href="#about">Quiénes somos</a>
         <a href="#servicios">Servicios</a>
+        <a href="#problema">Problema</a>
+        <a href="#arquitectura">Arquitectura</a>
         <a href="#metodo">Método</a>
         <a href="#contacto" class="btn-nav">Contacto</a>
       </div>
@@ -34,13 +38,17 @@
   <section class="hero" id="hero">
     <div class="hero-overlay"></div>
     <div class="container hero-content">
-      <div class="hero-badge">IA para empresas</div>
-      <h1 class="hero-title">Transforma tus operaciones con agentes inteligentes</h1>
+      <div class="hero-badge">🚀 Consultora de IA Empresarial</div>
+      <h1 class="hero-title">Operaciones <br />que no se pueden detener</h1>
       <p class="hero-subtitle">
-        Diseñamos e implementamos agentes de IA personalizados para automatizar procesos,
-        optimizar decisiones y escalar tu negocio en tiempo real.
+        Agentes virtuales a la medida para agilizar, estandarizar y escalar procesos críticos.
+        <strong>Somos tu socio integral de IA.</strong>
       </p>
-      <a href="#contacto" class="btn-primary">Agenda una consultoría →</a>
+      <a href="#contacto" class="btn-primary">Agenda una reunión de descubrimiento →</a>
+    </div>
+    <!-- Imagen flotante de IA -->
+    <div class="hero-image">
+      <img src="https://media.gokulab.mx/Behavior_Lab/hero-ai-illustration.png" alt="AI" />
     </div>
   </section>
 
@@ -51,21 +59,27 @@
         <div class="about-text">
           <h2>Quiénes somos</h2>
           <p>
-            Somos una consultora de inteligencia artificial con sede en México.
-            Ayudamos a empresas medianas y grandes de los sectores <strong>seguros, servicios financieros, retail, logística y gobierno</strong> a implementar soluciones de IA que generan resultados medibles.
+            <strong>BehaviorLab</strong> es una consultora de inteligencia artificial con sede en México.
+            Diseñamos agentes personalizados para empresas medianas y grandes en
+            <strong>seguros, servicios financieros, retail, logística y gobierno</strong>.
           </p>
           <p>
-            Desde el diagnóstico hasta la mejora continua, somos tu socio estratégico en todo el ciclo de vida de la IA.
+            Somos tu socio integral desde el descubrimiento hasta la mejora continua.
           </p>
+          <div class="about-features">
+            <span>🧠 Matemáticas + IA</span>
+            <span>📊 Riesgo y decisión</span>
+            <span>⚡ Implementación real</span>
+          </div>
         </div>
         <div class="about-stats">
           <div class="stat">
             <span class="stat-number" data-target="5">0</span>
-            <span class="stat-label">Sectores especializados</span>
+            <span class="stat-label">Sectores</span>
           </div>
           <div class="stat">
             <span class="stat-number" data-target="100">0</span>
-            <span class="stat-label">% Personalización</span>
+            <span class="stat-label">% Personalizado</span>
           </div>
           <div class="stat">
             <span class="stat-number" data-target="24">0</span>
@@ -79,42 +93,42 @@
   <!-- ========== SERVICIOS ========== -->
   <section class="services" id="servicios">
     <div class="container">
-      <h2 class="section-title">Nuestros servicios</h2>
+      <h2 class="section-title">Qué hacemos</h2>
       <div class="services-grid">
-        <div class="service-card reveal">
+        <div class="service-card glass reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/automation.svg" alt="Automatización" />
           </div>
           <h3>Automatización de atención al cliente</h3>
-          <p>Resuelve consultas 24/7 con IA conversacional y reduce tiempos de respuesta.</p>
+          <p>IA conversacional que entiende, clasifica y resuelve 24/7.</p>
         </div>
-        <div class="service-card reveal">
+        <div class="service-card glass reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/business-intelligence.svg" alt="Inteligencia comercial" />
           </div>
-          <h3>Inteligencia comercial</h3>
-          <p>Analiza datos en tiempo real para tomar decisiones estratégicas con mayor precisión.</p>
+          <h3>Inteligencia comercial y soporte operativo</h3>
+          <p>Analiza datos en tiempo real para optimizar decisiones.</p>
         </div>
-        <div class="service-card reveal">
+        <div class="service-card glass reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/documents.svg" alt="Documentos" />
           </div>
           <h3>Procesamiento de documentos</h3>
-          <p>Extrae, clasifica y valida información automáticamente para agilizar flujos de trabajo.</p>
+          <p>Extrae, clasifica y valida información automáticamente.</p>
         </div>
-        <div class="service-card reveal">
+        <div class="service-card glass reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/decision.svg" alt="Decisiones" />
           </div>
           <h3>Soporte a la toma de decisiones</h3>
-          <p>Recomendaciones basadas en datos para ejecutivos y líderes de negocio.</p>
+          <p>Recomendaciones basadas en datos para ejecutivos.</p>
         </div>
-        <div class="service-card reveal">
+        <div class="service-card glass reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/integration.svg" alt="Integración" />
           </div>
           <h3>Integración con sistemas existentes</h3>
-          <p>Conecta vía API con CRM, ERP y cualquier sistema core de tu empresa.</p>
+          <p>Conecta vía API con CRM, ERP y core de negocio.</p>
         </div>
       </div>
     </div>
@@ -123,9 +137,9 @@
   <!-- ========== PROBLEMA VS SOLUCIÓN ========== -->
   <section class="problem-solution" id="problema">
     <div class="container">
-      <h2 class="section-title">El cambio que tu negocio necesita</h2>
+      <h2 class="section-title">De la fragmentación a la operación autónoma</h2>
       <div class="ps-grid">
-        <div class="problem-box">
+        <div class="problem-box glass">
           <h3>⚠️ Situación actual</h3>
           <ul>
             <li>Procesos fragmentados y poco estandarizados</li>
@@ -135,7 +149,7 @@
             <li>Baja trazabilidad para medir desempeño</li>
           </ul>
         </div>
-        <div class="solution-box">
+        <div class="solution-box glass">
           <h3>✅ Situación deseada</h3>
           <ul>
             <li>Atención más rápida y consistente</li>
@@ -154,34 +168,34 @@
     <div class="container">
       <h2 class="section-title">Arquitectura de la solución</h2>
       <div class="arch-diagram">
-        <div class="arch-item">
+        <div class="arch-item glass">
           <div class="arch-icon">📱</div>
           <span>Canales</span>
-          <small>Web, App, WhatsApp, Correo</small>
+          <small>Web, App, WhatsApp, Correo, Call Center</small>
         </div>
         <div class="arch-arrow">↓</div>
-        <div class="arch-item">
+        <div class="arch-item glass">
           <div class="arch-icon">🧠</div>
           <span>Agente IA</span>
-          <small>Comprensión, Clasificación, Respuesta</small>
+          <small>Comprensión, Clasificación, Respuesta, Resolución</small>
         </div>
         <div class="arch-arrow">↓</div>
-        <div class="arch-item">
+        <div class="arch-item glass">
           <div class="arch-icon">⚙️</div>
           <span>Orquestación</span>
-          <small>Reglas, Flujos, Escalamiento</small>
+          <small>Reglas, Flujos, Prioridades, Escalamiento</small>
         </div>
         <div class="arch-arrow">↓</div>
-        <div class="arch-item">
+        <div class="arch-item glass">
           <div class="arch-icon">🔗</div>
           <span>Integración API</span>
-          <small>CRM, ERP, Core</small>
+          <small>CRM, ERP, Core, Repositorios</small>
         </div>
         <div class="arch-arrow">↓</div>
-        <div class="arch-item">
+        <div class="arch-item glass">
           <div class="arch-icon">📊</div>
           <span>Analítica y Monitoreo</span>
-          <small>Supervisión Humana</small>
+          <small>Supervisión Humana y Mejora Continua</small>
         </div>
       </div>
     </div>
@@ -190,29 +204,29 @@
   <!-- ========== MÉTODO ========== -->
   <section class="method" id="metodo">
     <div class="container">
-      <h2 class="section-title">Nuestro método</h2>
+      <h2 class="section-title">Construcción de agentes</h2>
       <div class="method-timeline">
-        <div class="method-step reveal">
+        <div class="method-step glass reveal">
           <div class="step-number">1</div>
           <h3>Diagnóstico y priorización</h3>
           <p>Identificamos el caso de uso con mayor impacto.</p>
         </div>
-        <div class="method-step reveal">
+        <div class="method-step glass reveal">
           <div class="step-number">2</div>
           <h3>Diseño y construcción</h3>
           <p>Arquitectura del agente y definición de flujos.</p>
         </div>
-        <div class="method-step reveal">
+        <div class="method-step glass reveal">
           <div class="step-number">3</div>
           <h3>Entrenamiento</h3>
           <p>Con datos y lógica de negocio reales.</p>
         </div>
-        <div class="method-step reveal">
+        <div class="method-step glass reveal">
           <div class="step-number">4</div>
           <h3>Integración y pruebas</h3>
           <p>Conectamos con tus sistemas y validamos.</p>
         </div>
-        <div class="method-step reveal">
+        <div class="method-step glass reveal">
           <div class="step-number">5</div>
           <h3>Despliegue y mejora continua</h3>
           <p>Monitoreo, ajustes y evolución constante.</p>
@@ -221,12 +235,41 @@
     </div>
   </section>
 
+  <!-- ========== POR QUÉ BEHAVIORLAB ========== -->
+  <section class="why" id="porque">
+    <div class="container">
+      <h2 class="section-title">¿Por qué BehaviorLab?</h2>
+      <div class="why-grid">
+        <div class="why-item glass">
+          <span class="why-icon">🎯</span>
+          <h3>Agentes a medida</h3>
+          <p>No software genérico. Diseñado para tu negocio.</p>
+        </div>
+        <div class="why-item glass">
+          <span class="why-icon">⚡</span>
+          <h3>Despliegue rápido</h3>
+          <p>En tiempos razonables, sin interrumpir operaciones.</p>
+        </div>
+        <div class="why-item glass">
+          <span class="why-icon">🔌</span>
+          <h3>Integración sin fricciones</h3>
+          <p>Conectamos con tus sistemas existentes.</p>
+        </div>
+        <div class="why-item glass">
+          <span class="why-icon">📈</span>
+          <h3>ROI medible</h3>
+          <p>Reducción de costos operativos entre 30% y 60%.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ========== CONTACTO ========== -->
   <section class="contact" id="contacto">
     <div class="container">
-      <div class="contact-box">
-        <h2>¿Listo para transformar tu empresa con IA?</h2>
-        <p>Agenda una consultoría estratégica y descubre el potencial de los agentes inteligentes.</p>
+      <div class="contact-box glass">
+        <h2>¿Listo para transformar tus operaciones?</h2>
+        <p>Agenda una reunión de descubrimiento y descubre el poder de los agentes de IA.</p>
         <div class="contact-info">
           <a href="mailto:contacto@gokulab.com" class="btn-primary">contacto@gokulab.com</a>
           <span class="contact-phone">📞 56 1266 8168</span>
@@ -248,7 +291,7 @@
     </div>
   </footer>
 
-  <!-- ========== WIDGET DEL CHAT ========== -->
+  <!-- ========== SCRIPTS ========== -->
   <script src="js/chat-widget.js"></script>
   <script src="js/main.js"></script>
   <script src="js/particles.js"></script>
