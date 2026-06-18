@@ -35,22 +35,19 @@ body {
 }
 section {
   padding: 80px 0;
+  position: relative;
+  z-index: 1;
 }
 
-/* ========== CURSOR GLOW ========== */
-.cursor-glow {
+/* ========== PARTÍCULAS (fondo hero) ========== */
+#particles-canvas {
   position: fixed;
-  width: 300px;
-  height: 300px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 212, 170, 0.08), transparent 70%);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
   pointer-events: none;
-  transform: translate(-50%, -50%);
-  z-index: 999;
-  transition: left 0.1s, top 0.1s;
-}
-@media (max-width: 768px) {
-  .cursor-glow { display: none; }
 }
 
 /* ========== GLASS ========== */
@@ -143,15 +140,7 @@ section {
   display: flex;
   align-items: center;
   overflow: hidden;
-}
-.hero-video {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 0;
+  z-index: 1;
 }
 .hero-overlay {
   position: absolute;
@@ -159,8 +148,8 @@ section {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(10,10,26,0.8), rgba(10,10,26,0.4));
-  z-index: 1;
+  background: radial-gradient(circle at 20% 50%, rgba(10,10,26,0.4), rgba(10,10,26,0.9));
+  z-index: 0;
 }
 .hero-content {
   position: relative;
@@ -184,7 +173,7 @@ section {
   font-weight: 900;
   line-height: 1.1;
   margin-bottom: 20px;
-  background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
+  background: linear-gradient(135deg, #FFFFFF, var(--accent-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -213,6 +202,15 @@ section {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 30px rgba(0, 212, 170, 0.3);
+}
+.hero-image {
+  position: absolute;
+  right: 5%;
+  bottom: 10%;
+  width: 400px;
+  opacity: 0.3;
+  z-index: 1;
+  display: none; /* Descomentar si tienes una ilustración */
 }
 @media (max-width: 768px) {
   .hero-title { font-size: 2.5rem; }
@@ -253,9 +251,10 @@ section {
 }
 .stat-number {
   font-family: var(--font-title);
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   color: var(--accent-primary);
   display: block;
+  font-weight: 900;
 }
 .stat-label {
   color: var(--text-secondary);
@@ -284,12 +283,26 @@ section {
 .service-card {
   padding: 32px 24px;
   text-align: center;
-  transition: transform 0.3s;
+  transition: transform 0.3s, box-shadow 0.3s;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius);
 }
-.service-card:hover { transform: translateY(-6px); }
+.service-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 212, 170, 0.15);
+  border-color: var(--accent-primary);
+}
 .service-icon {
-  font-size: 3rem;
-  margin-bottom: 16px;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+}
+.service-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* Convierte SVG a blanco */
 }
 .service-card h3 {
   font-size: 1.1rem;
@@ -299,6 +312,7 @@ section {
   color: var(--text-secondary);
   font-size: 0.95rem;
 }
+/* Si los SVG son blancos, no necesitas filter; si son oscuros, usa filter: brightness(0) invert(1) */
 
 /* ========== PROBLEM / SOLUTION ========== */
 .problem-solution {
@@ -335,26 +349,54 @@ section {
   .ps-grid { grid-template-columns: 1fr; }
 }
 
-/* ========== ARCHITECTURE ========== */
+/* ========== ARCHITECTURE (visual) ========== */
+.architecture {
+  background: var(--bg-primary);
+}
 .arch-diagram {
-  padding: 40px;
-  max-width: 700px;
-  margin: 0 auto;
-  text-align: center;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
+  max-width: 700px;
+  margin: 0 auto;
 }
-.arch-step {
-  padding: 16px 24px;
+.arch-item {
   background: var(--glass-bg);
-  border-radius: 12px;
-  font-weight: 500;
   border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 16px 24px;
+  width: 100%;
+  text-align: center;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+}
+.arch-item:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 30px rgba(0, 212, 170, 0.1);
+}
+.arch-icon {
+  font-size: 2rem;
+}
+.arch-item span {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+.arch-item small {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
 }
 .arch-arrow {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   color: var(--accent-primary);
+  animation: bounce 1.5s infinite;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
 }
 
 /* ========== METHOD ========== */
@@ -372,6 +414,10 @@ section {
   border-radius: var(--radius);
   border: 1px solid var(--glass-border);
   text-align: center;
+  transition: transform 0.3s;
+}
+.method-step:hover {
+  transform: scale(1.02);
 }
 .step-number {
   display: inline-block;
@@ -403,9 +449,13 @@ section {
 .why-item {
   padding: 32px 24px;
   text-align: center;
+  transition: transform 0.3s;
+}
+.why-item:hover {
+  transform: translateY(-4px);
 }
 .why-icon {
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   display: block;
   margin-bottom: 12px;
 }
@@ -475,7 +525,7 @@ section {
 }
 .footer-socials a:hover { color: var(--accent-primary); }
 
-/* ========== REVEAL ANIMATION ========== */
+/* ========== REVEAL ========== */
 .reveal {
   opacity: 0;
   transform: translateY(30px);
@@ -484,19 +534,4 @@ section {
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
-}
-.service-icon img,
-.why-icon img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  display: block;
-  margin: 0 auto;
-}
-.why-icon img {
-  width: 40px;
-  height: 40px;
-}
-.service-icon img {
-  filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg);
 }
