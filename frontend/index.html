@@ -8,8 +8,8 @@
   <!-- Tipografías -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
   
-  <!-- Estilos -->
-  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Estilos con versión para forzar recarga -->
+  <link rel="stylesheet" href="css/styles.css?v=2" />
 </head>
 <body>
 
@@ -44,7 +44,6 @@
       </p>
       <a href="#contacto" class="btn-primary">Agenda una reunión de descubrimiento →</a>
     </div>
-    <!-- Imagen flotante de IA (opcional, se puede omitir) -->
     <div class="hero-image">
       <img src="https://media.gokulab.mx/Behavior_Lab/hero-ai-illustration.png" alt="AI" />
     </div>
@@ -87,7 +86,6 @@
     <div class="container">
       <h2 class="section-title">Qué hacemos</h2>
       <div class="services-grid">
-        <!-- Cada tarjeta usa un SVG desde R2 -->
         <div class="service-card glass reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/automation.svg" alt="Automatización" />
@@ -156,12 +154,11 @@
     </div>
   </section>
 
-  <!-- ========== ARQUITECTURA (visual) ========== -->
+  <!-- ========== ARQUITECTURA ========== -->
   <section class="architecture" id="arquitectura">
     <div class="container">
       <h2 class="section-title">Arquitectura de la solución</h2>
       <div class="arch-diagram">
-        <!-- Cada paso es una tarjeta con ícono y flecha -->
         <div class="arch-item">
           <div class="arch-icon">📱</div>
           <span>Canales</span>
@@ -285,11 +282,9 @@
     </div>
   </footer>
 
-  <!-- ========== WIDGET DEL CHAT ========== -->
-  <script src="js/chat-widget.js"></script>
-
-  <!-- ========== SCRIPTS ========== -->
-  <script src="js/main.js"></script>
-  <script src="js/particles.js"></script>
+  <!-- ========== SCRIPTS (con versión para forzar recarga) ========== -->
+  <script src="js/chat-widget.js?v=2"></script>
+  <script src="js/main.js?v=2"></script>
+  <script src="js/particles.js?v=2"></script>
 </body>
 </html>
