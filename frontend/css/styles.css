@@ -756,3 +756,8 @@ section {
     gap: 6px;
   }
 }
+/* Transición para el cambio de frase en el Hero */
+#hero-phrases .phrase {
+  transition: opacity 0.6s ease;
+  display: inline-block;
+}

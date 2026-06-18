@@ -119,5 +119,39 @@
     setupSmoothScroll();
     setupCounterObserver();
   }
+// ========== CARRUSEL DE FRASES EN EL HERO ==========
+(function() {
+  const phrases = [
+    "Agentes de IA que entienden procesos, no solo palabras.",
+    "De procesos complejos a flujos que corren solos.",
+    "Comportamiento, datos y operación, en un mismo laboratorio.",
+    "La IA que se integra a lo que ya eres.",
+    "Menos fricción operativa, más foco estratégico."
+  ];
 
+  const phraseElement = document.querySelector('#hero-phrases .phrase');
+  if (!phraseElement) return;
+
+  let currentIndex = 0;
+
+  function changePhrase() {
+    // Efecto fade out
+    phraseElement.style.opacity = 0;
+    
+    setTimeout(() => {
+      // Cambiar texto
+      currentIndex = (currentIndex + 1) % phrases.length;
+      phraseElement.textContent = phrases[currentIndex];
+      // Efecto fade in
+      phraseElement.style.opacity = 1;
+    }, 600); // Coincide con la duración de la transición CSS
+  }
+
+  // Establecer la primera frase
+  phraseElement.textContent = phrases[0];
+  phraseElement.style.transition = 'opacity 0.6s ease';
+  phraseElement.style.opacity = 1;
+
+  // Cambiar cada 5 segundos
+  setInterval(changePhrase, 5000);
 })();
