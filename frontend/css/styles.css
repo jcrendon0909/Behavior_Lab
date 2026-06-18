@@ -1,3 +1,6 @@
+section {
+  scroll-margin-top: 80px; /* Ajusta según la altura de tu navbar */
+}
 /* ========== RESET Y VARIABLES ========== */
 * {
   margin: 0;
@@ -51,6 +54,12 @@ section {
   pointer-events: none;
 }
 
+/* Asegurar que todo el contenido esté por encima */
+body {
+  position: relative;
+  z-index: 1;
+  background: #0A1128; /* fondo de respaldo */
+}
 /* ========== GLASS ========== */
 .glass {
   background: var(--glass-bg);
@@ -546,4 +555,11 @@ section {
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
+}
+.service-icon img {
+  filter: brightness(0) saturate(100%) invert(1);
+}
+:selection {
+  background: var(--accent-primary);
+  color: white;
 }

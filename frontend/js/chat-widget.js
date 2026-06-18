@@ -1,5 +1,5 @@
 // ================================================================
-// CHAT WIDGET — BEHAVIORLAB (versión grande y premium)
+// CHAT WIDGET — BEHAVIORLAB (versión premium, grande y neon)
 // ================================================================
 
 (function() {
@@ -7,8 +7,9 @@
 
   // ---------- CONFIGURACIÓN ----------
   const API_URL = 'https://api.gokulab.mx/chat';
-  const PRIMARY = '#2563EB';
+  const PRIMARY = '#2563EB';   // o '#00D4AA' según prefieras
   const SECONDARY = '#7C3AED';
+  const ACCENT = '#6C63FF';         // Púrpura para detalles
 
   // ---------- CREAR CONTENEDOR ----------
   const container = document.createElement('div');
@@ -22,18 +23,19 @@
   `;
   document.body.appendChild(container);
 
-  // ---------- HTML ----------
+  // ---------- HTML DEL WIDGET (más grande y con glow) ----------
   container.innerHTML = `
+    <!-- Botón flotante con pulso neón -->
     <button id="chat-toggle" style="
-      background: linear-gradient(135deg, ${PRIMARY}, ${SECONDARY});
-      color: white;
+      background: ${PRIMARY};
+      color: #0A1128;
       border: none;
       border-radius: 50%;
-      width: 68px;
-      height: 68px;
-      font-size: 30px;
+      width: 72px;
+      height: 72px;
+      font-size: 32px;
       cursor: pointer;
-      box-shadow: 0 8px 40px rgba(37,99,235,0.35);
+      box-shadow: 0 0 40px rgba(0, 212, 170, 0.5);
       transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
       display: flex;
       align-items: center;
@@ -43,7 +45,7 @@
       <span style="position: relative; z-index: 2;">💬</span>
       <span style="
         position: absolute;
-        inset: -4px;
+        inset: -6px;
         border-radius: 50%;
         border: 2px solid ${PRIMARY};
         animation: pulse-ring 2s ease-out infinite;
@@ -51,125 +53,149 @@
       "></span>
     </button>
 
+    <!-- Ventana del chat -->
     <div id="chat-window" style="
       display: none;
       position: absolute;
-      bottom: 84px;
+      bottom: 88px;
       right: 0;
-      width: 420px;
-      max-height: 620px;
+      width: 460px;
+      max-height: 680px;
       background: #0A1128;
-      border-radius: 24px;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+      border-radius: 28px;
+      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.8), 0 0 60px rgba(0, 212, 170, 0.05);
       overflow: hidden;
       flex-direction: column;
-      border: 1px solid rgba(255,255,255,0.06);
+      border: 1px solid rgba(0, 212, 170, 0.15);
       opacity: 0;
       transform: scale(0.92) translateY(20px);
-      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
     ">
+      <!-- Header con gradiente y glow neón -->
       <div style="
         background: linear-gradient(135deg, #0A1128, #1A2333);
-        padding: 20px 24px;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 22px 28px;
+        border-bottom: 1px solid rgba(0, 212, 170, 0.1);
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 16px;
         flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
       ">
+        <!-- Glow de fondo -->
         <div style="
-          width: 44px;
-          height: 44px;
-          background: linear-gradient(135deg, ${PRIMARY}, ${SECONDARY});
+          position: absolute;
+          top: -60%;
+          right: -10%;
+          width: 250px;
+          height: 250px;
+          background: radial-gradient(circle, rgba(0,212,170,0.06), transparent 70%);
+          pointer-events: none;
+        "></div>
+        <!-- Logo / Avatar -->
+        <div style="
+          width: 52px;
+          height: 52px;
+          background: ${PRIMARY};
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 22px;
-          box-shadow: 0 0 24px rgba(37,99,235,0.2);
+          font-size: 26px;
+          box-shadow: 0 0 30px rgba(0, 212, 170, 0.25);
           flex-shrink: 0;
         ">🧠</div>
-        <div style="flex:1;">
-          <div style="color: white; font-weight: 700; font-size: 1.1rem;">BehaviorLab</div>
-          <div style="color: ${PRIMARY}; font-size: 0.75rem; display: flex; align-items: center; gap: 6px;">
-            <span style="display:inline-block;width:6px;height:6px;background:#22c55e;border-radius:50%;"></span>
-            Asistente en línea
+        <div style="flex: 1;">
+          <div style="color: white; font-weight: 700; font-size: 1.2rem; letter-spacing: -0.3px;">BehaviorLab</div>
+          <div style="color: ${PRIMARY}; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+            <span style="display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 10px #22c55e;"></span>
+            En línea · IA empresarial
           </div>
         </div>
         <button id="chat-close" style="
           background: rgba(255,255,255,0.04);
           border: none;
-          color: rgba(255,255,255,0.3);
-          width: 36px;
-          height: 36px;
+          color: rgba(255,255,255,0.4);
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
-          font-size: 18px;
+          font-size: 20px;
           cursor: pointer;
           transition: all 0.2s;
         ">✕</button>
       </div>
 
+      <!-- Mensajes -->
       <div id="chat-messages" style="
         flex: 1;
-        padding: 20px 20px 12px;
+        padding: 24px 24px 16px;
         overflow-y: auto;
-        min-height: 240px;
-        max-height: 380px;
+        min-height: 280px;
+        max-height: 420px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
+        background: rgba(0,0,0,0.2);
       "></div>
 
+      <!-- Indicador de escritura -->
       <div id="typing-indicator" style="
         display: none;
-        padding: 6px 20px 14px;
-        color: rgba(255,255,255,0.35);
-        font-size: 0.8rem;
+        padding: 8px 24px 16px;
+        color: rgba(255,255,255,0.4);
+        font-size: 0.85rem;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
       ">
-        <div style="display:flex;gap:4px;">
-          <span style="display:inline-block;width:6px;height:6px;background:${PRIMARY};border-radius:50%;animation:blink 1.4s infinite;"></span>
-          <span style="display:inline-block;width:6px;height:6px;background:${PRIMARY};border-radius:50%;animation:blink 1.4s infinite 0.2s;"></span>
-          <span style="display:inline-block;width:6px;height:6px;background:${PRIMARY};border-radius:50%;animation:blink 1.4s infinite 0.4s;"></span>
+        <div style="display:flex;gap:6px;">
+          <span style="display:inline-block;width:8px;height:8px;background:${PRIMARY};border-radius:50%;animation:blink 1.4s infinite;"></span>
+          <span style="display:inline-block;width:8px;height:8px;background:${PRIMARY};border-radius:50%;animation:blink 1.4s infinite 0.2s;"></span>
+          <span style="display:inline-block;width:8px;height:8px;background:${PRIMARY};border-radius:50%;animation:blink 1.4s infinite 0.4s;"></span>
         </div>
-        <span>Escribiendo...</span>
+        <span style="color: rgba(255,255,255,0.3);">Escribiendo respuesta...</span>
       </div>
 
+      <!-- Input con borde neón -->
       <div style="
         display: flex;
-        border-top: 1px solid rgba(255,255,255,0.04);
-        padding: 10px 16px 14px;
-        gap: 10px;
-        background: rgba(255,255,255,0.02);
+        border-top: 1px solid rgba(0, 212, 170, 0.08);
+        padding: 12px 20px 18px;
+        gap: 12px;
+        background: rgba(0,0,0,0.3);
         flex-shrink: 0;
       ">
         <input id="chat-input" type="text" placeholder="Escribe tu mensaje..." style="
           flex: 1;
           background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 30px;
-          padding: 12px 20px;
+          border: 1px solid rgba(0, 212, 170, 0.15);
+          border-radius: 40px;
+          padding: 14px 22px;
           color: white;
-          font-size: 0.95rem;
+          font-size: 1rem;
           outline: none;
           transition: all 0.25s;
           font-family: inherit;
+          box-shadow: 0 0 20px rgba(0,212,170,0) inset;
         ">
         <button id="chat-send" style="
-          background: linear-gradient(135deg, ${PRIMARY}, ${SECONDARY});
-          color: white;
+          background: ${PRIMARY};
+          color: #0A1128;
           border: none;
           border-radius: 50%;
-          width: 50px;
-          height: 50px;
+          width: 56px;
+          height: 56px;
           cursor: pointer;
-          font-size: 18px;
+          font-size: 22px;
+          font-weight: 700;
           transition: all 0.2s;
-          box-shadow: 0 4px 20px rgba(37,99,235,0.2);
+          box-shadow: 0 4px 30px rgba(0, 212, 170, 0.3);
           flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         ">➤</button>
       </div>
     </div>
@@ -180,13 +206,13 @@
   style.textContent = `
     @keyframes pulse-ring {
       0% { transform: scale(1); opacity: 0.8; }
-      100% { transform: scale(1.2); opacity: 0; }
+      100% { transform: scale(1.3); opacity: 0; }
     }
     @keyframes blink {
       0%,100%{opacity:0.2;}50%{opacity:1;}
     }
     @keyframes messageIn {
-      0%{opacity:0;transform:translateY(8px) scale(0.96);}
+      0%{opacity:0;transform:translateY(12px) scale(0.95);}
       100%{opacity:1;transform:translateY(0) scale(1);}
     }
     #chat-window.open {
@@ -195,44 +221,44 @@
       transform: scale(1) translateY(0) !important;
     }
     .chat-message {
-      padding: 12px 18px;
-      border-radius: 16px;
-      max-width: 82%;
+      padding: 14px 20px;
+      border-radius: 20px;
+      max-width: 85%;
       word-wrap: break-word;
-      line-height: 1.5;
-      font-size: 0.95rem;
+      line-height: 1.6;
+      font-size: 1rem;
       animation: messageIn 0.3s ease;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
     }
     .chat-message.bot {
       align-self: flex-start;
       background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.04);
+      border: 1px solid rgba(0, 212, 170, 0.08);
       color: #E2E8F0;
-      border-bottom-left-radius: 4px;
+      border-bottom-left-radius: 6px;
     }
     .chat-message.user {
       align-self: flex-end;
-      background: linear-gradient(135deg, ${PRIMARY}, ${SECONDARY});
-      color: white;
-      border-bottom-right-radius: 4px;
-      box-shadow: 0 4px 16px rgba(37,99,235,0.15);
+      background: linear-gradient(135deg, ${PRIMARY}, #00B894);
+      color: #0A1128;
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 4px 24px rgba(0, 212, 170, 0.2);
     }
     #chat-input:focus {
       border-color: ${PRIMARY};
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+      box-shadow: 0 0 0 4px rgba(0, 212, 170, 0.12), 0 0 30px rgba(0, 212, 170, 0.05);
     }
-    #chat-send:hover { transform: scale(1.05); box-shadow: 0 6px 28px rgba(37,99,235,0.35); }
-    #chat-send:active { transform: scale(0.95); }
+    #chat-send:hover { transform: scale(1.08); box-shadow: 0 6px 40px rgba(0, 212, 170, 0.4); }
+    #chat-send:active { transform: scale(0.92); }
     #chat-toggle:hover { transform: scale(1.05); }
-    #chat-close:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
-    #chat-messages::-webkit-scrollbar { width: 4px; }
+    #chat-close:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+    #chat-messages::-webkit-scrollbar { width: 5px; }
     #chat-messages::-webkit-scrollbar-track { background: transparent; }
-    #chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+    #chat-messages::-webkit-scrollbar-thumb { background: rgba(0, 212, 170, 0.2); border-radius: 10px; }
   `;
   document.head.appendChild(style);
 
-  // ---------- REFERENCIAS ----------
+  // ---------- REFERENCIAS Y LÓGICA ----------
   const toggleBtn = document.getElementById('chat-toggle');
   const closeBtn = document.getElementById('chat-close');
   const chatWindow = document.getElementById('chat-window');
@@ -247,7 +273,7 @@
     isOpen = true;
     chatWindow.classList.add('open');
     if (messagesContainer.children.length === 0) {
-      addMessage('Hola, soy el asistente de BehaviorLab. ¿En qué puedo ayudarte hoy?', 'bot');
+      addMessage('👋 Hola, soy el asistente de BehaviorLab. ¿En qué puedo ayudarte hoy?', 'bot');
     }
     setTimeout(() => inputField.focus(), 400);
   }
@@ -281,6 +307,7 @@
     inputField.disabled = true;
     sendBtn.disabled = true;
     showTyping();
+
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -294,7 +321,7 @@
     } catch (error) {
       console.error(error);
       hideTyping();
-      addMessage('Error de conexión. Intenta más tarde.', 'bot');
+      addMessage('❌ Error de conexión. Intenta más tarde.', 'bot');
     } finally {
       inputField.disabled = false;
       sendBtn.disabled = false;
@@ -302,6 +329,7 @@
     }
   }
 
+  // Event listeners
   toggleBtn.addEventListener('click', () => isOpen ? closeChat() : openChat());
   closeBtn.addEventListener('click', closeChat);
   sendBtn.addEventListener('click', sendMessage);
