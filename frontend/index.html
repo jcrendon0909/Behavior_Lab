@@ -8,8 +8,8 @@
   <!-- Tipografías -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   
-  <!-- Estilos -->
-  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Estilos con versionado para forzar recarga -->
+  <link rel="stylesheet" href="css/styles.css?v=2" />
 </head>
 <body>
 
@@ -299,11 +299,11 @@
   </div> <!-- fin de #app -->
 
   <!-- ========== WIDGET DEL CHAT (flotante) ========== -->
-  <script src="js/chat-widget.js"></script>
+  <script src="js/chat-widget.js?v=2" defer></script>
 
   <!-- ========== SCRIPTS ========== -->
-  <script src="js/main.js"></script>
-  <script src="js/particles.js"></script>
+  <script src="js/main.js?v=2" defer></script>
+  <script src="js/particles.js?v=2" defer></script>
 
 </body>
 </html>

@@ -7,9 +7,17 @@
 
   // ---------- CONFIGURACIÓN ----------
   const API_URL = 'https://api.gokulab.mx/chat';
-  const PRIMARY = '#2563EB';   // o '#00D4AA' según prefieras
+
+  // 🔥 ELIGE TU PALETA:
+  // Opción 1: Azul/Púrpura (coherente con la página)
+  const PRIMARY = '#2563EB';
   const SECONDARY = '#7C3AED';
-  const ACCENT = '#6C63FF';         // Púrpura para detalles
+  const GLOW_COLOR = 'rgba(37, 99, 235, 0.5)';
+
+  // Opción 2: Verde neón (contraste)
+  // const PRIMARY = '#00D4AA';
+  // const SECONDARY = '#00B894';
+  // const GLOW_COLOR = 'rgba(0, 212, 170, 0.5)';
 
   // ---------- CREAR CONTENEDOR ----------
   const container = document.createElement('div');
@@ -23,9 +31,9 @@
   `;
   document.body.appendChild(container);
 
-  // ---------- HTML DEL WIDGET (más grande y con glow) ----------
+  // ---------- HTML DEL WIDGET ----------
   container.innerHTML = `
-    <!-- Botón flotante con pulso neón -->
+    <!-- Botón flotante con pulso -->
     <button id="chat-toggle" style="
       background: ${PRIMARY};
       color: #0A1128;
@@ -35,7 +43,7 @@
       height: 72px;
       font-size: 32px;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(0, 212, 170, 0.5);
+      box-shadow: 0 0 40px ${GLOW_COLOR};
       transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
       display: flex;
       align-items: center;
@@ -63,21 +71,21 @@
       max-height: 680px;
       background: #0A1128;
       border-radius: 28px;
-      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.8), 0 0 60px rgba(0, 212, 170, 0.05);
+      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.8), 0 0 60px ${GLOW_COLOR};
       overflow: hidden;
       flex-direction: column;
-      border: 1px solid rgba(0, 212, 170, 0.15);
+      border: 1px solid ${PRIMARY}44;
       opacity: 0;
       transform: scale(0.92) translateY(20px);
       transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
     ">
-      <!-- Header con gradiente y glow neón -->
+      <!-- Header -->
       <div style="
         background: linear-gradient(135deg, #0A1128, #1A2333);
         padding: 22px 28px;
-        border-bottom: 1px solid rgba(0, 212, 170, 0.1);
+        border-bottom: 1px solid ${PRIMARY}44;
         display: flex;
         align-items: center;
         gap: 16px;
@@ -85,17 +93,15 @@
         position: relative;
         overflow: hidden;
       ">
-        <!-- Glow de fondo -->
         <div style="
           position: absolute;
           top: -60%;
           right: -10%;
           width: 250px;
           height: 250px;
-          background: radial-gradient(circle, rgba(0,212,170,0.06), transparent 70%);
+          background: radial-gradient(circle, ${PRIMARY}22, transparent 70%);
           pointer-events: none;
         "></div>
-        <!-- Logo / Avatar -->
         <div style="
           width: 52px;
           height: 52px;
@@ -105,7 +111,7 @@
           align-items: center;
           justify-content: center;
           font-size: 26px;
-          box-shadow: 0 0 30px rgba(0, 212, 170, 0.25);
+          box-shadow: 0 0 30px ${GLOW_COLOR};
           flex-shrink: 0;
         ">🧠</div>
         <div style="flex: 1;">
@@ -158,10 +164,10 @@
         <span style="color: rgba(255,255,255,0.3);">Escribiendo respuesta...</span>
       </div>
 
-      <!-- Input con borde neón -->
+      <!-- Input -->
       <div style="
         display: flex;
-        border-top: 1px solid rgba(0, 212, 170, 0.08);
+        border-top: 1px solid ${PRIMARY}44;
         padding: 12px 20px 18px;
         gap: 12px;
         background: rgba(0,0,0,0.3);
@@ -170,7 +176,7 @@
         <input id="chat-input" type="text" placeholder="Escribe tu mensaje..." style="
           flex: 1;
           background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(0, 212, 170, 0.15);
+          border: 1px solid ${PRIMARY}44;
           border-radius: 40px;
           padding: 14px 22px;
           color: white;
@@ -178,7 +184,6 @@
           outline: none;
           transition: all 0.25s;
           font-family: inherit;
-          box-shadow: 0 0 20px rgba(0,212,170,0) inset;
         ">
         <button id="chat-send" style="
           background: ${PRIMARY};
@@ -191,7 +196,7 @@
           font-size: 22px;
           font-weight: 700;
           transition: all 0.2s;
-          box-shadow: 0 4px 30px rgba(0, 212, 170, 0.3);
+          box-shadow: 0 4px 30px ${GLOW_COLOR};
           flex-shrink: 0;
           display: flex;
           align-items: center;
@@ -233,28 +238,28 @@
     .chat-message.bot {
       align-self: flex-start;
       background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(0, 212, 170, 0.08);
+      border: 1px solid ${PRIMARY}44;
       color: #E2E8F0;
       border-bottom-left-radius: 6px;
     }
     .chat-message.user {
       align-self: flex-end;
-      background: linear-gradient(135deg, ${PRIMARY}, #00B894);
-      color: #0A1128;
+      background: linear-gradient(135deg, ${PRIMARY}, ${SECONDARY});
+      color: white;
       border-bottom-right-radius: 6px;
-      box-shadow: 0 4px 24px rgba(0, 212, 170, 0.2);
+      box-shadow: 0 4px 24px ${GLOW_COLOR};
     }
     #chat-input:focus {
       border-color: ${PRIMARY};
-      box-shadow: 0 0 0 4px rgba(0, 212, 170, 0.12), 0 0 30px rgba(0, 212, 170, 0.05);
+      box-shadow: 0 0 0 4px ${PRIMARY}22, 0 0 30px ${PRIMARY}22;
     }
-    #chat-send:hover { transform: scale(1.08); box-shadow: 0 6px 40px rgba(0, 212, 170, 0.4); }
+    #chat-send:hover { transform: scale(1.08); box-shadow: 0 6px 40px ${GLOW_COLOR}; }
     #chat-send:active { transform: scale(0.92); }
     #chat-toggle:hover { transform: scale(1.05); }
     #chat-close:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
     #chat-messages::-webkit-scrollbar { width: 5px; }
     #chat-messages::-webkit-scrollbar-track { background: transparent; }
-    #chat-messages::-webkit-scrollbar-thumb { background: rgba(0, 212, 170, 0.2); border-radius: 10px; }
+    #chat-messages::-webkit-scrollbar-thumb { background: ${PRIMARY}44; border-radius: 10px; }
   `;
   document.head.appendChild(style);
 
