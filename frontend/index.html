@@ -3,26 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BehaviorLab · IA para operaciones críticas</title>
+  <title>BehaviorLab · Consultoría de IA para Empresas</title>
   
   <!-- Tipografías -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Estilos con versión para forzar recarga -->
-  <link rel="stylesheet" href="css/styles.css?v=2" />
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
-  <!-- ========== CANVAS DE PARTÍCULAS (fondo hero) ========== -->
-  <canvas id="particles-canvas"></canvas>
-
   <!-- ========== NAVBAR ========== -->
-  <nav class="navbar glass">
+  <nav class="navbar">
     <div class="container">
       <a href="#" class="logo">Behavior<span>Lab</span></a>
       <div class="nav-links">
         <a href="#servicios">Servicios</a>
-        <a href="#problema">Problema</a>
         <a href="#metodo">Método</a>
         <a href="#contacto" class="btn-nav">Contacto</a>
       </div>
@@ -36,16 +34,13 @@
   <section class="hero" id="hero">
     <div class="hero-overlay"></div>
     <div class="container hero-content">
-      <div class="hero-badge">🚀 IA Empresarial</div>
-      <h1 class="hero-title">Operaciones que no se pueden detener</h1>
+      <div class="hero-badge">IA para empresas</div>
+      <h1 class="hero-title">Transforma tus operaciones con agentes inteligentes</h1>
       <p class="hero-subtitle">
-        Agentes virtuales a la medida para agilizar, estandarizar y escalar procesos críticos.
-        <strong>Somos tu socio integral de IA.</strong>
+        Diseñamos e implementamos agentes de IA personalizados para automatizar procesos,
+        optimizar decisiones y escalar tu negocio en tiempo real.
       </p>
-      <a href="#contacto" class="btn-primary">Agenda una reunión de descubrimiento →</a>
-    </div>
-    <div class="hero-image">
-      <img src="https://media.gokulab.mx/Behavior_Lab/hero-ai-illustration.png" alt="AI" />
+      <a href="#contacto" class="btn-primary">Agenda una consultoría →</a>
     </div>
   </section>
 
@@ -56,21 +51,21 @@
         <div class="about-text">
           <h2>Quiénes somos</h2>
           <p>
-            Empresa de IA con sede en México. Diseñamos agentes personalizados para
-            medianas y grandes empresas de <strong>seguros, servicios financieros, retail, logística y gobierno</strong>.
+            Somos una consultora de inteligencia artificial con sede en México.
+            Ayudamos a empresas medianas y grandes de los sectores <strong>seguros, servicios financieros, retail, logística y gobierno</strong> a implementar soluciones de IA que generan resultados medibles.
           </p>
           <p>
-            Somos tu socio integral desde el descubrimiento hasta la mejora continua.
+            Desde el diagnóstico hasta la mejora continua, somos tu socio estratégico en todo el ciclo de vida de la IA.
           </p>
         </div>
         <div class="about-stats">
           <div class="stat">
             <span class="stat-number" data-target="5">0</span>
-            <span class="stat-label">Sectores</span>
+            <span class="stat-label">Sectores especializados</span>
           </div>
           <div class="stat">
             <span class="stat-number" data-target="100">0</span>
-            <span class="stat-label">% Personalizado</span>
+            <span class="stat-label">% Personalización</span>
           </div>
           <div class="stat">
             <span class="stat-number" data-target="24">0</span>
@@ -84,42 +79,42 @@
   <!-- ========== SERVICIOS ========== -->
   <section class="services" id="servicios">
     <div class="container">
-      <h2 class="section-title">Qué hacemos</h2>
+      <h2 class="section-title">Nuestros servicios</h2>
       <div class="services-grid">
-        <div class="service-card glass reveal">
+        <div class="service-card reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/automation.svg" alt="Automatización" />
           </div>
           <h3>Automatización de atención al cliente</h3>
-          <p>Responde 24/7 con IA conversacional que entiende y resuelve.</p>
+          <p>Resuelve consultas 24/7 con IA conversacional y reduce tiempos de respuesta.</p>
         </div>
-        <div class="service-card glass reveal">
+        <div class="service-card reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/business-intelligence.svg" alt="Inteligencia comercial" />
           </div>
-          <h3>Inteligencia comercial y soporte operativo</h3>
-          <p>Analiza datos en tiempo real para optimizar decisiones.</p>
+          <h3>Inteligencia comercial</h3>
+          <p>Analiza datos en tiempo real para tomar decisiones estratégicas con mayor precisión.</p>
         </div>
-        <div class="service-card glass reveal">
+        <div class="service-card reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/documents.svg" alt="Documentos" />
           </div>
           <h3>Procesamiento de documentos</h3>
-          <p>Extrae, clasifica y valida información automáticamente.</p>
+          <p>Extrae, clasifica y valida información automáticamente para agilizar flujos de trabajo.</p>
         </div>
-        <div class="service-card glass reveal">
+        <div class="service-card reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/decision.svg" alt="Decisiones" />
           </div>
           <h3>Soporte a la toma de decisiones</h3>
-          <p>Recomendaciones basadas en datos para ejecutivos.</p>
+          <p>Recomendaciones basadas en datos para ejecutivos y líderes de negocio.</p>
         </div>
-        <div class="service-card glass reveal">
+        <div class="service-card reveal">
           <div class="service-icon">
             <img src="https://media.gokulab.mx/Behavior_Lab/icons/integration.svg" alt="Integración" />
           </div>
           <h3>Integración con sistemas existentes</h3>
-          <p>Conecta vía API con CRM, ERP y core de negocio.</p>
+          <p>Conecta vía API con CRM, ERP y cualquier sistema core de tu empresa.</p>
         </div>
       </div>
     </div>
@@ -128,9 +123,9 @@
   <!-- ========== PROBLEMA VS SOLUCIÓN ========== -->
   <section class="problem-solution" id="problema">
     <div class="container">
-      <h2 class="section-title">De la fragmentación a la operación autónoma</h2>
+      <h2 class="section-title">El cambio que tu negocio necesita</h2>
       <div class="ps-grid">
-        <div class="problem-box glass">
+        <div class="problem-box">
           <h3>⚠️ Situación actual</h3>
           <ul>
             <li>Procesos fragmentados y poco estandarizados</li>
@@ -140,7 +135,7 @@
             <li>Baja trazabilidad para medir desempeño</li>
           </ul>
         </div>
-        <div class="solution-box glass">
+        <div class="solution-box">
           <h3>✅ Situación deseada</h3>
           <ul>
             <li>Atención más rápida y consistente</li>
@@ -195,7 +190,7 @@
   <!-- ========== MÉTODO ========== -->
   <section class="method" id="metodo">
     <div class="container">
-      <h2 class="section-title">Construcción de agentes</h2>
+      <h2 class="section-title">Nuestro método</h2>
       <div class="method-timeline">
         <div class="method-step reveal">
           <div class="step-number">1</div>
@@ -226,41 +221,12 @@
     </div>
   </section>
 
-  <!-- ========== POR QUÉ BEHAVIORLAB ========== -->
-  <section class="why" id="porque">
-    <div class="container">
-      <h2 class="section-title">¿Por qué BehaviorLab?</h2>
-      <div class="why-grid">
-        <div class="why-item glass">
-          <span class="why-icon">🎯</span>
-          <h3>Agentes a medida</h3>
-          <p>No software genérico. Diseñado para tu negocio.</p>
-        </div>
-        <div class="why-item glass">
-          <span class="why-icon">⚡</span>
-          <h3>Despliegue rápido</h3>
-          <p>En tiempos razonables, sin interrumpir operaciones.</p>
-        </div>
-        <div class="why-item glass">
-          <span class="why-icon">🔌</span>
-          <h3>Integración sin fricciones</h3>
-          <p>Conectamos con tus sistemas existentes.</p>
-        </div>
-        <div class="why-item glass">
-          <span class="why-icon">📈</span>
-          <h3>ROI medible</h3>
-          <p>Verificable y demostrable desde el primer mes.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- ========== CONTACTO ========== -->
   <section class="contact" id="contacto">
     <div class="container">
-      <div class="contact-box glass">
-        <h2>¿Listo para transformar tus operaciones?</h2>
-        <p>Agenda una reunión de descubrimiento y descubre el poder de los agentes de IA.</p>
+      <div class="contact-box">
+        <h2>¿Listo para transformar tu empresa con IA?</h2>
+        <p>Agenda una consultoría estratégica y descubre el potencial de los agentes inteligentes.</p>
         <div class="contact-info">
           <a href="mailto:contacto@gokulab.com" class="btn-primary">contacto@gokulab.com</a>
           <span class="contact-phone">📞 56 1266 8168</span>
@@ -282,9 +248,9 @@
     </div>
   </footer>
 
-  <!-- ========== SCRIPTS (con versión para forzar recarga) ========== -->
-  <script src="js/chat-widget.js?v=2"></script>
-  <script src="js/main.js?v=2"></script>
-  <script src="js/particles.js?v=2"></script>
+  <!-- ========== WIDGET DEL CHAT ========== -->
+  <script src="js/chat-widget.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/particles.js"></script>
 </body>
 </html>
