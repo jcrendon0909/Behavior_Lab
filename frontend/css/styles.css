@@ -761,3 +761,8 @@ section {
   transition: opacity 0.6s ease;
   display: inline-block;
 }
+.logo-img {
+  height: 40px;   /* Ajusta según el tamaño deseado */
+  width: auto;
+  display: block;
+}
