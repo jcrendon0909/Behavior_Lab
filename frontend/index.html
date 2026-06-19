@@ -1,36 +1,383 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BehAvIorLab</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BehAvIorLab · IA para operaciones críticas</title>
 
   <!-- Tipografías -->
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Estilos (con versionado para forzar recarga) -->
-  <link rel="stylesheet" href="https://behaviorlab.gokulab.mx/css/styles.css?v=7">
+  <!-- Estilos (ruta relativa) -->
+  <link rel="stylesheet" href="css/styles.css?v=7" />
 </head>
 <body>
 
+  <!-- ========== CANVAS DE PARTÍCULAS ========== -->
+  <canvas id="particles-canvas"></canvas>
+
   <!-- ========== CONTENIDO PRINCIPAL ========== -->
-  <div id="app">
+  <div id="app" style="position: relative; z-index: 1;">
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="navbar glass">
+      <div class="container">
+        <a href="#hero" class="logo">
+          <img src="https://media.gokulab.mx/Behavior_Lab/logo.jpeg" alt="BehAvIorLab" class="logo-img">
+        </a>
+        <div class="nav-links">
+          <a href="#hero">Inicio</a>
+          <a href="#about">Nosotros</a>
+          <a href="#equipo">Equipo</a>
+          <a href="#servicios">Servicios</a>
+          <a href="#problema">Problema</a>
+          <a href="#arquitectura">Arquitectura</a>
+          <a href="#metodo">Método</a>
+          <a href="#porque">¿Porqué nosotros?</a>
+          <a href="#contacto" class="btn-nav">Contacto</a>
+        </div>
+        <div class="hamburger" id="hamburger">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </nav>
 
     <!-- ========== HERO ========== -->
     <section class="hero" id="hero">
+      <div class="hero-overlay"></div>
+      <div class="container hero-content">
+        <div class="hero-badge">BehAvIorLab – Agentes de IA que entienden tu operación</div>
+        <h1 class="hero-title" id="hero-phrases">
+          <span class="phrase">Agentes de IA que entienden procesos, no solo palabras.</span>
+        </h1>
+        <p class="hero-subtitle">
+          Diseñamos agentes empresariales de IA que automatizan procesos complejos,
+          se integran a tus sistemas y generan resultados medibles en semanas.
+        </p>
+        <p class="hero-support">
+          Soluciones a la medida para agilizar, estandarizar y escalar procesos críticos.
+          <strong>Somos tu socio integral de IA.</strong>
+        </p>
+        <a href="#contacto" class="btn-primary">Agenda una reunión de descubrimiento →</a>
+      </div>
+    </section>
+
+    <!-- ========== QUIENES SOMOS ========== -->
+    <section class="about" id="about">
       <div class="container">
-        <div class="hero-content">
-          <h1 class="hero-title">Operaciones <br>que no se pueden detener</h1>
-          <p class="hero-subtitle">Agentes de IA que entienden procesos, no solo palabras.</p>
-          <a href="#contacto" class="btn-primary">Agenda una reunión →</a>
+        <div class="about-grid">
+          <div class="about-text">
+            <h2>Quiénes somos</h2>
+            <p>
+              <strong>BehAvIorLab</strong> es una consultora de inteligencia artificial con sede en México.
+              Diseñamos agentes personalizados para empresas medianas y grandes en
+              <strong>seguros, servicios financieros, retail, logística y gobierno</strong>.
+            </p>
+            <p>
+              Somos tu socio integral desde el descubrimiento hasta la mejora continua.
+            </p>
+            <div class="about-features">
+              <span>🧠 Matemáticas + IA</span>
+              <span>📊 Riesgo y decisión</span>
+              <span>⚡ Implementación real</span>
+            </div>
+          </div>
+          <div class="about-stats">
+            <div class="stat">
+              <span class="stat-number" data-target="5">0</span>
+              <span class="stat-label">Sectores especializados</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number" data-target="100">0</span>
+              <span class="stat-label">Soluciones personalizadas</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number" data-target="24">0</span>
+              <span class="stat-label">Operación continua 24/7</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-  </div>
+    <!-- ========== EQUIPO ========== -->
+    <section class="team" id="equipo">
+      <div class="container">
+        <div class="team-header">
+          <span class="team-badge">🧪 El equipo</span>
+          <h2 class="section-title">Ciencia, negocio y desarrollo en un mismo laboratorio</h2>
+          <p class="team-intro">
+            En BehAvIorLab reunimos matemáticos, actuarios, economistas, politólogos y especialistas en matemáticas aplicadas a la computación.
+            Esa combinación poco común nos permite entender la complejidad del negocio, modelarla con rigor y convertirla en agentes de IA
+            que realmente funcionan en operación.
+          </p>
+        </div>
+        <div class="team-grid">
+          <div class="team-card glass reveal">
+            <div class="team-icon">📐</div>
+            <h3>Matemático</h3>
+            <p>Especialista en modelación y pensamiento estructurado. Traduce problemas complejos en soluciones formales, robustas y escalables.</p>
+          </div>
+          <div class="team-card glass reveal">
+            <div class="team-icon">📊</div>
+            <h3>Actuario</h3>
+            <p>Experto en riesgo e incertidumbre. Aporta precisión cuantitativa, escenarios y control en procesos críticos de negocio.</p>
+          </div>
+          <div class="team-card glass reveal">
+            <div class="team-icon">📈</div>
+            <h3>Economista</h3>
+            <p>Enfocado en valor y eficiencia. Conecta cada caso de uso de IA con impacto en costos, ingresos y toma de decisiones.</p>
+          </div>
+          <div class="team-card glass reveal">
+            <div class="team-icon">🏛️</div>
+            <h3>Politólogo</h3>
+            <p>Especialista en instituciones, regulación y actores. Asegura que la IA se integre al contexto organizacional, normativo y humano.</p>
+          </div>
+        </div>
+        <div class="team-dev glass reveal">
+          <div class="team-dev-icon">⚡</div>
+          <div class="team-dev-content">
+            <h3>Equipo de desarrollo</h3>
+            <p>
+              Un equipo de <strong>Matemáticas Aplicadas a la Computación y actuaría</strong> transforma esta visión en productos reales:
+              agentes de IA entrenados, integrados y listos para operar en entornos empresariales exigentes.
+            </p>
+          </div>
+        </div>
+        <div class="team-footer">
+          <p>
+            No solo sabemos de modelos y algoritmos; sabemos de <strong>procesos, riesgo, regulación y negocio</strong>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== SERVICIOS ========== -->
+    <section class="services" id="servicios">
+      <div class="container">
+        <div class="services-header">
+          <span class="services-badge">🚀 Nuestros servicios</span>
+          <h2 class="section-title">Tus procesos, impulsados por agentes de IA empresariales</h2>
+          <p class="services-intro">
+            En BehAvIorLab construimos agentes de IA que no solo conversan.
+            Entienden tu flujo de trabajo, ejecutan tareas críticas, se conectan a tus sistemas
+            y transforman la operación en datos accionables.
+            Nuestro enfoque es diseñar agentes a la medida de la lógica de negocio,
+            las reglas y las excepciones de cada organización.
+          </p>
+        </div>
+        <div class="services-grid">
+          <div class="service-card glass reveal">
+            <div class="service-icon">
+              <img src="https://media.gokulab.mx/Behavior_Lab/icons/automation.svg" alt="Automatización" />
+            </div>
+            <h3>Automatización de atención al cliente</h3>
+            <p>IA conversacional que entiende, clasifica y resuelve 24/7.</p>
+          </div>
+          <div class="service-card glass reveal">
+            <div class="service-icon">
+              <img src="https://media.gokulab.mx/Behavior_Lab/icons/business-intelligence.svg" alt="Inteligencia comercial" />
+            </div>
+            <h3>Inteligencia comercial y soporte operativo</h3>
+            <p>Analiza datos en tiempo real para optimizar decisiones.</p>
+          </div>
+          <div class="service-card glass reveal">
+            <div class="service-icon">
+              <img src="https://media.gokulab.mx/Behavior_Lab/icons/documents.svg" alt="Documentos" />
+            </div>
+            <h3>Procesamiento de documentos</h3>
+            <p>Extrae, clasifica y valida información automáticamente.</p>
+          </div>
+          <div class="service-card glass reveal">
+            <div class="service-icon">
+              <img src="https://media.gokulab.mx/Behavior_Lab/icons/decision.svg" alt="Decisiones" />
+            </div>
+            <h3>Soporte a la toma de decisiones</h3>
+            <p>Recomendaciones basadas en datos para ejecutivos.</p>
+          </div>
+          <div class="service-card glass reveal">
+            <div class="service-icon">
+              <img src="https://media.gokulab.mx/Behavior_Lab/icons/integration.svg" alt="Integración" />
+            </div>
+            <h3>Integración con sistemas existentes</h3>
+            <p>Conecta vía API con CRM, ERP y core de negocio.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PROBLEMA VS SOLUCIÓN ========== -->
+    <section class="problem-solution" id="problema">
+      <div class="container">
+        <h2 class="section-title">De la fragmentación a la operación autónoma</h2>
+        <div class="ps-grid">
+          <div class="problem-box glass">
+            <h3>⚠️ Situación actual</h3>
+            <ul>
+              <li>Procesos fragmentados y poco estandarizados</li>
+              <li>Dependencia alta de tareas manuales</li>
+              <li>Respuestas inconsistentes entre canales</li>
+              <li>Costos operativos crecientes</li>
+              <li>Baja trazabilidad para medir desempeño</li>
+            </ul>
+          </div>
+          <div class="solution-box glass">
+            <h3>✅ Situación deseada</h3>
+            <ul>
+              <li>Atención más rápida y consistente</li>
+              <li>Operación estandarizada 24/7</li>
+              <li>Escalabilidad sin crecer en estructura</li>
+              <li>Menor costo operativo</li>
+              <li>Información en tiempo real para decidir mejor</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ARQUITECTURA ========== -->
+    <section class="architecture" id="arquitectura">
+      <div class="container">
+        <h2 class="section-title">Arquitectura de la solución</h2>
+        <div class="arch-diagram">
+          <div class="arch-item glass">
+            <div class="arch-icon">📱</div>
+            <span>Canales</span>
+            <small>Web, App, WhatsApp, Correo, Call Center</small>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-item glass">
+            <div class="arch-icon">🧠</div>
+            <span>Agente IA</span>
+            <small>Comprensión, Clasificación, Respuesta, Resolución</small>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-item glass">
+            <div class="arch-icon">⚙️</div>
+            <span>Orquestación</span>
+            <small>Reglas, Flujos, Prioridades, Escalamiento</small>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-item glass">
+            <div class="arch-icon">🔗</div>
+            <span>Integración API</span>
+            <small>CRM, ERP, Core, Repositorios</small>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-item glass">
+            <div class="arch-icon">📊</div>
+            <span>Analítica y Monitoreo</span>
+            <small>Supervisión Humana y Mejora Continua</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== MÉTODO ========== -->
+    <section class="method" id="metodo">
+      <div class="container">
+        <h2 class="section-title">Construcción de agentes</h2>
+        <div class="method-timeline">
+          <div class="method-step glass reveal">
+            <div class="step-number">1</div>
+            <h3>Diagnóstico y priorización</h3>
+            <p>Identificamos el caso de uso con mayor impacto.</p>
+          </div>
+          <div class="method-step glass reveal">
+            <div class="step-number">2</div>
+            <h3>Diseño y construcción</h3>
+            <p>Arquitectura del agente y definición de flujos.</p>
+          </div>
+          <div class="method-step glass reveal">
+            <div class="step-number">3</div>
+            <h3>Entrenamiento</h3>
+            <p>Con datos y lógica de negocio reales.</p>
+          </div>
+          <div class="method-step glass reveal">
+            <div class="step-number">4</div>
+            <h3>Integración y pruebas</h3>
+            <p>Conectamos con tus sistemas y validamos.</p>
+          </div>
+          <div class="method-step glass reveal">
+            <div class="step-number">5</div>
+            <h3>Despliegue y mejora continua</h3>
+            <p>Monitoreo, ajustes y evolución constante.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== POR QUÉ BEHAVIORLAB ========== -->
+    <section class="why" id="porque">
+      <div class="container">
+        <h2 class="section-title">¿Porqué BehAvIorLab?</h2>
+        <div class="why-grid">
+          <div class="why-item glass">
+            <span class="why-icon">🎯</span>
+            <h3>Agentes a medida</h3>
+            <p>Cada agente se diseña desde cero para tus procesos únicos. La IA se adapta a tu operación, no al revés.</p>
+          </div>
+          <div class="why-item glass">
+            <span class="why-icon">⚡</span>
+            <h3>Despliegue rápido</h3>
+            <p>De la idea al agente operativo en semanas, con un marco claro de diseño, pruebas y salida controlada a producción.</p>
+          </div>
+          <div class="why-item glass">
+            <span class="why-icon">🔌</span>
+            <h3>Integración sin fricciones</h3>
+            <p>Conectamos con tus sistemas existentes, respetando tu arquitectura y tus políticas de seguridad.</p>
+          </div>
+          <div class="why-item glass">
+            <span class="why-icon">📈</span>
+            <h3>Retorno medible</h3>
+            <p>Definimos desde el inicio qué vamos a medir: tiempos, volúmenes, errores, costos. La IA se justifica con números.</p>
+          </div>
+        </div>
+        <div class="why-closing">
+          <p>
+            <span class="closing-icon">🕒</span>
+            <strong>Operación 24/7</strong> — Agentes que trabajan todo el tiempo,
+            sin cansancio, sin rotación y con calidad homogénea.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CONTACTO ========== -->
+    <section class="contact" id="contacto">
+      <div class="container">
+        <div class="contact-box glass">
+          <h2>¿Listo para transformar tus operaciones?</h2>
+          <p>Agenda una reunión de descubrimiento y descubre el poder de los agentes de IA.</p>
+          <div class="contact-info">
+            <a href="mailto:contacto@gokulab.com" class="btn-primary">contacto@gokulab.com</a>
+            <span class="contact-phone">📞 56 1266 8168</span>
+            <span class="contact-location">📍 Naucalpan, Edo. de México</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2026 BehAvIorLab · Todos los derechos reservados</p>
+        <div class="footer-socials">
+          <a href="#">LinkedIn</a>
+          <a href="#">Twitter</a>
+          <a href="#">YouTube</a>
+        </div>
+      </div>
+    </footer>
+
+  </div> <!-- fin de #app -->
+
+  <!-- ========== WIDGET DEL CHAT ========== -->
+  <script src="js/chat-widget.js?v=7" defer></script>
 
   <!-- ========== SCRIPTS ========== -->
-  <script src="https://behaviorlab.gokulab.mx/js/main.js?v=7" defer></script>
+  <script src="js/main.js?v=7" defer></script>
+  <script src="js/particles.js?v=7" defer></script>
 
 </body>
 </html>
