@@ -762,7 +762,10 @@ section {
   display: inline-block;
 }
 .logo-img {
-  height: 250px;   /* Ajusta según el tamaño deseado */
-  width: 300;
+  max-height: 60px; /* Altura máxima */
+  max-width: 200px; /* Anchura máxima, ajústala a tu gusto */
+  width: auto;
+  height: auto;
   display: block;
+}
 }
