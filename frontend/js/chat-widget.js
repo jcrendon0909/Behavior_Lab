@@ -1,25 +1,15 @@
 // ================================================================
-// CHAT WIDGET — BEHAVIORLAB (versión premium, grande y neon)
+// CHAT WIDGET — BEHAVIORLAB (versión premium)
 // ================================================================
 
 (function() {
   'use strict';
 
-  // ---------- CONFIGURACIÓN ----------
   const API_URL = 'https://api.gokulab.mx/chat';
-
-  // 🔥 ELIGE TU PALETA:
-  // Opción 1: Azul/Púrpura (coherente con la página)
   const PRIMARY = '#2563EB';
   const SECONDARY = '#7C3AED';
   const GLOW_COLOR = 'rgba(37, 99, 235, 0.5)';
 
-  // Opción 2: Verde neón (contraste)
-  // const PRIMARY = '#00D4AA';
-  // const SECONDARY = '#00B894';
-  // const GLOW_COLOR = 'rgba(0, 212, 170, 0.5)';
-
-  // ---------- CREAR CONTENEDOR ----------
   const container = document.createElement('div');
   container.id = 'behavior-chat-widget';
   container.style.cssText = `
@@ -31,9 +21,7 @@
   `;
   document.body.appendChild(container);
 
-  // ---------- HTML DEL WIDGET ----------
   container.innerHTML = `
-    <!-- Botón flotante con pulso -->
     <button id="chat-toggle" style="
       background: ${PRIMARY};
       color: #0A1128;
@@ -61,7 +49,6 @@
       "></span>
     </button>
 
-    <!-- Ventana del chat -->
     <div id="chat-window" style="
       display: none;
       position: absolute;
@@ -81,7 +68,6 @@
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
     ">
-      <!-- Header -->
       <div style="
         background: linear-gradient(135deg, #0A1128, #1A2333);
         padding: 22px 28px;
@@ -134,7 +120,6 @@
         ">✕</button>
       </div>
 
-      <!-- Mensajes -->
       <div id="chat-messages" style="
         flex: 1;
         padding: 24px 24px 16px;
@@ -147,7 +132,6 @@
         background: rgba(0,0,0,0.2);
       "></div>
 
-      <!-- Indicador de escritura -->
       <div id="typing-indicator" style="
         display: none;
         padding: 8px 24px 16px;
@@ -164,7 +148,6 @@
         <span style="color: rgba(255,255,255,0.3);">Escribiendo respuesta...</span>
       </div>
 
-      <!-- Input -->
       <div style="
         display: flex;
         border-top: 1px solid ${PRIMARY}44;
@@ -206,7 +189,7 @@
     </div>
   `;
 
-  // ---------- ESTILOS GLOBALES ----------
+  // Inyectar estilos globales
   const style = document.createElement('style');
   style.textContent = `
     @keyframes pulse-ring {
@@ -263,7 +246,7 @@
   `;
   document.head.appendChild(style);
 
-  // ---------- REFERENCIAS Y LÓGICA ----------
+  // Referencias y lógica del chat
   const toggleBtn = document.getElementById('chat-toggle');
   const closeBtn = document.getElementById('chat-close');
   const chatWindow = document.getElementById('chat-window');
@@ -300,6 +283,7 @@
     typingIndicator.style.display = 'flex';
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
+
   function hideTyping() {
     typingIndicator.style.display = 'none';
   }
@@ -334,7 +318,6 @@
     }
   }
 
-  // Event listeners
   toggleBtn.addEventListener('click', () => isOpen ? closeChat() : openChat());
   closeBtn.addEventListener('click', closeChat);
   sendBtn.addEventListener('click', sendMessage);
