@@ -762,7 +762,7 @@ section {
   display: inline-block;
 }
 .logo-img {
-  height: 40px;   /* Ajusta según el tamaño deseado */
+  height: 60px;   /* Ajusta según el tamaño deseado */
   width: auto;
   display: block;
 }
