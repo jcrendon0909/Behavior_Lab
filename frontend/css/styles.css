@@ -153,10 +153,11 @@ section {
   position: relative;
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;   /* 🔥 Cambiado de 'center' a 'flex-start' */
+  justify-content: center;
   overflow: hidden;
   z-index: 1;
-  padding-top: 40px;   /* ← NUEVO: separación de la navbar */
+  padding-top: 120px;   /* ← NUEVO: separación de la navbar */
 }
 .hero-overlay {
   position: absolute;
