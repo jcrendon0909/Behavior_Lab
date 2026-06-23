@@ -777,19 +777,29 @@ section {
 /* ========== LOGO COMO MARCA DE AGUA EN EL HERO ========== */
 .hero-logo-bg {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 60%;
-  max-width: 700px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.08; /* Ajusta este valor: 0.05 = muy sutil, 0.15 = más visible */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.08; /* Ajusta la transparencia: 0.05 = muy sutil, 0.12 = más visible */
 }
 
 .hero-logo-watermark {
-  width: 100%;
+  width: 60%;
+  max-width: 700px;
   height: auto;
   display: block;
+  filter: blur(1px); /* Opcional: un pequeño desenfoque para darle más efecto de marca de agua */
+}
+
+/* Asegurar que el contenido del Hero esté por encima */
+.hero-content {
+  position: relative;
+  z-index: 2;
 }
 }
