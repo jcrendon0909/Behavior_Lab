@@ -194,7 +194,7 @@
           <div class="team-dev-content">
             <h3>Equipo de desarrollo</h3>
             <p>
-              Un equipo de <strong>Matemáticas Aplicadas a la Computación y actuaría</strong> transforma esta visión en productos reales:
+              Un equipo de <strong>Licenciados en Matemáticas Aplicadas y Computación</strong> transforma esta visión en productos reales:
               agentes de IA entrenados, integrados y listos para operar en entornos empresariales exigentes.
             </p>
           </div>
@@ -290,43 +290,71 @@
       </div>
     </section>
 
-    <!-- ========== ARQUITECTURA ========== -->
-    <section class="architecture" id="arquitectura">
-      <div class="container">
-        <h2 class="section-title">Arquitectura de la solución</h2>
+<!-- ========== ARQUITECTURA ========== -->
+<section class="architecture" id="arquitectura">
+  <div class="container">
+    <h2 class="section-title">Arquitectura de la solución</h2>
+    <p class="arch-subtitle">
+      Una capa de <strong>Gobernabilidad y Ciberseguridad</strong> protege cada etapa del proceso
+    </p>
+
+    <div class="arch-wrapper">
+      <!-- Capa de seguridad envolvente -->
+      <div class="arch-security-layer">
+        <div class="arch-security-badge">
+          <span class="security-icon">🛡️</span>
+          <span>Gobernabilidad &amp; Ciberseguridad</span>
+        </div>
+
         <div class="arch-diagram">
-          <div class="arch-item glass">
+          <!-- Canales -->
+          <div class="arch-item glass" data-modal="modal-canales">
             <div class="arch-icon">📱</div>
             <span>Canales</span>
             <small>Web, App, WhatsApp, Correo, Call Center</small>
+            <div class="arch-hover-info">🔍 Ver más</div>
           </div>
           <div class="arch-arrow">↓</div>
-          <div class="arch-item glass">
+
+          <!-- Agente IA -->
+          <div class="arch-item glass" data-modal="modal-agente">
             <div class="arch-icon">🧠</div>
             <span>Agente IA</span>
             <small>Comprensión, Clasificación, Respuesta, Resolución</small>
+            <div class="arch-hover-info">🔍 Ver más</div>
           </div>
           <div class="arch-arrow">↓</div>
-          <div class="arch-item glass">
+
+          <!-- Orquestación -->
+          <div class="arch-item glass" data-modal="modal-orquestacion">
             <div class="arch-icon">⚙️</div>
             <span>Orquestación</span>
             <small>Reglas, Flujos, Prioridades, Escalamiento</small>
+            <div class="arch-hover-info">🔍 Ver más</div>
           </div>
           <div class="arch-arrow">↓</div>
-          <div class="arch-item glass">
+
+          <!-- Integración API -->
+          <div class="arch-item glass" data-modal="modal-integracion">
             <div class="arch-icon">🔗</div>
             <span>Integración API</span>
             <small>CRM, ERP, Core, Repositorios</small>
+            <div class="arch-hover-info">🔍 Ver más</div>
           </div>
           <div class="arch-arrow">↓</div>
-          <div class="arch-item glass">
+
+          <!-- Analítica y Monitoreo -->
+          <div class="arch-item glass" data-modal="modal-analitica">
             <div class="arch-icon">📊</div>
             <span>Analítica y Monitoreo</span>
             <small>Supervisión Humana y Mejora Continua</small>
+            <div class="arch-hover-info">🔍 Ver más</div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
     <!-- ========== MÉTODO ========== -->
     <section class="method" id="metodo">
@@ -426,7 +454,79 @@
     </footer>
 
   </div> <!-- fin de #app -->
+<!-- ========== MODALES DE ARQUITECTURA ========== -->
+<div class="arch-modal" id="modal-canales">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>📱 Canales de entrada</h3>
+    <p>Integración con múltiples puntos de contacto: <strong>web, app móvil, WhatsApp, correo electrónico y call center</strong>. Cada canal se normaliza y unifica en un flujo único de atención.</p>
+    <ul>
+      <li><strong>Web / App:</strong> Chatbots y asistentes integrados.</li>
+      <li><strong>WhatsApp / Correo:</strong> Automatización de respuestas y clasificación.</li>
+      <li><strong>Call Center:</strong> Asistencia en vivo con respaldo de IA.</li>
+    </ul>
+    <p><small>La capa de seguridad garantiza autenticación y cifrado en todos los canales.</small></p>
+  </div>
+</div>
 
+<div class="arch-modal" id="modal-agente">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>🧠 Agente IA</h3>
+    <p>El cerebro de la solución. Procesa la entrada del usuario mediante <strong>comprensión de lenguaje natural, clasificación de intención, generación de respuestas y resolución de tareas</strong>.</p>
+    <ul>
+      <li><strong>Comprensión:</strong> NLP avanzado para entender contexto.</li>
+      <li><strong>Clasificación:</strong> Identifica el tipo de solicitud.</li>
+      <li><strong>Respuesta:</strong> Genera respuestas precisas o ejecuta acciones.</li>
+      <li><strong>Resolución:</strong> Cierra el ciclo con confirmación o derivación.</li>
+    </ul>
+    <p><small>La gobernabilidad asegura que el agente opere dentro de políticas definidas.</small></p>
+  </div>
+</div>
+
+<div class="arch-modal" id="modal-orquestacion">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>⚙️ Orquestación</h3>
+    <p>Coordina el flujo de trabajo: <strong>reglas de negocio, flujos condicionales, priorización de tareas y escalamiento a humanos</strong> cuando es necesario.</p>
+    <ul>
+      <li><strong>Reglas:</strong> Lógica definida por el negocio.</li>
+      <li><strong>Flujos:</strong> Secuencias de pasos dinámicos.</li>
+      <li><strong>Prioridades:</strong> Atención urgente o rutinaria.</li>
+      <li><strong>Escalamiento:</strong> Transición suave a supervisión humana.</li>
+    </ul>
+    <p><small>La ciberseguridad protege los datos en cada transición.</small></p>
+  </div>
+</div>
+
+<div class="arch-modal" id="modal-integracion">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>🔗 Integración API</h3>
+    <p>Conexión con los sistemas existentes del cliente: <strong>CRM, ERP, Core de negocio y repositorios internos</strong>. La integración es bidireccional y en tiempo real.</p>
+    <ul>
+      <li><strong>CRM:</strong> Actualización de contactos y casos.</li>
+      <li><strong>ERP:</strong> Consulta de inventarios, pedidos, etc.</li>
+      <li><strong>Core:</strong> Operaciones críticas del negocio.</li>
+      <li><strong>Repositorios:</strong> Acceso a documentos y bases de datos.</li>
+    </ul>
+    <p><small>Las API están protegidas con autenticación OAuth y cifrado TLS.</small></p>
+  </div>
+</div>
+
+<div class="arch-modal" id="modal-analitica">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>📊 Analítica y Monitoreo</h3>
+    <p>Panel de control para <strong>supervisión humana, dashboards de rendimiento y mejora continua</strong>. Permite medir tiempos, volúmenes, errores y calidad.</p>
+    <ul>
+      <li><strong>Supervisión:</strong> Intervención humana cuando es necesario.</li>
+      <li><strong>Dashboards:</strong> Visualización de métricas clave.</li>
+      <li><strong>Mejora continua:</strong> Ajustes basados en datos.</li>
+    </ul>
+    <p><small>La gobernabilidad asegura que los datos se usen éticamente.</small></p>
+  </div>
+</div>
   <!-- ========== WIDGET DEL CHAT ========== -->
   <script src="js/chat-widget.js?v=19" defer></script>
 

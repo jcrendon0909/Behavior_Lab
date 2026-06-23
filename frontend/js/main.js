@@ -135,5 +135,51 @@
     setupCounterObserver();
     setupPhraseCarousel();
   }
+// ========== MODALES DE ARQUITECTURA ==========
+document.addEventListener('DOMContentLoaded', function() {
+  const modalTriggers = document.querySelectorAll('.arch-item[data-modal]');
+  const modals = document.querySelectorAll('.arch-modal');
+  const closeButtons = document.querySelectorAll('.arch-modal-close');
 
+  // Abrir modal
+  modalTriggers.forEach(trigger => {
+    trigger.addEventListener('click', function() {
+      const modalId = this.getAttribute('data-modal');
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    });
+  });
+
+  // Cerrar modal (botón X)
+  closeButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const modal = this.closest('.arch-modal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    });
+  });
+
+  // Cerrar modal (clic fuera)
+  modals.forEach(modal => {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+
+  // Cerrar modal con Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      modals.forEach(modal => {
+        modal.classList.remove('active');
+      });
+      document.body.style.overflow = '';
+    }
+  });
+});
 })();
