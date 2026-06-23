@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import fetch from "node-fetch";
 import cors from "cors";
+import { MongoClient } from "mongodb";
 
 console.log("¿EXISTE .env?:", fs.existsSync(".env"));
 dotenv.config();
@@ -22,6 +23,36 @@ app.use(cors({
   methods: ['GET', 'POST'],
   credentials: true
 }));
+
+// ---------- CONEXIÓN A MONGODB ----------
+const MONGO_URI = process.env.MONGO_URI;
+let db = null;
+
+async function connectMongo() {
+  if (!MONGO_URI) {
+    console.warn("⚠️ MONGO_URI no configurada. La base de conocimiento no estará disponible.");
+    return;
+  }
+  try {
+    const client = new MongoClient(MONGO_URI);
+    await client.connect();
+    db = client.db();
+    console.log("✅ Conectado a MongoDB");
+    
+    // Verificar colecciones
+    const collections = await db.listCollections().toArray();
+    const collectionNames = collections.map(c => c.name);
+    if (!collectionNames.includes('knowledge')) {
+      console.warn("⚠️ Colección 'knowledge' no encontrada. Crea una e importa knowledge.json");
+    }
+    if (!collectionNames.includes('faq')) {
+      console.warn("⚠️ Colección 'faq' no encontrada. Crea una e importa faq.json");
+    }
+  } catch (error) {
+    console.error("❌ Error conectando a MongoDB:", error.message);
+  }
+}
+connectMongo();
 
 // ---------- API KEYS Y ROTACIÓN ----------
 const GROQ_KEYS = [
@@ -45,7 +76,7 @@ function getNextKey() {
 }
 
 // ---------- MEMORIA DE CONVERSACIÓN ----------
-const conversationHistory = {}; // { userId: [ { role, content }, ... ] }
+const conversationHistory = {};
 
 function getConversationHistory(userId) {
   if (!conversationHistory[userId]) {
@@ -57,13 +88,46 @@ function getConversationHistory(userId) {
 function addToConversationHistory(userId, role, content) {
   const history = getConversationHistory(userId);
   history.push({ role, content });
-  // Limitar a 10 mensajes (5 turnos) para no exceder contexto
   if (history.length > 10) {
     history.splice(0, history.length - 10);
   }
 }
 
-// ---------- MODOS (prompt estructurado) ----------
+// ---------- CONSULTA A MONGODB ----------
+async function searchKnowledge(query) {
+  if (!db) return null;
+  try {
+    // Buscar en FAQ (coincidencia exacta por palabras clave)
+    const faqResult = await db.collection('faq').find({
+      keywords: { $regex: query, $options: 'i' }
+    }).limit(1).toArray();
+    
+    if (faqResult.length > 0) {
+      return { type: 'faq', data: faqResult[0] };
+    }
+
+    // Buscar en Knowledge (por topic, title, content o keywords)
+    const knowledgeResult = await db.collection('knowledge').find({
+      $or: [
+        { topic: { $regex: query, $options: 'i' } },
+        { title: { $regex: query, $options: 'i' } },
+        { content: { $regex: query, $options: 'i' } },
+        { keywords: { $regex: query, $options: 'i' } }
+      ]
+    }).limit(1).toArray();
+
+    if (knowledgeResult.length > 0) {
+      return { type: 'knowledge', data: knowledgeResult[0] };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("❌ Error en búsqueda MongoDB:", error);
+    return null;
+  }
+}
+
+// ---------- MODOS (prompt base) ----------
 const MODES = {
   default: `
 Eres el asistente virtual de BehaviorLab, una consultora de IA empresarial con sede en México.
@@ -71,58 +135,18 @@ Eres el asistente virtual de BehaviorLab, una consultora de IA empresarial con s
 **Reglas de respuesta:**
 - Responde en **máximo 3 oraciones**.
 - Sé directo, profesional y evita repetir información.
-- Si no sabes algo, sugiere contactar al equipo de BehaviorLab.
+- Si tienes información específica de la base de conocimiento, úsala primero.
+- Si no sabes algo, sugiere contactar al equipo.
 
-**Información clave sobre BehaviorLab (organizada por temas):**
-
-1. ¿QUIÉNES SOMOS?
-   - Somos una consultora de IA con sede en México.
-   - Diseñamos agentes de IA personalizados para empresas medianas y grandes.
-   - Sectores: seguros, servicios financieros, retail, logística y gobierno.
-
-2. ¿QUÉ SERVICIOS OFRECEMOS?
-   - Automatización de atención al cliente (chatbots y asistentes 24/7).
-   - Inteligencia comercial y soporte operativo (análisis de datos en tiempo real).
-   - Procesamiento de documentos (extracción y clasificación automática).
-   - Soporte a la toma de decisiones (recomendaciones basadas en datos).
-   - Integración con sistemas existentes vía API (CRM, ERP, core).
-
-3. ¿CUÁL ES NUESTRA METODOLOGÍA?
-   - Paso 1: Diagnóstico y priorización del caso de uso.
-   - Paso 2: Diseño y construcción del agente a la medida.
-   - Paso 3: Entrenamiento con datos y lógica de negocio reales.
-   - Paso 4: Integración y pruebas con tus sistemas.
-   - Paso 5: Despliegue, monitoreo y mejora continua.
-
-4. ¿QUÉ NOS DIFERENCIA?
-   - Agentes a medida (no software genérico).
-   - Despliegue rápido (en semanas).
-   - Integración sin fricciones.
-   - ROI medible y verificable (reducción de costos operativos 30-60%).
-
-5. ¿QUÉ HACEMOS EN TÉRMINOS DE GOBERNABILIDAD Y CIBERSEGURIDAD?
-   - Protegemos cada etapa del ciclo de vida del agente.
-   - Aseguramos autenticación, cifrado y control de acceso.
-   - Monitoreamos y auditamos el desempeño del agente.
-   - Cumplimos con estándares de seguridad y privacidad.
-
-**Instrucción final:** Usa la información anterior para responder preguntas. Si el usuario pregunta algo que no está cubierto, indícalo con honestidad y sugiere contactar al equipo.
+**Contexto general:**
+BehaviorLab diseña agentes de IA personalizados para seguros, finanzas, retail, logística y gobierno.
+Ofrecemos automatización, inteligencia comercial, procesamiento de documentos, soporte a decisiones e integración API.
+Nuestra metodología tiene 5 pasos: diagnóstico, diseño, entrenamiento, integración y despliegue.
+Nos diferenciamos por ser agentes a medida, despliegue rápido, integración sin fricciones y ROI medible.
 `,
-
-  creatividad: `
-Eres un experto en creatividad empresarial aplicada a IA.
-Responde en máximo 3 oraciones, con ideas innovadoras y prácticas.
-`,
-
-  emociones: `
-Eres un consultor de IA con enfoque en experiencia de usuario y adopción tecnológica.
-Responde en máximo 3 oraciones, con empatía y claridad.
-`,
-
-  storytelling: `
-Eres un experto en narrativa empresarial y casos de éxito.
-Responde en máximo 3 oraciones, contando historias breves y convincentes.
-`
+  creatividad: `Eres un experto en creatividad empresarial aplicada a IA. Responde en máximo 3 oraciones.`,
+  emociones: `Eres un consultor de IA con enfoque en experiencia de usuario. Responde en máximo 3 oraciones.`,
+  storytelling: `Eres un experto en narrativa empresarial. Responde en máximo 3 oraciones.`
 };
 
 // ---------- FUNCIÓN PARA LLAMAR A GROQ ----------
@@ -143,8 +167,8 @@ async function callGroq(messages) {
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages,
-        max_tokens: 120,        // Limita la respuesta a ~120 palabras
-        temperature: 0.3        // Respuestas más directas y predecibles
+        max_tokens: 120,
+        temperature: 0.3
       })
     });
 
@@ -167,46 +191,49 @@ async function callGroq(messages) {
   throw new Error("❌ Todas las API keys fallaron");
 }
 
-// ---------- ENDPOINTS ----------
-app.get('/', (req, res) => {
-  res.send('Behavior Lab API running 🚀');
-});
-
-app.get('/chat', (req, res) => {
-  res.send('Este endpoint usa POST. Usa Postman o frontend.');
-});
-
-// 🚀 Endpoint principal con memoria de conversación
+// ---------- ENDPOINT PRINCIPAL ----------
 app.post("/chat", async (req, res) => {
   try {
-    const { message, mode = "default", multiAgent = false, userId = "defaultUser" } = req.body;
+    const { message, mode = "default", userId = "defaultUser" } = req.body;
 
     if (!message) {
       return res.json({ reply: "❌ Falta 'message'" });
     }
 
-    // Si multiAgent está activado (no se usa en este flujo, pero lo dejamos)
-    if (multiAgent) {
-      // Podrías implementar runMultiAgent si lo necesitas
-      const reply = "Función multi-agente no implementada en esta versión.";
-      return res.json({ reply });
+    // 1. Buscar en MongoDB
+    let knowledgeContext = "";
+    if (db) {
+      const result = await searchKnowledge(message);
+      if (result) {
+        if (result.type === 'faq') {
+          knowledgeContext = `Pregunta frecuente: "${result.data.question}"\nRespuesta: ${result.data.answer}`;
+        } else if (result.type === 'knowledge') {
+          knowledgeContext = `Información: ${result.data.title}\n${result.data.content}`;
+        }
+        console.log(`📚 Usando conocimiento de MongoDB (${result.type})`);
+      }
     }
 
-    // Obtener historial del usuario
+    // 2. Obtener historial
     const history = getConversationHistory(userId);
 
-    // Construir mensajes: system prompt + historial + nuevo mensaje
+    // 3. Construir mensajes
     const systemPrompt = MODES[mode] || MODES.default;
+    let systemContent = systemPrompt;
+    if (knowledgeContext) {
+      systemContent += `\n\n**Información adicional de la base de conocimiento:**\n${knowledgeContext}\n\nUsa esta información para responder con precisión.`;
+    }
+
     const messages = [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: systemContent },
       ...history,
       { role: "user", content: message }
     ];
 
-    // Llamar a Groq con el historial
+    // 4. Llamar a Groq
     const reply = await callGroq(messages);
 
-    // Guardar el nuevo mensaje y la respuesta en el historial
+    // 5. Guardar historial
     addToConversationHistory(userId, "user", message);
     addToConversationHistory(userId, "assistant", reply);
 
@@ -216,6 +243,11 @@ app.post("/chat", async (req, res) => {
     console.error("❌ Error en /chat:", error.message);
     res.json({ reply: error.message || "❌ Error en el servidor" });
   }
+});
+
+// ---------- HEALTH CHECK ----------
+app.get('/', (req, res) => {
+  res.send('Behavior Lab API running 🚀');
 });
 
 // ---------- INICIAR SERVIDOR ----------
