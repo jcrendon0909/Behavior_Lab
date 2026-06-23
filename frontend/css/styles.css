@@ -847,15 +847,17 @@ section {
 }
 
 .clients-grid {
-  max-width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
   overflow: hidden;
+  display: flex;
+  justify-content: center;   /* 🔥 Centra horizontalmente */
   padding: 0 20px;
 }
 
 .clients-track {
   display: flex;
-  gap: 30px;               /* Ajusta la separación entre logos */
+  gap: 50px;                /* 🔥 Más separación */
   width: max-content;
   animation: scroll-clients 30s linear infinite;
 }
@@ -869,26 +871,27 @@ section {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  opacity: 0.6;
+  opacity: 0.7;             /* 🔥 Un poco más visibles */
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .client-item:hover {
   opacity: 1;
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 .client-item img {
-  max-height: 30px;        /* Tamaño de los logos */
+  max-height: 55px;         /* 🔥 Logos más grandes */
   width: auto;
   display: block;
-  filter: brightness(0) saturate(100%) invert(1);
-  transition: filter 0.3s ease;
+  /* 🔥 ELIMINAMOS el filtro de inversión para conservar colores originales */
+  /* filter: brightness(0) saturate(100%) invert(1); */
+  transition: transform 0.3s ease;
   object-fit: contain;
 }
 
 .client-item:hover img {
-  filter: brightness(0.9) saturate(100%) invert(1);
+  transform: scale(1.05);
 }
 
 @keyframes scroll-clients {
@@ -903,10 +906,10 @@ section {
 /* Responsive */
 @media (max-width: 768px) {
   .clients-track {
-    gap: 20px;
+    gap: 30px;
   }
   .client-item img {
-    max-height: 24px;
+    max-height: 35px;
   }
   .clients {
     padding: 40px 0;
