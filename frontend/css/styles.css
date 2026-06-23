@@ -156,7 +156,7 @@ section {
   align-items: center;
   overflow: hidden;
   z-index: 1;
-  padding-top: 80px;   /* ← NUEVO: separación de la navbar */
+  padding-top: 40px;   /* ← NUEVO: separación de la navbar */
 }
 .hero-overlay {
   position: absolute;
@@ -798,7 +798,7 @@ section {
   width: auto;
   height: auto;
   display: block;
-  opacity: 0.20;               /* Ajusta la transparencia */
+  opacity: 0.80;               /* Ajusta la transparencia */
   filter: blur(0.5px);         /* Efecto sutil */
   filter: drop-shadow(16px 16px 20px rgb(131, 139, 186)) invert(75%);
 }
@@ -809,5 +809,5 @@ section {
   z-index: 2;
   max-width: 750px;
   margin: 80px auto 0 auto;   /* 🔥 Siempre comienza 80px abajo */
-  text-align: center;osition
+  text-align: center;
 }
