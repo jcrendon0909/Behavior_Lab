@@ -762,10 +762,15 @@ section {
   display: inline-block;
 }
 .logo-img {
-  max-height: 60px; /* Altura máxima */
-  max-width: 200px; /* Anchura máxima, ajústala a tu gusto */
+  height: 80px;          /* Antes 60px */
   width: auto;
-  height: auto;
   display: block;
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+/* Efecto glow al pasar el mouse */
+.logo-img:hover {
+  filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.6));
+  transform: scale(1.05);
 }
 }
