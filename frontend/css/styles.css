@@ -798,12 +798,16 @@ section {
   width: auto;
   height: auto;
   display: block;
-  opacity: 0.10;               /* Ajusta la transparencia */
+  opacity: 0.20;               /* Ajusta la transparencia */
   filter: blur(0.5px);         /* Efecto sutil */
+  filter: drop-shadow(16px 16px 20px rgb(131, 139, 186)) invert(75%);
 }
 
 /* Asegurar que el contenido del Hero esté por encima */
 .hero-content {
   position: relative;
   z-index: 2;
+  max-width: 750px;
+  margin: 80px auto 0 auto;   /* 🔥 Siempre comienza 80px abajo */
+  text-align: center;osition
 }
