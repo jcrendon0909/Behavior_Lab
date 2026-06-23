@@ -799,9 +799,11 @@ section {
   width: auto;
   height: auto;
   display: block;
-  opacity: 0.20;               /* Ajusta la transparencia */
-  filter: blur(0.5px);         /* Efecto sutil */
+  opacity: 0.15;               /* Ajusta la transparencia */
+  filter: blur(0.3px);         /* Efecto sutil */
+  mix-blend-mode: screen;  /* 🔥 Esto aclara los colores sobre fondo oscuro */
 }
+
 
 /* Asegurar que el contenido del Hero esté por encima */
 .hero-content {
