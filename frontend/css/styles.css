@@ -782,20 +782,14 @@ section {
   transform: translate(-50%, -50%);
   width: 60%;
   max-width: 700px;
-  height: auto;
-  aspect-ratio: auto;
-  background-image: url('https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.07;          /* Muy sutil, ajusta a tu gusto */
-  z-index: 1;            /* Por debajo del contenido pero encima del overlay */
-  pointer-events: none;  /* Para que no interfiera con clics */
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.08; /* Ajusta este valor: 0.05 = muy sutil, 0.15 = más visible */
 }
 
-/* Ajuste para que el contenido del Hero esté por encima */
-.hero-content {
-  position: relative;
-  z-index: 2;
+.hero-logo-watermark {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 }
