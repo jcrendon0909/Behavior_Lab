@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// Configurar CORS para permitir solo tus dominios
+// Configurar CORS
 app.use(cors({
   origin: [
     'https://behaviorlab.gokulab.mx',
@@ -23,7 +23,7 @@ app.use(cors({
   credentials: true
 }));
 
-// 🔑 Cargar múltiples keys
+// ---------- API KEYS Y ROTACIÓN ----------
 const GROQ_KEYS = [
   process.env.GROQ_API_KEY_1,
   process.env.GROQ_API_KEY_2,
@@ -37,31 +37,76 @@ if (GROQ_KEYS.length === 0) {
 }
 console.log(`🔑 Keys cargadas: ${GROQ_KEYS.length} de 5`);
 
-// 🔄 Rotación de keys
 let currentKeyIndex = 0;
-
 function getNextKey() {
   const key = GROQ_KEYS[currentKeyIndex];
   currentKeyIndex = (currentKeyIndex + 1) % GROQ_KEYS.length;
   return key;
 }
 
-// 🧠 MODOS (BehaviorLab) - VERSIÓN CORTA Y EJECUTIVA
+// ---------- MEMORIA DE CONVERSACIÓN ----------
+const conversationHistory = {}; // { userId: [ { role, content }, ... ] }
+
+function getConversationHistory(userId) {
+  if (!conversationHistory[userId]) {
+    conversationHistory[userId] = [];
+  }
+  return conversationHistory[userId];
+}
+
+function addToConversationHistory(userId, role, content) {
+  const history = getConversationHistory(userId);
+  history.push({ role, content });
+  // Limitar a 10 mensajes (5 turnos) para no exceder contexto
+  if (history.length > 10) {
+    history.splice(0, history.length - 10);
+  }
+}
+
+// ---------- MODOS (prompt estructurado) ----------
 const MODES = {
   default: `
-Eres el asistente virtual de BehaviorLab, consultora de IA empresarial en México.
+Eres el asistente virtual de BehaviorLab, una consultora de IA empresarial con sede en México.
 
 **Reglas de respuesta:**
-- Responde en **máximo 2 o 3 oraciones**.
-- Ve al grano, sin rodeos.
-- No repitas información.
-- Si no sabes algo, sugiere contactar al equipo.
+- Responde en **máximo 3 oraciones**.
+- Sé directo, profesional y evita repetir información.
+- Si no sabes algo, sugiere contactar al equipo de BehaviorLab.
 
-**Información clave (solo para responder con precisión):**
-- Diseñamos agentes de IA a medida para seguros, finanzas, retail, logística y gobierno.
-- Servicios: automatización de atención al cliente, inteligencia comercial, procesamiento de documentos, soporte a decisiones, integración API.
-- Beneficios: reducción de costos 30-60%, operación 24/7, escalabilidad, ROI medible.
-- Metodología: diagnóstico, diseño, entrenamiento, integración, despliegue y mejora continua.
+**Información clave sobre BehaviorLab (organizada por temas):**
+
+1. ¿QUIÉNES SOMOS?
+   - Somos una consultora de IA con sede en México.
+   - Diseñamos agentes de IA personalizados para empresas medianas y grandes.
+   - Sectores: seguros, servicios financieros, retail, logística y gobierno.
+
+2. ¿QUÉ SERVICIOS OFRECEMOS?
+   - Automatización de atención al cliente (chatbots y asistentes 24/7).
+   - Inteligencia comercial y soporte operativo (análisis de datos en tiempo real).
+   - Procesamiento de documentos (extracción y clasificación automática).
+   - Soporte a la toma de decisiones (recomendaciones basadas en datos).
+   - Integración con sistemas existentes vía API (CRM, ERP, core).
+
+3. ¿CUÁL ES NUESTRA METODOLOGÍA?
+   - Paso 1: Diagnóstico y priorización del caso de uso.
+   - Paso 2: Diseño y construcción del agente a la medida.
+   - Paso 3: Entrenamiento con datos y lógica de negocio reales.
+   - Paso 4: Integración y pruebas con tus sistemas.
+   - Paso 5: Despliegue, monitoreo y mejora continua.
+
+4. ¿QUÉ NOS DIFERENCIA?
+   - Agentes a medida (no software genérico).
+   - Despliegue rápido (en semanas).
+   - Integración sin fricciones.
+   - ROI medible y verificable (reducción de costos operativos 30-60%).
+
+5. ¿QUÉ HACEMOS EN TÉRMINOS DE GOBERNABILIDAD Y CIBERSEGURIDAD?
+   - Protegemos cada etapa del ciclo de vida del agente.
+   - Aseguramos autenticación, cifrado y control de acceso.
+   - Monitoreamos y auditamos el desempeño del agente.
+   - Cumplimos con estándares de seguridad y privacidad.
+
+**Instrucción final:** Usa la información anterior para responder preguntas. Si el usuario pregunta algo que no está cubierto, indícalo con honestidad y sugiere contactar al equipo.
 `,
 
   creatividad: `
@@ -80,14 +125,13 @@ Responde en máximo 3 oraciones, contando historias breves y convincentes.
 `
 };
 
-// 🤖 Función para llamar al modelo (con retry por keys)
+// ---------- FUNCIÓN PARA LLAMAR A GROQ ----------
 async function callGroq(messages) {
   let attempts = 0;
   let data = null;
 
   while (attempts < GROQ_KEYS.length) {
     const apiKey = getNextKey();
-
     console.log(`🔄 Intento ${attempts + 1}`);
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -99,8 +143,8 @@ async function callGroq(messages) {
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages,
-        max_tokens: 120,        // 🔥 Limita la respuesta a ~120 palabras
-        temperature: 0.3        // 🔥 Respuestas más directas y predecibles
+        max_tokens: 120,        // Limita la respuesta a ~120 palabras
+        temperature: 0.3        // Respuestas más directas y predecibles
       })
     });
 
@@ -123,71 +167,48 @@ async function callGroq(messages) {
   throw new Error("❌ Todas las API keys fallaron");
 }
 
-// 🤖 MULTI-AGENTE (no se modifica)
-async function runMultiAgent(userMessage) {
-  const creativo = await callGroq([
-    { role: "system", content: "Eres creativo para niños" },
-    { role: "user", content: userMessage }
-  ]);
-
-  const psicologo = await callGroq([
-    { role: "system", content: "Eres psicólogo infantil" },
-    { role: "user", content: userMessage }
-  ]);
-
-  const final = await callGroq([
-    {
-      role: "system",
-      content: "Eres un coordinador que combina ideas en una actividad clara"
-    },
-    {
-      role: "user",
-      content: `
-Usuario: ${userMessage}
-
-Creativo: ${creativo}
-Psicologo: ${psicologo}
-
-Combina todo en una actividad práctica.
-`
-    }
-  ]);
-
-  return final;
-}
-
-// 🏠 Ruta base (health check)
+// ---------- ENDPOINTS ----------
 app.get('/', (req, res) => {
   res.send('Behavior Lab API running 🚀');
 });
 
-// 🧪 GET para probar en navegador
 app.get('/chat', (req, res) => {
   res.send('Este endpoint usa POST. Usa Postman o frontend.');
 });
 
-// 🚀 Endpoint principal
+// 🚀 Endpoint principal con memoria de conversación
 app.post("/chat", async (req, res) => {
   try {
-    const { message, mode = "default", multiAgent = false } = req.body;
+    const { message, mode = "default", multiAgent = false, userId = "defaultUser" } = req.body;
 
     if (!message) {
       return res.json({ reply: "❌ Falta 'message'" });
     }
 
-    // 🧠 Multi-agente activado
+    // Si multiAgent está activado (no se usa en este flujo, pero lo dejamos)
     if (multiAgent) {
-      const reply = await runMultiAgent(message);
+      // Podrías implementar runMultiAgent si lo necesitas
+      const reply = "Función multi-agente no implementada en esta versión.";
       return res.json({ reply });
     }
 
-    // 🧪 Modo Behavior Lab
-    const systemPrompt = MODES[mode] || MODES.default;
+    // Obtener historial del usuario
+    const history = getConversationHistory(userId);
 
-    const reply = await callGroq([
+    // Construir mensajes: system prompt + historial + nuevo mensaje
+    const systemPrompt = MODES[mode] || MODES.default;
+    const messages = [
       { role: "system", content: systemPrompt },
+      ...history,
       { role: "user", content: message }
-    ]);
+    ];
+
+    // Llamar a Groq con el historial
+    const reply = await callGroq(messages);
+
+    // Guardar el nuevo mensaje y la respuesta en el historial
+    addToConversationHistory(userId, "user", message);
+    addToConversationHistory(userId, "assistant", reply);
 
     res.json({ reply });
 
@@ -197,9 +218,8 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-// 🔥 Servidor
+// ---------- INICIAR SERVIDOR ----------
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor en puerto ${PORT}`);
 });

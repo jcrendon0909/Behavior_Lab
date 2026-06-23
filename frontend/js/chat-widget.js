@@ -1,15 +1,24 @@
 // ================================================================
-// CHAT WIDGET — BEHAVIORLAB (versión premium)
+// CHAT WIDGET — BEHAVIORLAB (versión premium con memoria)
 // ================================================================
 
 (function() {
   'use strict';
 
+  // ---------- CONFIGURACIÓN ----------
   const API_URL = 'https://api.gokulab.mx/chat';
   const PRIMARY = '#2563EB';
   const SECONDARY = '#7C3AED';
   const GLOW_COLOR = 'rgba(37, 99, 235, 0.5)';
 
+  // ---------- ID DE USUARIO PERSISTENTE ----------
+  let userId = localStorage.getItem('behaviorlab_userId');
+  if (!userId) {
+    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    localStorage.setItem('behaviorlab_userId', userId);
+  }
+
+  // ---------- CREAR CONTENEDOR ----------
   const container = document.createElement('div');
   container.id = 'behavior-chat-widget';
   container.style.cssText = `
@@ -21,7 +30,9 @@
   `;
   document.body.appendChild(container);
 
+  // ---------- HTML DEL WIDGET ----------
   container.innerHTML = `
+    <!-- Botón flotante con pulso -->
     <button id="chat-toggle" style="
       background: ${PRIMARY};
       color: #0A1128;
@@ -49,6 +60,7 @@
       "></span>
     </button>
 
+    <!-- Ventana del chat -->
     <div id="chat-window" style="
       display: none;
       position: absolute;
@@ -68,6 +80,7 @@
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
     ">
+      <!-- Header -->
       <div style="
         background: linear-gradient(135deg, #0A1128, #1A2333);
         padding: 22px 28px;
@@ -120,6 +133,7 @@
         ">✕</button>
       </div>
 
+      <!-- Mensajes -->
       <div id="chat-messages" style="
         flex: 1;
         padding: 24px 24px 16px;
@@ -132,6 +146,7 @@
         background: rgba(0,0,0,0.2);
       "></div>
 
+      <!-- Indicador de escritura -->
       <div id="typing-indicator" style="
         display: none;
         padding: 8px 24px 16px;
@@ -148,6 +163,7 @@
         <span style="color: rgba(255,255,255,0.3);">Escribiendo respuesta...</span>
       </div>
 
+      <!-- Input -->
       <div style="
         display: flex;
         border-top: 1px solid ${PRIMARY}44;
@@ -189,7 +205,7 @@
     </div>
   `;
 
-  // Inyectar estilos globales
+  // ---------- ESTILOS GLOBALES ----------
   const style = document.createElement('style');
   style.textContent = `
     @keyframes pulse-ring {
@@ -246,7 +262,7 @@
   `;
   document.head.appendChild(style);
 
-  // Referencias y lógica del chat
+  // ---------- REFERENCIAS Y LÓGICA ----------
   const toggleBtn = document.getElementById('chat-toggle');
   const closeBtn = document.getElementById('chat-close');
   const chatWindow = document.getElementById('chat-window');
@@ -283,7 +299,6 @@
     typingIndicator.style.display = 'flex';
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
-
   function hideTyping() {
     typingIndicator.style.display = 'none';
   }
@@ -301,7 +316,10 @@
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({
+          message: message,
+          userId: userId  // 🔥 ENVÍO DEL ID DE USUARIO PARA MEMORIA
+        })
       });
       const data = await response.json();
       const reply = data.reply || 'Lo siento, no pude procesar tu solicitud.';
@@ -318,6 +336,7 @@
     }
   }
 
+  // Event listeners
   toggleBtn.addEventListener('click', () => isOpen ? closeChat() : openChat());
   closeBtn.addEventListener('click', closeChat);
   sendBtn.addEventListener('click', sendMessage);
