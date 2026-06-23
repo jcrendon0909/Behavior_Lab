@@ -794,14 +794,13 @@ section {
   right: 0;
   bottom: 0;
   margin: auto;                /* 🔥 Centra perfectamente */
-  max-width: 50%;              /* Ajusta el tamaño */
-  max-height: 50%;
+  max-width: 100%;              /* Ajusta el tamaño */
+  max-height: 100%;
   width: auto;
   height: auto;
   display: block;
-  opacity: 0.80;               /* Ajusta la transparencia */
+  opacity: 0.20;               /* Ajusta la transparencia */
   filter: blur(0.5px);         /* Efecto sutil */
-  filter: drop-shadow(16px 16px 20px rgb(131, 139, 186)) invert(75%);
 }
 
 /* Asegurar que el contenido del Hero esté por encima */
