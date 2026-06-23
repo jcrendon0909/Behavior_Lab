@@ -885,7 +885,7 @@ section {
   width: auto;
   display: block;
   /* 🔥 ELIMINAMOS el filtro de inversión para conservar colores originales */
-  /* filter: brightness(0) saturate(100%) invert(1); */
+  /* filter: brightness(0) saturate(100%) invert(1);*/
   transition: transform 0.3s ease;
   object-fit: contain;
 }

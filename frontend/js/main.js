@@ -1,5 +1,5 @@
 // ================================================================
-// MAIN JS — BehAvIorLab (animaciones, scroll, contadores)
+// MAIN JS —  BehAvIorLab (animaciones, scroll, contadores)
 // ================================================================
 
 (function() {
