@@ -9,7 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Estilos (versión 11 para forzar recarga) -->
-  <link rel="stylesheet" href="css/styles.css?v=11" />
+  <link rel="stylesheet" href="css/styles.css?v=19
+  " />
 </head>
 <body>
 
@@ -42,25 +43,29 @@
       </div>
     </nav>
 
-    <!-- ========== HERO ========== -->
-    <section class="hero" id="hero">
-      <div class="hero-overlay"></div>
-      <div class="container hero-content">
-        <div class="hero-badge">BehAvIorLab – Agentes de IA que entienden tu operación</div>
-        <h1 class="hero-title" id="hero-phrases">
-          <span class="phrase">Agentes de IA que entienden procesos, no solo palabras.</span>
-        </h1>
-        <p class="hero-subtitle">
-          Diseñamos agentes empresariales de IA que automatizan procesos complejos,
-          se integran a tus sistemas y generan resultados medibles en semanas.
-        </p>
-        <p class="hero-support">
-          Soluciones a la medida para agilizar, estandarizar y escalar procesos críticos.
-          <strong>Somos tu socio integral de IA.</strong>
-        </p>
-        <a href="#contacto" class="btn-primary">Agenda una reunión de descubrimiento →</a>
-      </div>
-    </section>
+<!-- ========== HERO ========== -->
+<section class="hero" id="hero">
+  <div class="hero-overlay"></div>
+  <!-- 👇 NUEVO: LOGO COMO MARCA DE AGUA -->
+  <div class="hero-logo-bg">
+    <img src="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.svg" alt="BehAvIorLab" class="hero-logo-watermark">
+  </div>
+  <div class="container hero-content">
+    <div class="hero-badge">BehAvIorLab – Agentes de IA que entienden tu operación</div>
+    <h1 class="hero-title" id="hero-phrases">
+      <span class="phrase">Agentes de IA que entienden procesos, no solo palabras.</span>
+    </h1>
+    <p class="hero-subtitle">
+      Diseñamos agentes empresariales de IA que automatizan procesos complejos,
+      se integran a tus sistemas y generan resultados medibles en semanas.
+    </p>
+    <p class="hero-support">
+      Soluciones a la medida para agilizar, estandarizar y escalar procesos críticos.
+      <strong>Somos tu socio integral de IA.</strong>
+    </p>
+    <a href="#contacto" class="btn-primary">Agenda una reunión de descubrimiento →</a>
+  </div>
+</section>
 
     <!-- ========== QUIENES SOMOS ========== -->
     <section class="about" id="about">
@@ -99,6 +104,56 @@
         </div>
       </div>
     </section>
+
+<!-- ========== CLIENTES (CARRUSEL CONTINUO) ========== -->
+<section class="clients" id="clientes">
+  <div class="container">
+    <div class="clients-header">
+      <span class="clients-badge">🤝 Empresas que confían en nosotros</span>
+      <h2 class="section-title">Nuestros clientes</h2>
+      <p class="clients-intro">
+        Hemos trabajado con organizaciones líderes en seguros, servicios financieros, retail, logística y gobierno.
+      </p>
+    </div>
+
+    <div class="clients-grid">
+      <div class="clients-track">
+        <!-- Logos (primera vuelta) -->
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/aicm.jpg" alt="AICM">
+        </div>
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/cfe.jpg" alt="CFE">
+        </div>
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/revlon.jpg" alt="Revlon">
+        </div>
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/ikea.jpg" alt="IKEA">
+        </div>
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/mastercard.jpg" alt="Mastercard">
+        </div>
+        <!-- Logos duplicados para loop infinito -->
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/aicm.jpg" alt="AICM">
+        </div>
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/cfe.jpg" alt="CFE">
+        </div>
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/revlon.jpg" alt="Revlon">
+        </div>
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/ikea.jpg" alt="IKEA">
+        </div>
+        <div class="client-item">
+          <img src="https://media.gokulab.mx/Behavior_Lab/Empresas/mastercard.jpg" alt="Mastercard">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
     <!-- ========== EQUIPO ========== -->
     <section class="team" id="equipo">
@@ -139,7 +194,7 @@
           <div class="team-dev-content">
             <h3>Equipo de desarrollo</h3>
             <p>
-              Un equipo de <strong>Matemáticas Aplicadas a la Computación y actuaría</strong> transforma esta visión en productos reales:
+              Un equipo de <strong>Licenciados en Matemáticas Aplicadas y Computación</strong> transforma esta visión en productos reales:
               agentes de IA entrenados, integrados y listos para operar en entornos empresariales exigentes.
             </p>
           </div>
@@ -373,11 +428,11 @@
   </div> <!-- fin de #app -->
 
   <!-- ========== WIDGET DEL CHAT ========== -->
-  <script src="js/chat-widget.js?v=11" defer></script>
+  <script src="js/chat-widget.js?v=19" defer></script>
 
   <!-- ========== SCRIPTS ========== -->
-  <script src="js/main.js?v=11" defer></script>
-  <script src="js/particles.js?v=11" defer></script>
+  <script src="js/main.js?v=19" defer></script>
+  <script src="js/particles.js?v=19" defer></script>
 
 </body>
 </html>
