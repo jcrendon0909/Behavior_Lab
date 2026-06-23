@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Estilos (versión 11 para forzar recarga) -->
-  <link rel="stylesheet" href="css/styles.css?v=20
+  <link rel="stylesheet" href="css/styles.css?v=21
   " />
 </head>
 <body>
@@ -356,39 +356,68 @@
   </div>
 </section>
 
-    <!-- ========== MÉTODO ========== -->
-    <section class="method" id="metodo">
-      <div class="container">
-        <h2 class="section-title">Construcción de agentes</h2>
-        <div class="method-timeline">
-          <div class="method-step glass reveal">
-            <div class="step-number">1</div>
-            <h3>Diagnóstico y priorización</h3>
-            <p>Identificamos el caso de uso con mayor impacto.</p>
-          </div>
-          <div class="method-step glass reveal">
-            <div class="step-number">2</div>
-            <h3>Diseño y construcción</h3>
-            <p>Arquitectura del agente y definición de flujos.</p>
-          </div>
-          <div class="method-step glass reveal">
-            <div class="step-number">3</div>
-            <h3>Entrenamiento</h3>
-            <p>Con datos y lógica de negocio reales.</p>
-          </div>
-          <div class="method-step glass reveal">
-            <div class="step-number">4</div>
-            <h3>Integración y pruebas</h3>
-            <p>Conectamos con tus sistemas y validamos.</p>
-          </div>
-          <div class="method-step glass reveal">
-            <div class="step-number">5</div>
-            <h3>Despliegue y mejora continua</h3>
-            <p>Monitoreo, ajustes y evolución constante.</p>
-          </div>
+<!-- ========== MÉTODO (Construcción de agentes) ========== -->
+<section class="method" id="metodo">
+  <div class="container">
+    <h2 class="section-title">Construcción de agentes</h2>
+    <p class="method-subtitle">
+      Nuestra metodología en <strong>5 pasos</strong> para llevar tu agente de IA de la idea a la operación
+    </p>
+
+    <div class="method-wrapper">
+      <div class="method-timeline">
+        <!-- Paso 1 -->
+        <div class="method-item glass reveal" data-modal="modal-paso1">
+          <div class="method-step-number">1</div>
+          <div class="method-icon">🔍</div>
+          <h3>Diagnóstico y priorización</h3>
+          <p>Identificamos el caso de uso con mayor impacto.</p>
+          <div class="method-hover-info">🔍 Ver más</div>
+        </div>
+        <div class="method-arrow">↓</div>
+
+        <!-- Paso 2 -->
+        <div class="method-item arch-item glass reveal" data-modal="modal-paso2">
+          <div class="method-step-number">2</div>
+          <div class="method-icon">📐</div>
+          <h3>Diseño y construcción</h3>
+          <p>Arquitectura del agente y definición de flujos.</p>
+          <div class="method-hover-info">🔍 Ver más</div>
+        </div>
+        <div class="method-arrow">↓</div>
+
+        <!-- Paso 3 -->
+        <div class="method-item arch-item glass reveal" data-modal="modal-paso3">
+          <div class="method-step-number">3</div>
+          <div class="method-icon">🧪</div>
+          <h3>Entrenamiento</h3>
+          <p>Con datos y lógica de negocio reales.</p>
+          <div class="method-hover-info">🔍 Ver más</div>
+        </div>
+        <div class="method-arrow">↓</div>
+
+        <!-- Paso 4 -->
+        <div class="method-item arch-item glass reveal" data-modal="modal-paso4">
+          <div class="method-step-number">4</div>
+          <div class="method-icon">🔗</div>
+          <h3>Integración y pruebas</h3>
+          <p>Conectamos con tus sistemas y validamos.</p>
+          <div class="method-hover-info">🔍 Ver más</div>
+        </div>
+        <div class="method-arrow">↓</div>
+
+        <!-- Paso 5 -->
+        <div class="method-item arch-item glass reveal" data-modal="modal-paso5">
+          <div class="method-step-number">5</div>
+          <div class="method-icon">🚀</div>
+          <h3>Despliegue y mejora continua</h3>
+          <p>Monitoreo, ajustes y evolución constante.</p>
+          <div class="method-hover-info">🔍 Ver más</div>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
     <!-- ========== POR QUÉ BEHAVIORLAB ========== -->
     <section class="why" id="porque">
@@ -529,12 +558,83 @@
   </div>
 </div>
 
+<!-- ========== MODALES DE MÉTODO ========== -->
+<div class="arch-modal" id="modal-paso1">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>🔍 Paso 1: Diagnóstico y priorización</h3>
+    <p>Analizamos los procesos actuales de tu organización para identificar <strong>cuellos de botella, tareas repetitivas y oportunidades de automatización</strong>.</p>
+    <ul>
+      <li><strong>Análisis de procesos:</strong> Mapeamos flujos de trabajo y puntos de fricción.</li>
+      <li><strong>Identificación de casos de uso:</strong> Seleccionamos el proceso con mayor impacto y ROI.</li>
+      <li><strong>Priorización:</strong> Definimos un plan de implementación escalonado.</li>
+    </ul>
+    <p><small>La gobernabilidad asegura que el agente opere dentro de políticas definidas.</small></p>
+  </div>
+</div>
+
+<div class="arch-modal" id="modal-paso2">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>📐 Paso 2: Diseño y construcción</h3>
+    <p>Diseñamos la arquitectura del agente, definimos los flujos de conversación y las reglas de negocio que guiarán su comportamiento.</p>
+    <ul>
+      <li><strong>Arquitectura:</strong> Selección de tecnologías y estructura del agente.</li>
+      <li><strong>Flujos:</strong> Diseño de la lógica de conversación y toma de decisiones.</li>
+      <li><strong>Reglas de negocio:</strong> Configuración de parámetros específicos de tu operación.</li>
+    </ul>
+    <p><small>La ciberseguridad protege los datos y el acceso en cada etapa.</small></p>
+  </div>
+</div>
+
+<div class="arch-modal" id="modal-paso3">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>🧪 Paso 3: Entrenamiento</h3>
+    <p>Entrenamos el agente con <strong>datos reales de tu negocio</strong> y ajustamos los modelos para que comprendan el contexto y las particularidades de tu operación.</p>
+    <ul>
+      <li><strong>Datos reales:</strong> Utilizamos información histórica y ejemplos concretos.</li>
+      <li><strong>Ajuste de modelos:</strong> Optimizamos el rendimiento con técnicas de fine-tuning.</li>
+      <li><strong>Validación:</strong> Probamos con casos reales para asegurar precisión.</li>
+    </ul>
+    <p><small>La gobernabilidad garantiza el uso ético y responsable de los datos.</small></p>
+  </div>
+</div>
+
+<div class="arch-modal" id="modal-paso4">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>🔗 Paso 4: Integración y pruebas</h3>
+    <p>Conectamos el agente con tus sistemas existentes (CRM, ERP, etc.) y realizamos pruebas de extremo a extremo para garantizar su correcto funcionamiento.</p>
+    <ul>
+      <li><strong>Integración API:</strong> Conexión bidireccional con tus plataformas.</li>
+      <li><strong>Pruebas E2E:</strong> Validamos el flujo completo, desde la entrada hasta la resolución.</li>
+      <li><strong>Seguridad:</strong> Verificamos autenticación, cifrado y protección de datos.</li>
+    </ul>
+    <p><small>La ciberseguridad protege las comunicaciones entre sistemas.</small></p>
+  </div>
+</div>
+
+<div class="arch-modal" id="modal-paso5">
+  <div class="arch-modal-content glass">
+    <span class="arch-modal-close">&times;</span>
+    <h3>🚀 Paso 5: Despliegue y mejora continua</h3>
+    <p>Realizamos un <strong>lanzamiento controlado por fases</strong> y monitoreamos el desempeño del agente para realizar ajustes iterativos y evolucionar con tu negocio.</p>
+    <ul>
+      <li><strong>Lanzamiento:</strong> Despliegue en producción con supervisión.</li>
+      <li><strong>Monitoreo:</strong> Dashboards de rendimiento y alertas.</li>
+      <li><strong>Mejora continua:</strong> Ajustes basados en métricas y feedback.</li>
+    </ul>
+    <p><small>La gobernabilidad asegura que el agente evolucione alineado a los objetivos del negocio.</small></p>
+  </div>
+</div>
+
   <!-- ==========  WIDGET DEL CHAT  ========== -->
-  <script src="js/chat-widget.js?v=20" defer></script>
+  <script src="js/chat-widget.js?v=21" defer></script>
 
   <!-- ========== SCRIPTS ========== -->
-  <script src="js/main.js?v=20" defer></script>
-  <script src="js/particles.js?v=20" defer></script>
+  <script src="js/main.js?v=21" defer></script>
+  <script src="js/particles.js?v=21" defer></script>
 
 </body>
 </html>
