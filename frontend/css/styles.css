@@ -800,7 +800,7 @@ section {
   width: auto;
   height: auto;
   display: block;
-  opacity: 0.15;               /* Ajusta la transparencia */
+  opacity: 0.25;               /* Ajusta la transparencia */
   filter: blur(0.3px);         /* Efecto sutil */
   mix-blend-mode: screen;  /* 🔥 Esto aclara los colores sobre fondo oscuro */
 }
