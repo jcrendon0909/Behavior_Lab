@@ -1,5 +1,5 @@
 // ================================================================
-// MAIN JS —  BehAvIorLab (animaciones, scroll, contadores)
+// MAIN JS — BehAvIorLab (animaciones, scroll, contadores, modales)
 // ================================================================
 
 (function() {
@@ -119,6 +119,54 @@
     setInterval(changePhrase, 5000);
   }
 
+  // ---------- MODALES DE ARQUITECTURA ----------
+  function setupModals() {
+    const modalTriggers = document.querySelectorAll('.arch-item[data-modal]');
+    const modals = document.querySelectorAll('.arch-modal');
+    const closeButtons = document.querySelectorAll('.arch-modal-close');
+
+    // Abrir modal
+    modalTriggers.forEach(trigger => {
+      trigger.addEventListener('click', function() {
+        const modalId = this.getAttribute('data-modal');
+        const modal = document.getElementById(modalId);
+        if (modal) {
+          modal.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+      });
+    });
+
+    // Cerrar modal (botón X)
+    closeButtons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        const modal = this.closest('.arch-modal');
+        if (modal) modal.classList.remove('active');
+        document.body.style.overflow = '';
+      });
+    });
+
+    // Cerrar modal (clic fuera)
+    modals.forEach(modal => {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      });
+    });
+
+    // Cerrar modal con Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        modals.forEach(modal => {
+          modal.classList.remove('active');
+        });
+        document.body.style.overflow = '';
+      }
+    });
+  }
+
   // ---------- INICIO ----------
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -127,6 +175,7 @@
       setupSmoothScroll();
       setupCounterObserver();
       setupPhraseCarousel();
+      setupModals();  // 👈 Añadido
     });
   } else {
     setupRevealObserver();
@@ -134,52 +183,7 @@
     setupSmoothScroll();
     setupCounterObserver();
     setupPhraseCarousel();
+    setupModals();   // 👈 Añadido
   }
-// ========== MODALES DE ARQUITECTURA ==========
-document.addEventListener('DOMContentLoaded', function() {
-  const modalTriggers = document.querySelectorAll('.arch-item[data-modal]');
-  const modals = document.querySelectorAll('.arch-modal');
-  const closeButtons = document.querySelectorAll('.arch-modal-close');
 
-  // Abrir modal
-  modalTriggers.forEach(trigger => {
-    trigger.addEventListener('click', function() {
-      const modalId = this.getAttribute('data-modal');
-      const modal = document.getElementById(modalId);
-      if (modal) {
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      }
-    });
-  });
-
-  // Cerrar modal (botón X)
-  closeButtons.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const modal = this.closest('.arch-modal');
-      modal.classList.remove('active');
-      document.body.style.overflow = '';
-    });
-  });
-
-  // Cerrar modal (clic fuera)
-  modals.forEach(modal => {
-    modal.addEventListener('click', function(e) {
-      if (e.target === this) {
-        this.classList.remove('active');
-        document.body.style.overflow = '';
-      }
-    });
-  });
-
-  // Cerrar modal con Escape
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      modals.forEach(modal => {
-        modal.classList.remove('active');
-      });
-      document.body.style.overflow = '';
-    }
-  });
-});
 })();
