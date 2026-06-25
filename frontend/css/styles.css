@@ -881,7 +881,7 @@ section {
 }
 
 .client-item img {
-  max-height: 75px;         /* 🔥 Logos más grandes */
+  max-height: 175px;         /* 🔥 Logos más grandes */
   width: auto;
   display: block;
   /* 🔥 ELIMINAMOS el filtro de inversión para conservar colores originales */
