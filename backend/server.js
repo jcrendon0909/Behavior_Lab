@@ -3,15 +3,16 @@ import dotenv from "dotenv";
 import fs from "fs";
 import fetch from "node-fetch";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { MongoClient } from "mongodb";
 
 console.log("¿EXISTE .env?:", fs.existsSync(".env"));
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
-// Configurar CORS
+// ---------- CORS ----------
 app.use(cors({
   origin: [
     'https://behaviorlab.gokulab.mx',
@@ -24,13 +25,22 @@ app.use(cors({
   credentials: true
 }));
 
-// ---------- CONEXIÓN A MONGODB ----------
+// ---------- RATE LIMITING ----------
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,   // 1 minuto
+  max: 20,                // 20 requests por IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { reply: "Demasiadas peticiones. Intenta de nuevo en un minuto." }
+});
+
+// ---------- MONGODB ----------
 const MONGO_URI = process.env.MONGO_URI;
 let db = null;
 
 async function connectMongo() {
   if (!MONGO_URI) {
-    console.warn("⚠️ MONGO_URI no configurada. La base de conocimiento no estará disponible.");
+    console.warn("⚠️ MONGO_URI no configurada.");
     return;
   }
   try {
@@ -38,23 +48,45 @@ async function connectMongo() {
     await client.connect();
     db = client.db();
     console.log("✅ Conectado a MongoDB");
-    
-    // Verificar colecciones
-    const collections = await db.listCollections().toArray();
-    const collectionNames = collections.map(c => c.name);
-    if (!collectionNames.includes('knowledge')) {
-      console.warn("⚠️ Colección 'knowledge' no encontrada. Crea una e importa knowledge.json");
-    }
-    if (!collectionNames.includes('faq')) {
-      console.warn("⚠️ Colección 'faq' no encontrada. Crea una e importa faq.json");
-    }
   } catch (error) {
-    console.error("❌ Error conectando a MongoDB:", error.message);
+    console.error("❌ Error MongoDB:", error.message);
   }
 }
 connectMongo();
 
-// ---------- API KEYS Y ROTACIÓN ----------
+// ---------- AUDIT LOG (nunca rompe el chat) ----------
+async function audit(entry) {
+  if (!db) return;
+  try {
+    await db.collection("audit_logs").insertOne({
+      ts: new Date(),
+      ...entry
+    });
+  } catch (err) {
+    console.error("⚠️ audit_log falló:", err.message);
+  }
+}
+
+// ---------- PROMPT INJECTION ----------
+const INJECTION_PATTERNS = [
+  /ignora\s+(las\s+)?instrucciones/i,
+  /olvida\s+(las\s+)?instrucciones/i,
+  /system\s*prompt/i,
+  /revela.*(api|key|token|contraseña|password)/i,
+  /dame.*(api|key|token|contraseña)/i,
+  /jailbreak/i
+];
+
+function detectInjection(message) {
+  return INJECTION_PATTERNS.some(p => p.test(message));
+}
+
+// ---------- REGEX ESCAPE (fix ReDoS) ----------
+function escapeRegex(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// ---------- GROQ KEYS ----------
 const GROQ_KEYS = [
   process.env.GROQ_API_KEY_1,
   process.env.GROQ_API_KEY_2,
@@ -75,59 +107,80 @@ function getNextKey() {
   return key;
 }
 
-// ---------- MEMORIA DE CONVERSACIÓN ----------
-const conversationHistory = {};
+// ---------- HISTORIAL (memoria + Mongo) ----------
+const memoryHistory = {};
 
-function getConversationHistory(userId) {
-  if (!conversationHistory[userId]) {
-    conversationHistory[userId] = [];
+async function getConversationHistory(userId) {
+  if (db) {
+    try {
+      const doc = await Promise.race([
+        db.collection("conversations").findOne({ userId }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 500))
+      ]);
+      if (doc?.messages?.length) return doc.messages.slice(-10);
+    } catch (e) {
+      // fallback silencioso a memoria
+    }
   }
-  return conversationHistory[userId];
+  return memoryHistory[userId] || [];
 }
 
-function addToConversationHistory(userId, role, content) {
-  const history = getConversationHistory(userId);
-  history.push({ role, content });
-  if (history.length > 10) {
-    history.splice(0, history.length - 10);
+async function addToConversationHistory(userId, role, content) {
+  if (!memoryHistory[userId]) memoryHistory[userId] = [];
+  memoryHistory[userId].push({ role, content });
+  if (memoryHistory[userId].length > 10) {
+    memoryHistory[userId] = memoryHistory[userId].slice(-10);
+  }
+
+  if (db) {
+    try {
+      await db.collection("conversations").updateOne(
+        { userId },
+        {
+          $push: {
+            messages: {
+              $each: [{ role, content, ts: new Date() }],
+              $slice: -20
+            }
+          },
+          $set: { updatedAt: new Date() }
+        },
+        { upsert: true }
+      );
+    } catch (err) {
+      console.error("⚠️ No se pudo persistir historial:", err.message);
+    }
   }
 }
 
-// ---------- CONSULTA A MONGODB ----------
+// ---------- BÚSQUEDA EN MONGO ----------
 async function searchKnowledge(query) {
   if (!db) return null;
+  const safe = escapeRegex(query);
   try {
-    // Buscar en FAQ (coincidencia exacta por palabras clave)
-    const faqResult = await db.collection('faq').find({
-      keywords: { $regex: query, $options: 'i' }
-    }).limit(1).toArray();
-    
-    if (faqResult.length > 0) {
-      return { type: 'faq', data: faqResult[0] };
-    }
+    const faq = await db.collection('faq').findOne({
+      keywords: { $regex: safe, $options: 'i' }
+    });
+    if (faq) return { type: 'faq', data: faq };
 
-    // Buscar en Knowledge (por topic, title, content o keywords)
-    const knowledgeResult = await db.collection('knowledge').find({
+    const knowledge = await db.collection('knowledge').findOne({
       $or: [
-        { topic: { $regex: query, $options: 'i' } },
-        { title: { $regex: query, $options: 'i' } },
-        { content: { $regex: query, $options: 'i' } },
-        { keywords: { $regex: query, $options: 'i' } }
+        { topic:    { $regex: safe, $options: 'i' } },
+        { title:    { $regex: safe, $options: 'i' } },
+        { content:  { $regex: safe, $options: 'i' } },
+        { keywords: { $regex: safe, $options: 'i' } }
       ]
-    }).limit(1).toArray();
-
-    if (knowledgeResult.length > 0) {
-      return { type: 'knowledge', data: knowledgeResult[0] };
-    }
+    });
+    if (knowledge) return { type: 'knowledge', data: knowledge };
 
     return null;
   } catch (error) {
-    console.error("❌ Error en búsqueda MongoDB:", error);
+    console.error("❌ Error búsqueda Mongo:", error.message);
     return null;
   }
 }
 
-// ---------- MODOS (prompt base) ----------
+// ---------- MODOS ----------
 const MODES = {
   default: `
 Eres el asistente virtual de BehaviorLab, una consultora de IA empresarial con sede en México.
@@ -145,14 +198,13 @@ Nuestra metodología tiene 5 pasos: diagnóstico, diseño, entrenamiento, integr
 Nos diferenciamos por ser agentes a medida, despliegue rápido, integración sin fricciones y ROI medible.
 `,
   creatividad: `Eres un experto en creatividad empresarial aplicada a IA. Responde en máximo 3 oraciones.`,
-  emociones: `Eres un consultor de IA con enfoque en experiencia de usuario. Responde en máximo 3 oraciones.`,
-  storytelling: `Eres un experto en narrativa empresarial. Responde en máximo 3 oraciones.`
+  emociones:   `Eres un consultor de IA con enfoque en experiencia de usuario. Responde en máximo 3 oraciones.`,
+  storytelling:`Eres un experto en narrativa empresarial. Responde en máximo 3 oraciones.`
 };
 
-// ---------- FUNCIÓN PARA LLAMAR A GROQ ----------
+// ---------- GROQ ----------
 async function callGroq(messages) {
   let attempts = 0;
-  let data = null;
 
   while (attempts < GROQ_KEYS.length) {
     const apiKey = getNextKey();
@@ -165,7 +217,7 @@ async function callGroq(messages) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages,
         max_tokens: 120,
         temperature: 0.3
@@ -177,7 +229,7 @@ async function callGroq(messages) {
       attempts++;
       continue;
     }
-    data = await response.json();
+    const data = await response.json();
 
     if (!data.error) {
       console.log("✅ Respuesta OK");
@@ -191,37 +243,50 @@ async function callGroq(messages) {
   throw new Error("❌ Todas las API keys fallaron");
 }
 
-// ---------- ENDPOINT PRINCIPAL ----------
-app.post("/chat", async (req, res) => {
+// ---------- ENDPOINT /chat ----------
+app.post("/chat", chatLimiter, async (req, res) => {
+  const start = Date.now();
+  const { message, mode = "default", userId = "defaultUser" } = req.body;
+
+  if (!message) {
+    return res.json({ reply: "❌ Falta 'message'" });
+  }
+
+  // Bloqueo de prompt injection
+  if (detectInjection(message)) {
+    await audit({
+      type: "injection_attempt",
+      userId,
+      input_preview: String(message).slice(0, 200)
+    });
+    return res.json({ reply: "No puedo procesar esa solicitud." });
+  }
+
   try {
-    const { message, mode = "default", userId = "defaultUser" } = req.body;
-
-    if (!message) {
-      return res.json({ reply: "❌ Falta 'message'" });
-    }
-
-    // 1. Buscar en MongoDB
+    // 1. Buscar en Mongo
     let knowledgeContext = "";
+    let knowledgeHit = null;
     if (db) {
       const result = await searchKnowledge(message);
       if (result) {
+        knowledgeHit = result.type;
         if (result.type === 'faq') {
           knowledgeContext = `Pregunta frecuente: "${result.data.question}"\nRespuesta: ${result.data.answer}`;
         } else if (result.type === 'knowledge') {
           knowledgeContext = `Información: ${result.data.title}\n${result.data.content}`;
         }
-        console.log(`📚 Usando conocimiento de MongoDB (${result.type})`);
+        console.log(`📚 Usando conocimiento (${result.type})`);
       }
     }
 
-    // 2. Obtener historial
-    const history = getConversationHistory(userId);
+    // 2. Historial
+    const history = await getConversationHistory(userId);
 
     // 3. Construir mensajes
     const systemPrompt = MODES[mode] || MODES.default;
     let systemContent = systemPrompt;
     if (knowledgeContext) {
-      systemContent += `\n\n**Información adicional de la base de conocimiento:**\n${knowledgeContext}\n\nUsa esta información para responder con precisión.`;
+      systemContent += `\n\n**Información adicional:**\n${knowledgeContext}\n\nUsa esta información para responder con precisión.`;
     }
 
     const messages = [
@@ -233,25 +298,53 @@ app.post("/chat", async (req, res) => {
     // 4. Llamar a Groq
     const reply = await callGroq(messages);
 
-    // 5. Guardar historial
-    addToConversationHistory(userId, "user", message);
-    addToConversationHistory(userId, "assistant", reply);
+    // 5. Persistir historial
+    await addToConversationHistory(userId, "user", message);
+    await addToConversationHistory(userId, "assistant", reply);
+
+    // 6. Audit log
+    await audit({
+      type: "chat",
+      userId,
+      mode,
+      input_length: String(message).length,
+      knowledge_hit: knowledgeHit,
+      key_used: (currentKeyIndex - 1 + GROQ_KEYS.length) % GROQ_KEYS.length,
+      latency_ms: Date.now() - start
+    });
 
     res.json({ reply });
 
   } catch (error) {
     console.error("❌ Error en /chat:", error.message);
+    await audit({
+      type: "chat_error",
+      userId,
+      error: error.message,
+      latency_ms: Date.now() - start
+    });
     res.json({ reply: error.message || "❌ Error en el servidor" });
   }
 });
 
-// ---------- HEALTH CHECK ----------
+// ---------- HEALTH ----------
 app.get('/', (req, res) => {
   res.send('Behavior Lab API running 🚀');
 });
 
-// ---------- INICIAR SERVIDOR ----------
+app.get('/health', (req, res) => {
+  res.json({
+    ok: true,
+    mongo: !!db,
+    keys_loaded: GROQ_KEYS.length,
+    uptime_s: Math.floor(process.uptime()),
+    ts: new Date().toISOString()
+  });
+});
+
+// ---------- INICIAR ----------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor en puerto ${PORT}`);
+  console.log(`   Health: http://localhost:${PORT}/health`);
 });
