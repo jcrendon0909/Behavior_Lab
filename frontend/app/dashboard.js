@@ -62,13 +62,17 @@ document.getElementById('openUserModalBtn').addEventListener('click', async () =
 document.getElementById('closeUserModalBtn').addEventListener('click', () => modalUser.classList.add('hidden'));
 
 const modalDeliverable = document.getElementById('newDeliverableModal');
-document.getElementById('openDeliverableModalBtn').addEventListener('click', () => modalDeliverable.classList.remove('hidden'));
+document.getElementById('openDeliverableModalBtn').addEventListener('click', () => {
+  document.getElementById('commonTaskSelect').value = "";
+  modalDeliverable.classList.remove('hidden');
+});
 document.getElementById('closeDeliverableModalBtn').addEventListener('click', () => modalDeliverable.classList.add('hidden'));
 
 const modalRisk = document.getElementById('newRiskModal');
 document.getElementById('openRiskModalBtn').addEventListener('click', () => {
   const selectCompany = document.getElementById('riskCompany');
   selectCompany.innerHTML = `<option value="">Global (Toda la org)</option>` + companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+  document.getElementById('commonRiskSelect').value = "";
   modalRisk.classList.remove('hidden');
 });
 document.getElementById('closeRiskModalBtn').addEventListener('click', () => modalRisk.classList.add('hidden'));
@@ -88,7 +92,70 @@ document.getElementById('openDiagnosticBtn').addEventListener('click', () => {
 document.getElementById('closeDiagBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
 document.getElementById('closeResultBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
 
-// 2. CARGA DE DATOS
+// 2. FUNCIONES DE AUTOCOMPLETAR (NUEVAS)
+function fillCommonRisk() {
+  const val = document.getElementById('commonRiskSelect').value;
+  if(!val) return;
+  if(val === 'fuga') {
+    document.getElementById('riskName').value = "Fuga de datos confidenciales en herramientas de IA Generativa";
+    document.getElementById('riskCategory').value = "Privacidad";
+    document.getElementById('riskProb').value = "4";
+    document.getElementById('riskImpact').value = "5";
+    document.getElementById('riskMitigation').value = "Implementar política de uso aceptable y bloquear herramientas no autorizadas.";
+  } else if(val === 'alucinacion') {
+    document.getElementById('riskName').value = "Alucinación o entrega de información incorrecta por parte del Agente";
+    document.getElementById('riskCategory').value = "Operacional";
+    document.getElementById('riskProb').value = "4";
+    document.getElementById('riskImpact').value = "3";
+    document.getElementById('riskMitigation').value = "Implementar supervisión humana (Human-in-the-loop) y validación de respuestas.";
+  } else if(val === 'sesgo') {
+    document.getElementById('riskName').value = "Sesgo algorítmico en la toma de decisiones";
+    document.getElementById('riskCategory').value = "Sesgo";
+    document.getElementById('riskProb').value = "3";
+    document.getElementById('riskImpact').value = "5";
+    document.getElementById('riskMitigation').value = "Realizar auditorías de equidad y usar datasets de entrenamiento balanceados.";
+  } else if(val === 'trazabilidad') {
+    document.getElementById('riskName').value = "Falta de trazabilidad en la toma de decisiones de la IA";
+    document.getElementById('riskCategory').value = "Regulatorio";
+    document.getElementById('riskProb').value = "3";
+    document.getElementById('riskImpact').value = "4";
+    document.getElementById('riskMitigation').value = "Implementar logs inmutables (Audit Logs) y retención de prompts.";
+  } else if(val === 'shadow') {
+    document.getElementById('riskName').value = "Uso de Shadow AI por parte de los empleados";
+    document.getElementById('riskCategory').value = "Seguridad";
+    document.getElementById('riskProb').value = "5";
+    document.getElementById('riskImpact').value = "4";
+    document.getElementById('riskMitigation').value = "Desplegar DLP (Data Loss Prevention) y capacitar al personal.";
+  }
+}
+
+function fillCommonTask() {
+  const val = document.getElementById('commonTaskSelect').value;
+  if(!val) return;
+  if(val === 'politica') {
+    document.getElementById('taskName').value = "Redactar y aprobar la Política Corporativa de IA";
+    document.getElementById('taskPhase').value = "Fase 1: Diagnóstico";
+    document.getElementById('taskAssignee').value = "Ambos";
+  } else if(val === 'comite') {
+    document.getElementById('taskName').value = "Designar Oficial de IA y formalizar Comité de Ética";
+    document.getElementById('taskPhase').value = "Fase 1: Diagnóstico";
+    document.getElementById('taskAssignee').value = "Cliente";
+  } else if(val === 'inventario') {
+    document.getElementById('taskName').value = "Registrar todos los modelos y herramientas de IA en el Inventario";
+    document.getElementById('taskPhase').value = "Fase 2: Diseño";
+    document.getElementById('taskAssignee').value = "Ambos";
+  } else if(val === 'capacitacion') {
+    document.getElementById('taskName').value = "Capacitar al personal en riesgos y uso responsable de IA";
+    document.getElementById('taskPhase').value = "Fase 3: Implementación";
+    document.getElementById('taskAssignee').value = "Equipo BehAvIorLab";
+  } else if(val === 'mlops') {
+    document.getElementById('taskName').value = "Implementar monitoreo de sesgos y alucinaciones (MLOps)";
+    document.getElementById('taskPhase').value = "Fase 4: Auditoría";
+    document.getElementById('taskAssignee').value = "Equipo BehAvIorLab";
+  }
+}
+
+// 3. CARGA DE DATOS
 async function init() {
   currentUser = JSON.parse(localStorage.getItem('gov_user'));
   if (!currentUser) return window.location.href = 'index.html';
@@ -155,7 +222,7 @@ async function loadInventory() {
   } catch (error) {}
 }
 
-// 3. MATRIZ GLOBAL
+// 4. MATRIZ GLOBAL
 async function loadMatrix() {
   try {
     const res = await fetch(`${API_URL}/gov/evaluations`, { headers });
@@ -179,7 +246,7 @@ async function loadMatrix() {
 
 function openDiagnosticFor(fw) { document.getElementById('tabInventoryBtn').click(); document.getElementById('openDiagnosticBtn').click(); document.getElementById('diagFramework').value = fw; }
 
-// 4. PLAN DE TRABAJO
+// 5. PLAN DE TRABAJO
 async function loadDeliverables() {
   try {
     const res = await fetch(`${API_URL}/gov/deliverables`, { headers });
@@ -206,7 +273,7 @@ document.getElementById('newDeliverableForm').addEventListener('submit', async (
   try { const res = await fetch(`${API_URL}/gov/deliverables`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newDeliverableModal').classList.add('hidden'); e.target.reset(); loadDeliverables(); } else alert('Error al guardar tarea'); } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Tarea'; btn.disabled = false; }
 });
 
-// 5. REGISTRO DE RIESGOS
+// 6. REGISTRO DE RIESGOS
 async function loadRisks() {
   try {
     const res = await fetch(`${API_URL}/gov/risks`, { headers });
@@ -253,7 +320,7 @@ document.getElementById('newRiskForm').addEventListener('submit', async (e) => {
   } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
 });
 
-// 6. RESTO DE FUNCIONES
+// 7. RESTO DE FUNCIONES
 async function loadLeads() {
   try {
     const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();

@@ -69,7 +69,6 @@
       </div>
     </div>
 
-    <!-- SECCIÓN: REGISTRO DE RIESGOS -->
     <div id="risksSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-6">
@@ -194,10 +193,22 @@
     </div>
   </div>
 
+  <!-- MODAL: NUEVA TAREA (CON AUTOCOMPLETAR) -->
   <div id="newDeliverableModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Agregar Tarea al Plan</h2>
       <form id="newDeliverableForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-teal-400 mb-1">✨ Autocompletar tarea (Opcional)</label>
+          <select id="commonTaskSelect" onchange="fillCommonTask()" class="w-full bg-slate-900 border border-teal-700 rounded-xl px-4 py-2 text-white outline-none">
+            <option value="">-- Seleccionar sugerencia --</option>
+            <option value="politica">Redactar Política de Uso Aceptable</option>
+            <option value="comite">Designar Oficial de IA / Comité</option>
+            <option value="inventario">Completar Inventario de IA</option>
+            <option value="capacitacion">Capacitar al personal en riesgos</option>
+            <option value="mlops">Implementar Monitoreo MLOps</option>
+          </select>
+        </div>
         <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Tarea / Entregable</label><input type="text" id="taskName" required placeholder="Ej. Redactar Política de IA" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
         <div class="grid grid-cols-2 gap-4">
           <div><label class="block text-sm font-semibold text-slate-300 mb-1">Fase</label><select id="taskPhase" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Fase 1: Diagnóstico">Fase 1: Diagnóstico</option><option value="Fase 2: Diseño">Fase 2: Diseño</option><option value="Fase 3: Implementación">Fase 3: Implementación</option><option value="Fase 4: Auditoría">Fase 4: Auditoría</option></select></div>
@@ -209,11 +220,22 @@
     </div>
   </div>
 
-  <!-- NUEVO MODAL: NUEVO RIESGO -->
+  <!-- MODAL: NUEVO RIESGO (CON AUTOCOMPLETAR) -->
   <div id="newRiskModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Riesgo</h2>
       <form id="newRiskForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-teal-400 mb-1">✨ Autocompletar riesgo (Opcional)</label>
+          <select id="commonRiskSelect" onchange="fillCommonRisk()" class="w-full bg-slate-900 border border-teal-700 rounded-xl px-4 py-2 text-white outline-none">
+            <option value="">-- Seleccionar sugerencia --</option>
+            <option value="fuga">Fuga de datos en IA Generativa</option>
+            <option value="alucinacion">Alucinaciones del modelo</option>
+            <option value="sesgo">Sesgo algorítmico</option>
+            <option value="trazabilidad">Falta de trazabilidad</option>
+            <option value="shadow">Shadow AI (Uso no autorizado)</option>
+          </select>
+        </div>
         <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Riesgo</label><input type="text" id="riskName" required placeholder="Ej. Fuga de datos en ChatGPT" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
         <div class="grid grid-cols-2 gap-4">
           <div><label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label><select id="riskCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Privacidad">Privacidad</option><option value="Sesgo">Sesgo</option><option value="Seguridad">Seguridad</option><option value="Operacional">Operacional</option><option value="Regulatorio">Regulatorio</option></select></div>
