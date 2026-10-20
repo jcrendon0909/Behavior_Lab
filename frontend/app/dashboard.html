@@ -8,12 +8,10 @@
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
   
-  <!-- Header -->
   <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50 px-6 py-3 flex justify-between items-center">
     <div class="flex items-center space-x-6">
       <span class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">BEHAVIOR LAB</span>
       
-      <!-- SELECTOR DE ORGANIZACIÓN -->
       <div id="orgSelectorContainer" class="hidden items-center space-x-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1">
         <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Viendo a:</span>
         <select id="orgSelector" class="bg-transparent text-sm font-semibold text-teal-400 outline-none cursor-pointer">
@@ -27,7 +25,6 @@
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-4 py-8">
     <div class="mb-8 flex justify-between items-end">
       <div>
@@ -39,16 +36,17 @@
       </button>
     </div>
 
-    <!-- Pestañas de Navegación -->
+    <!-- Pestañas -->
     <div class="flex space-x-4 mb-6 border-b border-slate-800 pb-2">
       <button type="button" id="tabInventoryBtn" class="text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition">Inventario de IA</button>
       <button type="button" id="tabCompaniesBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition">Empresas / Filiales</button>
       <button type="button" id="tabLeadsBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition">Prospectos (Leads)</button>
+      <button type="button" id="tabUsersBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition">Usuarios</button>
     </div>
 
-    <!-- ================= SECCIÓN 1: INVENTARIO DE IA ================= -->
+    <!-- SECCIÓN 1: INVENTARIO -->
     <div id="inventorySection" class="block">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
           <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Modelos Registrados</h3>
           <p id="statTotalModels" class="text-4xl font-bold text-teal-400">0</p>
@@ -61,152 +59,174 @@
           <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Filiales Activas</h3>
           <p id="statCompanies" class="text-4xl font-bold text-blue-400">0</p>
         </div>
+        <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 border-b-4 border-b-amber-400">
+          <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Madurez de Gobernanza</h3>
+          <p id="statMaturity" class="text-4xl font-bold text-amber-400">-- %</p>
+        </div>
       </div>
 
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-bold">Inventario de IA</h2>
-          <button id="openModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nuevo Modelo</button>
+          <div class="flex gap-3">
+            <button id="openDiagnosticBtn" class="bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition shadow-lg shadow-amber-500/20">📊 Diagnóstico ISO 42001</button>
+            <button id="openModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nuevo Modelo</button>
+          </div>
         </div>
-        
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-slate-700 text-sm text-slate-400">
-                <th class="py-3 px-4">Modelo</th>
-                <th class="py-3 px-4">Categoría</th>
-                <th class="py-3 px-4">Filial</th>
-                <th class="py-3 px-4">Riesgo</th>
-                <th class="py-3 px-4">Estado</th>
-              </tr>
-            </thead>
-            <tbody id="inventoryTableBody" class="text-sm">
-              <tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando datos...</td></tr>
-            </tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Modelo</th><th class="py-3 px-4">Categoría</th><th class="py-3 px-4">Filial</th><th class="py-3 px-4">Riesgo</th><th class="py-3 px-4">Estado</th></tr></thead>
+            <tbody id="inventoryTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando datos...</td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ================= SECCIÓN 2: EMPRESAS / FILIALES ================= -->
+    <!-- SECCIÓN 2: EMPRESAS -->
     <div id="companiesSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4">
-          <div>
-            <h2 class="text-lg font-bold">Directorio de Filiales</h2>
-            <p class="text-sm text-slate-400">Gestiona las unidades de negocio de esta organización.</p>
-          </div>
+          <div><h2 class="text-lg font-bold">Directorio de Filiales</h2><p class="text-sm text-slate-400">Gestiona las unidades de negocio de esta organización.</p></div>
           <button id="openCompanyModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nueva Filial</button>
         </div>
-        
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-slate-700 text-sm text-slate-400">
-                <th class="py-3 px-4">Nombre de la Empresa</th>
-                <th class="py-3 px-4">Perfil de Riesgo</th>
-                <th class="py-3 px-4">Estado</th>
-                <th class="py-3 px-4">ID</th>
-              </tr>
-            </thead>
-            <tbody id="companiesTableBody" class="text-sm">
-              <tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando datos...</td></tr>
-            </tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre de la Empresa</th><th class="py-3 px-4">Perfil de Riesgo</th><th class="py-3 px-4">Estado</th><th class="py-3 px-4">ID</th></tr></thead>
+            <tbody id="companiesTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando datos...</td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ================= SECCIÓN 3: PROSPECTOS (LEADS) ================= -->
+    <!-- SECCIÓN 3: PROSPECTOS -->
     <div id="leadsSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-        <div class="mb-4">
-          <h2 class="text-lg font-bold">Prospectos Capturados</h2>
-          <p class="text-sm text-slate-400">Personas que usaron la calculadora pública.</p>
-        </div>
-        
+        <div class="mb-4"><h2 class="text-lg font-bold">Prospectos Capturados</h2><p class="text-sm text-slate-400">Personas que usaron la calculadora pública.</p></div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-slate-700 text-sm text-slate-400">
-                <th class="py-3 px-4">Fecha</th>
-                <th class="py-3 px-4">Nombre</th>
-                <th class="py-3 px-4">Email</th>
-                <th class="py-3 px-4">Empresa</th>
-                <th class="py-3 px-4">Riesgo Detectado</th>
-              </tr>
-            </thead>
-            <tbody id="leadsTableBody" class="text-sm">
-              <tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando prospectos...</td></tr>
-            </tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Fecha</th><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Email</th><th class="py-3 px-4">Empresa</th><th class="py-3 px-4">Riesgo</th></tr></thead>
+            <tbody id="leadsTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando prospectos...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: USUARIOS -->
+    <div id="usersSection" class="hidden">
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
+        <div class="flex justify-between items-center mb-4">
+          <div><h2 class="text-lg font-bold">Gestión de Usuarios</h2><p class="text-sm text-slate-400">Invita a directores o auditores a sus respectivas organizaciones.</p></div>
+          <button id="openUserModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Invitar Usuario</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Email</th><th class="py-3 px-4">Rol</th><th class="py-3 px-4">ID Org</th></tr></thead>
+            <tbody id="usersTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando usuarios...</td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
   </main>
 
-  <!-- Modal Nuevo Modelo -->
+  <!-- MODALES (Modelo, Filial y Diagnóstico se mantienen igual) -->
   <div id="newModelModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Modelo de IA</h2>
       <form id="newModelForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Modelo</label>
-          <input type="text" id="modelName" required placeholder="Ej. Gemini Pro" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none">
-        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Modelo</label><input type="text" id="modelName" required placeholder="Ej. Gemini Pro" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none"></div>
         <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label>
-            <select id="modelCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
-              <option value="generativo">Generativo</option>
-              <option value="predictivo">Predictivo</option>
-              <option value="vision">Visión Artificial</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-slate-300 mb-1">Nivel de Riesgo</label>
-            <select id="modelRisk" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
-              <option value="bajo">Bajo</option>
-              <option value="medio">Medio</option>
-              <option value="alto">Alto</option>
-            </select>
-          </div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label><select id="modelCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="generativo">Generativo</option><option value="predictivo">Predictivo</option><option value="vision">Visión Artificial</option></select></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Riesgo</label><select id="modelRisk" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="bajo">Bajo</option><option value="medio">Medio</option><option value="alto">Alto</option></select></div>
         </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label>
-          <select id="modelCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select>
-        </div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" id="closeModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button>
-          <button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Modelo</button>
-        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label><select id="modelCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Modelo</button></div>
       </form>
     </div>
   </div>
 
-  <!-- Modal Nueva Filial -->
   <div id="newCompanyModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nueva Filial</h2>
       <form id="newCompanyForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Empresa / Filial</label>
-          <input type="text" id="companyNameInput" required placeholder="Ej. Oleopalma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none">
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-300 mb-1">Perfil de Operación</label>
-          <select id="companyProfileInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
-            <option value="operacional_agro">Agroindustria / Manufactura</option>
-            <option value="servicios">Servicios / Corporativo</option>
-            <option value="retail">Retail / Comercial</option>
-            <option value="salud">Salud / Cuidado Personal (SaMD)</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" id="closeCompanyModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button>
-          <button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Filial</button>
-        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Empresa / Filial</label><input type="text" id="companyNameInput" required placeholder="Ej. Oleopalma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none"></div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Perfil de Operación</label><select id="companyProfileInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="operacional_agro">Agroindustria / Manufactura</option><option value="servicios">Servicios / Corporativo</option><option value="retail">Retail / Comercial</option><option value="salud">Salud / Cuidado Personal (SaMD)</option></select></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeCompanyModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Filial</button></div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL NUEVO USUARIO -->
+  <div id="newUserModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Invitar Nuevo Usuario</h2>
+      <form id="newUserForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre Completo</label><input type="text" id="userName" required placeholder="Ej. Ana Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none"></div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Correo Electrónico</label><input type="email" id="userEmailInput" required placeholder="ana@oleomex.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Contraseña Temporal</label><input type="text" id="userPassword" required value="GokuLab2026!" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none"></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Rol</label><select id="userRole" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="admin">Admin (Cliente)</option><option value="auditor">Auditor</option><option value="superadmin">Superadmin</option></select></div>
+        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Organización (ID)</label><select id="userOrg" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeUserModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Crear Usuario</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DIAGNÓSTICO (Igual al anterior) -->
+  <div id="diagnosticModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-3xl shadow-2xl my-8">
+      <div id="diagnosticFormContainer">
+        <div class="mb-6 border-b border-slate-700 pb-4"><h2 class="text-2xl font-bold text-white">Diagnóstico de Madurez ISO 42001</h2><p class="text-sm text-slate-400 mt-2">Evalúa del 0 al 5. Si no hay evidencia documental, se limitará a 2.</p></div>
+        <form id="diagnosticForm" class="space-y-6">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial a Evaluar</label><select id="diagCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
+          
+          <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-teal-400 mb-3">1. Gobernanza y Políticas</h3>
+            <div class="space-y-4">
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Existe una política de IA aprobada?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Hay un Oficial de IA asignado?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Se destina presupuesto a la gobernanza?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-amber-400 mb-3">2. Gestión de Riesgos</h3>
+            <div class="space-y-4">
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Se realizan evaluaciones de impacto (AIA)?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Se auditan sesgos algorítmicos?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Existe plan de respuesta a incidentes?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-blue-400 mb-3">3. Ciclo de Vida</h3>
+            <div class="space-y-4">
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Se documenta el linaje de datos?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Se monitorea Data Drift?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Existe versionado de modelos?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-purple-400 mb-3">4. Transparencia</h3>
+            <div class="space-y-4">
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Se avisa a usuarios que hablan con IA?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Se explican decisiones automatizadas?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+              <div class="flex flex-col md:flex-row justify-between md:items-center gap-2"><span class="text-sm text-slate-300 w-full md:w-2/3">¿Hay canal de reclamos por IA?</span><div class="flex items-center gap-3"><label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer"><input type="checkbox" class="diag-ev w-4 h-4 rounded"> Evidencia</label><select class="diag-q bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeDiagBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold transition">Calcular Madurez</button></div>
+        </form>
+      </div>
+
+      <div id="diagnosticResultContainer" class="hidden py-4">
+        <div class="text-center mb-6"><div class="text-5xl mb-2">🎯</div><h2 class="text-2xl font-bold text-white mb-1">Diagnóstico Completado</h2><p class="text-slate-400">Plan de acción generado.</p></div>
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm mx-auto mb-6 text-center"><h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Score de Madurez</h3><div id="finalScore" class="text-5xl font-black text-amber-400 mb-1">0%</div><div id="finalRiskLabel" class="text-sm font-bold text-slate-300">Evaluando...</div></div>
+        <div class="text-center mb-8"><button type="button" id="btnGenerateAIReport" class="hidden bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition w-full max-w-md mx-auto shadow-lg">🧠 Generando Reporte Ejecutivo con IA...</button><div id="aiReportText" class="hidden"></div></div>
+        <div class="bg-slate-800 border border-slate-600 rounded-2xl p-6 mb-8 text-left"><h3 class="text-lg font-bold text-white mb-4">🗺️ Tu Roadmap de Implementación</h3><div class="space-y-4 text-sm"><div class="border-l-4 border-amber-500 pl-4"><p class="font-bold text-amber-400">Fase 1 (0-60 días)</p><p id="roadmapPhase1" class="text-slate-300 mt-1"></p></div><div class="border-l-4 border-blue-500 pl-4"><p class="font-bold text-blue-400">Fase 2 (6 meses)</p><p id="roadmapPhase2" class="text-slate-300 mt-1"></p></div><div class="border-l-4 border-teal-500 pl-4"><p class="font-bold text-teal-400">Fase 3 (12 meses)</p><p id="roadmapPhase3" class="text-slate-300 mt-1"></p></div></div></div>
+        <div class="text-center"><button type="button" id="closeResultBtn" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-8 rounded-xl transition">Cerrar</button></div>
+      </div>
     </div>
   </div>
 

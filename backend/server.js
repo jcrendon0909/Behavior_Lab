@@ -21,18 +21,15 @@ app.use(cors({
     'https://gokulab.mx',
     'https://behavior-lab.onrender.com',
     'http://localhost:3000',
-    'http://localhost:5500',     // <-- Agrega esta
-    'http://127.0.0.1:5500'      // <-- Y esta
+    'http://localhost:5500',
+    'http://127.0.0.1:5500'
   ],
   credentials: true
 }));
 
 // ---------- RATE LIMITING ----------
 const chatLimiter = rateLimit({
-  windowMs: 60 * 1000,   // 1 minuto
-  max: 20,                // 20 requests por IP
-  standardHeaders: true,
-  legacyHeaders: false,
+  windowMs: 60 * 1000, max: 20,
   message: { reply: "Demasiadas peticiones. Intenta de nuevo en un minuto." }
 });
 
@@ -41,10 +38,7 @@ const MONGO_URI = process.env.MONGO_URI;
 let db = null;
 
 async function connectMongo() {
-  if (!MONGO_URI) {
-    console.warn("⚠️ MONGO_URI no configurada.");
-    return;
-  }
+  if (!MONGO_URI) return;
   try {
     const client = new MongoClient(MONGO_URI);
     await client.connect();
@@ -56,62 +50,25 @@ async function connectMongo() {
 }
 connectMongo();
 
-// ---------- AUDIT LOG (nunca rompe el chat) ----------
+// ---------- AUDIT LOG ----------
 async function audit(entry) {
   if (!db) return;
-  try {
-    await db.collection("audit_logs").insertOne({
-      ts: new Date(),
-      ...entry
-    });
-  } catch (err) {
-    console.error("⚠️ audit_log falló:", err.message);
-  }
+  try { await db.collection("audit_logs").insertOne({ ts: new Date(), ...entry }); } catch (err) {}
 }
 
 // ---------- PROMPT INJECTION ----------
-const INJECTION_PATTERNS = [
-  /ignora\s+(las\s+)?instrucciones/i,
-  /olvida\s+(las\s+)?instrucciones/i,
-  /system\s*prompt/i,
-  /revela.*(api|key|token|contraseña|password)/i,
-  /dame.*(api|key|token|contraseña)/i,
-  /jailbreak/i
-];
+const INJECTION_PATTERNS = [/ignora\s+(las\s+)?instrucciones/i, /system\s*prompt/i, /revela.*(api|key|token)/i];
+function detectInjection(message) { return INJECTION_PATTERNS.some(p => p.test(message)); }
 
-function detectInjection(message) {
-  return INJECTION_PATTERNS.some(p => p.test(message));
-}
-
-// ---------- REGEX ESCAPE (fix ReDoS) ----------
-function escapeRegex(str) {
-  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+function escapeRegex(str) { return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
 // ---------- GROQ KEYS ----------
-const GROQ_KEYS = [
-  process.env.GROQ_API_KEY_1,
-  process.env.GROQ_API_KEY_2,
-  process.env.GROQ_API_KEY_3,
-  process.env.GROQ_API_KEY_4,
-  process.env.GROQ_API_KEY_5
-].filter(Boolean);
-
-if (GROQ_KEYS.length === 0) {
-  console.error("❌ No hay API keys cargadas");
-}
-console.log(`🔑 Keys cargadas: ${GROQ_KEYS.length} de 5`);
-
+const GROQ_KEYS = [process.env.GROQ_API_KEY_1, process.env.GROQ_API_KEY_2, process.env.GROQ_API_KEY_3, process.env.GROQ_API_KEY_4, process.env.GROQ_API_KEY_5].filter(Boolean);
 let currentKeyIndex = 0;
-function getNextKey() {
-  const key = GROQ_KEYS[currentKeyIndex];
-  currentKeyIndex = (currentKeyIndex + 1) % GROQ_KEYS.length;
-  return key;
-}
+function getNextKey() { const key = GROQ_KEYS[currentKeyIndex]; currentKeyIndex = (currentKeyIndex + 1) % GROQ_KEYS.length; return key; }
 
-// ---------- HISTORIAL (memoria + Mongo) ----------
+// ---------- HISTORIAL ----------
 const memoryHistory = {};
-
 async function getConversationHistory(userId) {
   if (db) {
     try {
@@ -120,9 +77,7 @@ async function getConversationHistory(userId) {
         new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 500))
       ]);
       if (doc?.messages?.length) return doc.messages.slice(-10);
-    } catch (e) {
-      // fallback silencioso a memoria
-    }
+    } catch (e) {}
   }
   return memoryHistory[userId] || [];
 }
@@ -130,74 +85,45 @@ async function getConversationHistory(userId) {
 async function addToConversationHistory(userId, role, content) {
   if (!memoryHistory[userId]) memoryHistory[userId] = [];
   memoryHistory[userId].push({ role, content });
-  if (memoryHistory[userId].length > 10) {
-    memoryHistory[userId] = memoryHistory[userId].slice(-10);
-  }
-
+  if (memoryHistory[userId].length > 10) memoryHistory[userId] = memoryHistory[userId].slice(-10);
   if (db) {
     try {
       await db.collection("conversations").updateOne(
         { userId },
-        {
-          $push: {
-            messages: {
-              $each: [{ role, content, ts: new Date() }],
-              $slice: -20
-            }
-          },
-          $set: { updatedAt: new Date() }
-        },
+        { $push: { messages: { $each: [{ role, content, ts: new Date() }], $slice: -20 } }, $set: { updatedAt: new Date() } },
         { upsert: true }
       );
-    } catch (err) {
-      console.error("⚠️ No se pudo persistir historial:", err.message);
-    }
+    } catch (err) {}
   }
 }
 
-// ---------- BÚSQUEDA EN MONGO ----------
+// ---------- BÚSQUEDA ----------
 async function searchKnowledge(query) {
   if (!db) return null;
   const safe = escapeRegex(query);
   try {
-    const faq = await db.collection('faq').findOne({
-      keywords: { $regex: safe, $options: 'i' }
-    });
+    const faq = await db.collection('faq').findOne({ keywords: { $regex: safe, $options: 'i' } });
     if (faq) return { type: 'faq', data: faq };
-
-    const knowledge = await db.collection('knowledge').findOne({
-      $or: [
-        { topic:    { $regex: safe, $options: 'i' } },
-        { title:    { $regex: safe, $options: 'i' } },
-        { content:  { $regex: safe, $options: 'i' } },
-        { keywords: { $regex: safe, $options: 'i' } }
-      ]
-    });
+    const knowledge = await db.collection('knowledge').findOne({ $or: [{ topic: { $regex: safe, $options: 'i' } }, { title: { $regex: safe, $options: 'i' } }, { content: { $regex: safe, $options: 'i' } }] });
     if (knowledge) return { type: 'knowledge', data: knowledge };
-
     return null;
-  } catch (error) {
-    console.error("❌ Error búsqueda Mongo:", error.message);
-    return null;
-  }
+  } catch (error) { return null; }
 }
 
-// ---------- MODOS ----------
+// ---------- MODOS (PROMPT ACTUALIZADO) ----------
 const MODES = {
   default: `
-Eres el asistente virtual de BehaviorLab, una consultora de IA empresarial con sede en México.
+Eres el asistente experto de BehaviorLab, una consultora líder en Gobernanza de IA, Riesgos y Cumplimiento (GRC) y Ciberseguridad.
+Tu conocimiento abarca:
+1. Creación y despliegue de Agentes de IA empresariales.
+2. Gobernanza de IA: ISO/IEC 42001, NIST AI RMF, y cumplimiento regulatorio local (LFPDPPP, COFEPRIS/SaMD).
+3. Gestión de riesgos de IA (auditoría de sesgos, evaluaciones de impacto, privacidad por diseño).
+4. Nuestra plataforma BehaviorLab: Inventario de IA, Diagnóstico de Madurez, Generación de Políticas y Monitoreo.
 
 **Reglas de respuesta:**
-- Responde en **máximo 3 oraciones**.
-- Sé directo, profesional y evita repetir información.
-- Si tienes información específica de la base de conocimiento, úsala primero.
-- Si no sabes algo, sugiere contactar al equipo.
-
-**Contexto general:**
-BehaviorLab diseña agentes de IA personalizados para seguros, finanzas, retail, logística y gobierno.
-Ofrecemos automatización, inteligencia comercial, procesamiento de documentos, soporte a decisiones e integración API.
-Nuestra metodología tiene 5 pasos: diagnóstico, diseño, entrenamiento, integración y despliegue.
-Nos diferenciamos por ser agentes a medida, despliegue rápido, integración sin fricciones y ROI medible.
+- Responde en máximo 3 o 4 oraciones. Sé directo, profesional y ejecutivo.
+- Si te preguntan sobre normativas, explica brevemente cómo ayudamos a cumplirlas.
+- Si no sabes algo, sugiere contactar al equipo o agendar una demo.
 `,
   creatividad: `Eres un experto en creatividad empresarial aplicada a IA. Responde en máximo 3 oraciones.`,
   emociones:   `Eres un consultor de IA con enfoque en experiencia de usuario. Responde en máximo 3 oraciones.`,
@@ -205,194 +131,86 @@ Nos diferenciamos por ser agentes a medida, despliegue rápido, integración sin
 };
 
 // ---------- GROQ ----------
-async function callGroq(messages) {
+async function callGroq(messages, max_tokens = 600) {
   let attempts = 0;
-
   while (attempts < GROQ_KEYS.length) {
     const apiKey = getNextKey();
-    console.log(`🔄 Intento ${attempts + 1}`);
-
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-120b",
-        messages,
-        max_tokens: 120,
-        temperature: 0.3
-      })
-    });
-
-    if (!response.ok) {
-      console.log("⚠️ HTTP Error:", response.status);
+    try {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "openai/gpt-oss-120b", messages, max_tokens, temperature: 0.3 })
+      });
+      if (!response.ok) { attempts++; continue; }
+      const data = await response.json();
+      if (!data.error) return data.choices?.[0]?.message?.content;
       attempts++;
-      continue;
-    }
-    const data = await response.json();
-
-    if (!data.error) {
-      console.log("✅ Respuesta OK");
-      return data.choices?.[0]?.message?.content;
-    }
-
-    console.log("⚠️ Error con key:", data.error.message);
-    attempts++;
+    } catch (e) { attempts++; }
   }
-
-  throw new Error("❌ Todas las API keys fallaron");
+  throw new Error("Todas las API keys fallaron o Groq rechazó la petición.");
 }
 
-// ---------- ENDPOINT /chat ----------
+// ---------- ENDPOINTS ----------
 app.post("/chat", chatLimiter, async (req, res) => {
-  const start = Date.now();
   const { message, mode = "default", userId = "defaultUser" } = req.body;
-
-  if (!message) {
-    return res.json({ reply: "❌ Falta 'message'" });
-  }
-
-  // Bloqueo de prompt injection
-  if (detectInjection(message)) {
-    await audit({
-      type: "injection_attempt",
-      userId,
-      input_preview: String(message).slice(0, 200)
-    });
-    return res.json({ reply: "No puedo procesar esa solicitud." });
-  }
+  if (!message) return res.json({ reply: "❌ Falta 'message'" });
+  if (detectInjection(message)) return res.json({ reply: "No puedo procesar esa solicitud." });
 
   try {
-    // 1. Buscar en Mongo
     let knowledgeContext = "";
-    let knowledgeHit = null;
     if (db) {
       const result = await searchKnowledge(message);
       if (result) {
-        knowledgeHit = result.type;
-        if (result.type === 'faq') {
-          knowledgeContext = `Pregunta frecuente: "${result.data.question}"\nRespuesta: ${result.data.answer}`;
-        } else if (result.type === 'knowledge') {
-          knowledgeContext = `Información: ${result.data.title}\n${result.data.content}`;
-        }
-        console.log(`📚 Usando conocimiento (${result.type})`);
+        if (result.type === 'faq') knowledgeContext = `Pregunta: "${result.data.question}"\nRespuesta: ${result.data.answer}`;
+        else if (result.type === 'knowledge') knowledgeContext = `Información: ${result.data.title}\n${result.data.content}`;
       }
     }
-
-    // 2. Historial
     const history = await getConversationHistory(userId);
-
-    // 3. Construir mensajes
     const systemPrompt = MODES[mode] || MODES.default;
     let systemContent = systemPrompt;
-    if (knowledgeContext) {
-      systemContent += `\n\n**Información adicional:**\n${knowledgeContext}\n\nUsa esta información para responder con precisión.`;
-    }
+    if (knowledgeContext) systemContent += `\n\n**Info extra:**\n${knowledgeContext}`;
 
-    const messages = [
-      { role: "system", content: systemContent },
-      ...history,
-      { role: "user", content: message }
-    ];
-
-    // 4. Llamar a Groq
-    const reply = await callGroq(messages);
-
-    // 5. Persistir historial
+    const messages = [{ role: "system", content: systemContent }, ...history, { role: "user", content: message }];
+    const reply = await callGroq(messages, 150);
     await addToConversationHistory(userId, "user", message);
     await addToConversationHistory(userId, "assistant", reply);
-
-    // 6. Audit log
-    await audit({
-      type: "chat",
-      userId,
-      mode,
-      input_length: String(message).length,
-      knowledge_hit: knowledgeHit,
-      key_used: (currentKeyIndex - 1 + GROQ_KEYS.length) % GROQ_KEYS.length,
-      latency_ms: Date.now() - start
-    });
-
     res.json({ reply });
-
-  } catch (error) {
-    console.error("❌ Error en /chat:", error.message);
-    await audit({
-      type: "chat_error",
-      userId,
-      error: error.message,
-      latency_ms: Date.now() - start
-    });
-    res.json({ reply: error.message || "❌ Error en el servidor" });
-  }
+  } catch (error) { res.json({ reply: "❌ Error en el servidor" }); }
 });
 
-// ---------- ENDPOINTS DE PROSPECTOS (LEADS) ----------
 app.post("/leads", async (req, res) => {
   const { name, email, company, sector, shadow_ai, samd, risk_level } = req.body;
   if (!email) return res.status(400).json({ error: "Email requerido" });
-  
   try {
     if (!db) return res.status(500).json({ error: "DB no conectada" });
-    
-    await db.collection("leads").insertOne({
-      ts: new Date(),
-      name: name || "No especificado",
-      email,
-      company: company || "No especificada",
-      sector,
-      shadow_ai,
-      samd,
-      risk_level
-    });
-    
+    await db.collection("leads").insertOne({ ts: new Date(), name, email, company, sector, shadow_ai, samd, risk_level });
     res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get("/leads", async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: "DB no conectada" });
-    // En producción, esto debería estar protegido por JWT
     const leads = await db.collection("leads").find({}).sort({ ts: -1 }).toArray();
     res.json(leads);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ---------- HEALTH ----------
-app.get('/', (req, res) => {
-  res.send('Behavior Lab API running 🚀');
+app.post("/gov/generate-report", async (req, res) => {
+  try {
+    const { companyName, score, riskLevel, answers } = req.body;
+    const prompt = `Eres un consultor experto en gobernanza de IA (ISO 42001, NIST AI RMF). La empresa "${companyName}" ha completado un diagnóstico de madurez obteniendo un score del ${score}% (Nivel: ${riskLevel}). Respuestas: ${JSON.stringify(answers)}. Genera un "Resumen Ejecutivo" formal (máximo 3 párrafos) interpretando el nivel, identificando los 2 puntos más críticos y recomendando acciones inmediatas (Quick Wins) para 60 días. Tono consultivo y ejecutivo.`;
+    const report = await callGroq([{ role: "user", content: prompt }], 800);
+    res.json({ report });
+  } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.get('/health', (req, res) => {
-  res.json({
-    ok: true,
-    mongo: !!db,
-    keys_loaded: GROQ_KEYS.length,
-    uptime_s: Math.floor(process.uptime()),
-    ts: new Date().toISOString()
-  });
-});
+app.use('/gov', (req, res, next) => {
+  if (!db) return res.status(503).json({ error: "DB no conectada aún" });
+  req.db = db; next();
+}, createGovRouter());
 
-// ---------- GOVERNANCE ----------
-app.use('/gov',
-  (req, res, next) => {
-    if (!db) return res.status(503).json({ error: "DB no conectada aún" });
-    req.db = db;
-    next();
-  },
-  createGovRouter()
-);
+app.get('/health', (req, res) => res.json({ ok: true, mongo: !!db, keys_loaded: GROQ_KEYS.length, uptime_s: Math.floor(process.uptime()), ts: new Date().toISOString() }));
 
-// ---------- INICIAR ----------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor en puerto ${PORT}`);
-  console.log(`   Health: http://localhost:${PORT}/health`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor en puerto ${PORT}`));
