@@ -8,14 +8,8 @@ export function createGovRouter() {
   const router = express.Router();
   const JWT_SECRET = process.env.JWT_SECRET;
 
-  function db(req) {
-    if (!req.db) throw new Error("DB no conectada");
-    return req.db;
-  }
-
-  function signToken(payload) {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: "8h" });
-  }
+  function db(req) { return req.db; }
+  function signToken(payload) { return jwt.sign(payload, JWT_SECRET, { expiresIn: "8h" }); }
 
   function auth(roles = []) {
     return (req, res, next) => {
@@ -24,108 +18,77 @@ export function createGovRouter() {
       if (!token) return res.status(401).json({ error: "Token requerido" });
       try {
         const payload = jwt.verify(token, JWT_SECRET);
-        if (roles.length && !roles.includes(payload.role)) {
-          return res.status(403).json({ error: "Sin permisos" });
-        }
-        req.user = payload;
-        next();
-      } catch (e) {
-        return res.status(401).json({ error: "Token inválido o expirado" });
-      }
+        if (roles.length && !roles.includes(payload.role)) return res.status(403).json({ error: "Sin permisos" });
+        req.user = payload; next();
+      } catch (e) { return res.status(401).json({ error: "Token inválido" }); }
     };
   }
 
   async function audit(req, action, payload = {}) {
-    try {
-      await db(req).collection("audit_logs").insertOne({
-        ts: new Date(), type: "gov_" + action, userId: req.user?.userId || null, orgId: req.user?.orgId || null, ip: req.ip, ...payload
-      });
-    } catch (e) {}
+    try { await db(req).collection("audit_logs").insertOne({ ts: new Date(), type: "gov_" + action, userId: req.user?.userId, orgId: req.user?.orgId, ...payload }); } catch (e) {}
   }
 
-  // AUTH
   router.post("/auth/login", async (req, res) => {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "email y password requeridos" });
     const user = await db(req).collection("users").findOne({ email: email.toLowerCase() });
-    if (!user) return res.status(401).json({ error: "Credenciales inválidas" });
-    const ok = await bcrypt.compare(password, user.hash);
-    if (!ok) return res.status(401).json({ error: "Credenciales inválidas" });
+    if (!user || !(await bcrypt.compare(password, user.hash))) return res.status(401).json({ error: "Credenciales inválidas" });
     const token = signToken({ userId: user._id.toString(), orgId: user.orgId.toString(), role: user.role, email: user.email });
-    await audit(req, "login", { email: user.email });
     res.json({ token, user: { email: user.email, role: user.role, orgId: user.orgId.toString(), name: user.name || null } });
   });
 
-  router.get("/auth/me", auth(), async (req, res) => { res.json({ user: req.user }); });
+  router.get("/auth/me", auth(), (req, res) => res.json({ user: req.user }));
 
-  // ORGANIZACIONES Y EMPRESAS
   router.post("/orgs", auth(["superadmin"]), async (req, res) => {
-    const { name, sector, plan = "basic" } = req.body;
-    const doc = { name, sector: sector || null, plan, active: true, createdAt: new Date(), createdBy: req.user.userId };
+    const doc = { name: req.body.name, sector: req.body.sector || null, plan: "basic", active: true, createdAt: new Date() };
     const result = await db(req).collection("organizations").insertOne(doc);
-    await audit(req, "org_create", { orgId: result.insertedId.toString(), name });
     res.json({ _id: result.insertedId, ...doc });
   });
 
-  router.get("/orgs", auth(["superadmin"]), async (req, res) => {
-    const orgs = await db(req).collection("organizations").find({}).toArray();
-    res.json(orgs);
-  });
+  router.get("/orgs", auth(["superadmin"]), async (req, res) => res.json(await db(req).collection("organizations").find({}).toArray()));
 
   router.post("/orgs/:orgId/companies", auth(["superadmin", "admin"]), async (req, res) => {
-    const { name, riskProfile } = req.body;
     if (req.user.role !== "superadmin" && req.user.orgId !== req.params.orgId) return res.status(403).json({ error: "Sin permisos" });
-    const doc = { orgId: new ObjectId(req.params.orgId), name, riskProfile: riskProfile || "operacional", active: true, createdAt: new Date() };
+    const doc = { orgId: new ObjectId(req.params.orgId), name: req.body.name, riskProfile: req.body.riskProfile || "operacional", active: true, createdAt: new Date() };
     const result = await db(req).collection("companies").insertOne(doc);
-    await audit(req, "company_create", { orgId: req.params.orgId, name });
     res.json({ _id: result.insertedId, ...doc });
   });
 
   router.get("/orgs/:orgId/companies", auth(), async (req, res) => {
     if (req.user.role !== "superadmin" && req.user.orgId !== req.params.orgId) return res.status(403).json({ error: "Sin permisos" });
-    const companies = await db(req).collection("companies").find({ orgId: new ObjectId(req.params.orgId) }).toArray();
-    res.json(companies);
+    res.json(await db(req).collection("companies").find({ orgId: new ObjectId(req.params.orgId) }).toArray());
   });
 
-  // USUARIOS
   router.post("/users", auth(["superadmin", "admin"]), async (req, res) => {
     try {
       const { name, email, password, role, orgId } = req.body;
-      if (!email || !password || !role || !orgId) return res.status(400).json({ error: "Faltan campos obligatorios" });
-      if (req.user.role !== "superadmin" && req.user.orgId !== orgId) return res.status(403).json({ error: "Solo puedes crear usuarios para tu propia organización" });
+      if (req.user.role !== "superadmin" && req.user.orgId !== orgId) return res.status(403).json({ error: "Sin permisos" });
       const existing = await db(req).collection("users").findOne({ email: email.toLowerCase() });
       if (existing) return res.status(400).json({ error: "El correo ya está registrado" });
       const hash = await bcrypt.hash(password, 12);
       const doc = { name, email: email.toLowerCase(), hash, role, orgId: new ObjectId(orgId), active: true, createdAt: new Date() };
       const result = await db(req).collection("users").insertOne(doc);
-      await audit(req, "user_create", { newUserId: result.insertedId.toString(), email, role });
       res.json({ ok: true, _id: result.insertedId });
     } catch (e) { res.status(500).json({ error: e.message }); }
   });
 
   router.get("/users", auth(["superadmin", "admin"]), async (req, res) => {
     const filter = req.user.role === "superadmin" ? {} : { orgId: new ObjectId(req.user.orgId) };
-    const users = await db(req).collection("users").find(filter, { projection: { hash: 0 } }).toArray();
-    res.json(users);
+    res.json(await db(req).collection("users").find(filter, { projection: { hash: 0 } }).toArray());
   });
 
-  // INVENTARIO Y EVALUACIONES
   router.post("/ai-inventory", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
     const { companyId, model_name, category, vendor, data_sensitivity = [], risk_level = "medio", status = "evaluacion", description } = req.body;
     const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
     if (!company) return res.status(404).json({ error: "Company no encontrada" });
     if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
-    const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), model_name, category: category || "generativo", vendor: vendor || null, data_sensitivity, risk_level, status, description: description || null, evidence: [], createdAt: new Date(), updatedAt: new Date(), createdBy: req.user.userId };
+    const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), model_name, category, vendor: vendor || null, data_sensitivity, risk_level, status, description, createdAt: new Date(), updatedAt: new Date(), createdBy: req.user.userId };
     const result = await db(req).collection("ai_inventory").insertOne(doc);
-    await audit(req, "ai_inventory_create", { inventoryId: result.insertedId.toString(), model_name });
     res.json({ _id: result.insertedId, ...doc });
   });
 
   router.get("/ai-inventory", auth(), async (req, res) => {
     const filter = req.user.role === "superadmin" ? {} : { orgId: new ObjectId(req.user.orgId) };
-    if (req.query.companyId) filter.companyId = new ObjectId(req.query.companyId);
-    const items = await db(req).collection("ai_inventory").find(filter).sort({ updatedAt: -1 }).toArray();
-    res.json(items);
+    res.json(await db(req).collection("ai_inventory").find(filter).sort({ updatedAt: -1 }).toArray());
   });
 
   router.post("/evaluations", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
@@ -133,34 +96,75 @@ export function createGovRouter() {
     const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
     if (!company) return res.status(404).json({ error: "Company no encontrada" });
     if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
-    const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), framework, answers, score: score ?? null, risk_level: risk_level || "medio", recommendations, createdAt: new Date(), createdBy: req.user.userId };
+    const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), framework, answers, score, risk_level, recommendations, createdAt: new Date(), createdBy: req.user.userId };
     const result = await db(req).collection("risk_evaluations").insertOne(doc);
-    await audit(req, "evaluation_create", { evaluationId: result.insertedId.toString(), framework });
     res.json({ _id: result.insertedId, ...doc });
   });
 
   router.get("/evaluations", auth(), async (req, res) => {
     const filter = req.user.role === "superadmin" ? {} : { orgId: new ObjectId(req.user.orgId) };
-    const items = await db(req).collection("risk_evaluations").find(filter).sort({ createdAt: -1 }).toArray();
-    res.json(items);
+    res.json(await db(req).collection("risk_evaluations").find(filter).sort({ createdAt: -1 }).toArray());
   });
 
-  // 🚨 NUEVO: EXPEDIENTE DE EVIDENCIAS
   router.get("/evidence", auth(), async (req, res) => {
-    try {
-      let filter = {};
-      if (req.user.role !== "superadmin") {
-        // Si es cliente, solo ve las evidencias de las empresas de su organización
-        const companies = await db(req).collection("companies").find({ orgId: new ObjectId(req.user.orgId) }).toArray();
-        const companyIds = companies.map(c => c._id.toString());
-        filter = { companyId: { $in: companyIds } };
-      }
-      
-      const evidence = await db(req).collection("evidence").find(filter).sort({ ts: -1 }).toArray();
-      res.json(evidence);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    let filter = {};
+    if (req.user.role !== "superadmin") {
+      const companies = await db(req).collection("companies").find({ orgId: new ObjectId(req.user.orgId) }).toArray();
+      filter = { companyId: { $in: companies.map(c => c._id.toString()) } };
     }
+    res.json(await db(req).collection("evidence").find(filter).sort({ ts: -1 }).toArray());
+  });
+
+  router.get("/deliverables", auth(), async (req, res) => {
+    const filter = req.user.role === "superadmin" ? {} : { orgId: new ObjectId(req.user.orgId) };
+    res.json(await db(req).collection("deliverables").find(filter).sort({ createdAt: -1 }).toArray());
+  });
+
+  router.post("/deliverables", auth(["superadmin", "admin"]), async (req, res) => {
+    const { orgId, taskName, phase, assignedTo, dueDate } = req.body;
+    if (req.user.role !== "superadmin" && req.user.orgId !== orgId) return res.status(403).json({ error: "Sin permisos" });
+    const doc = { orgId: new ObjectId(orgId), taskName, phase: phase || "Fase 1: Diagnóstico", assignedTo: assignedTo || "Equipo BehAvIorLab", dueDate: dueDate || null, status: "Pendiente", createdAt: new Date() };
+    const result = await db(req).collection("deliverables").insertOne(doc);
+    res.json({ _id: result.insertedId, ...doc });
+  });
+
+  router.put("/deliverables/:id", auth(["superadmin", "admin"]), async (req, res) => {
+    await db(req).collection("deliverables").updateOne({ _id: new ObjectId(req.params.id) }, { $set: { status: req.body.status } });
+    res.json({ ok: true });
+  });
+
+  // REGISTRO DE RIESGOS
+  router.get("/risks", auth(), async (req, res) => {
+    const filter = req.user.role === "superadmin" ? {} : { orgId: new ObjectId(req.user.orgId) };
+    res.json(await db(req).collection("risks").find(filter).sort({ createdAt: -1 }).toArray());
+  });
+
+  router.post("/risks", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
+    const { orgId, companyId, riskName, category, probability, impact, mitigationPlan } = req.body;
+    if (req.user.role !== "superadmin" && req.user.orgId !== orgId) return res.status(403).json({ error: "Sin permisos" });
+    
+    const riskScore = probability * impact;
+    let riskLevel = "Bajo";
+    if (riskScore >= 15) riskLevel = "Crítico";
+    else if (riskScore >= 8) riskLevel = "Alto";
+    else if (riskScore >= 4) riskLevel = "Medio";
+
+    const doc = { 
+      orgId: new ObjectId(orgId), 
+      companyId: companyId ? new ObjectId(companyId) : null,
+      riskName, 
+      category: category || "Operacional", 
+      probability, 
+      impact, 
+      riskScore,
+      riskLevel,
+      mitigationPlan: mitigationPlan || "Pendiente de definir",
+      status: "Abierto",
+      createdAt: new Date(),
+      createdBy: req.user.userId
+    };
+    const result = await db(req).collection("risks").insertOne(doc);
+    res.json({ _id: result.insertedId, ...doc });
   });
 
   return router;

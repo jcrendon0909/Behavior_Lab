@@ -33,8 +33,10 @@
 
     <div class="flex space-x-4 mb-6 border-b border-slate-800 pb-2 overflow-x-auto">
       <button type="button" id="tabInventoryBtn" class="text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap">Inventario de IA</button>
-      <button type="button" id="tabMatrixBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Matriz Global (Compliance)</button>
-      <button type="button" id="tabCompaniesBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Empresas / Filiales</button>
+      <button type="button" id="tabMatrixBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Matriz Global</button>
+      <button type="button" id="tabRisksBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Registro de Riesgos</button>
+      <button type="button" id="tabDeliverablesBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Plan de Trabajo</button>
+      <button type="button" id="tabCompaniesBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Filiales</button>
       <button type="button" id="tabLeadsBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Prospectos</button>
       <button type="button" id="tabUsersBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Usuarios</button>
       <button type="button" id="tabEvidenceBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Expediente Digital</button>
@@ -59,13 +61,58 @@
       </div>
     </div>
 
-    <!-- MATRIZ DE CUMPLIMIENTO GLOBAL -->
     <div id="matrixSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 mb-6">
         <h2 class="text-lg font-bold mb-4">Estado Global de Cumplimiento</h2>
         <p class="text-slate-400 text-sm mb-6">Semáforo de exposición regulatoria basado en los últimos diagnósticos.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="matrixGrid">
-          <!-- Se llena con JS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="matrixGrid"></div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: REGISTRO DE RIESGOS -->
+    <div id="risksSection" class="hidden">
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h2 class="text-lg font-bold">Registro de Riesgos (Risk Register)</h2>
+            <p class="text-sm text-slate-400">Identifica y evalúa los riesgos de tus sistemas de IA.</p>
+          </div>
+          <button id="openRiskModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition shadow-lg shadow-teal-500/20">+ Nuevo Riesgo</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-700 text-sm text-slate-400">
+                <th class="py-3 px-4">Riesgo</th>
+                <th class="py-3 px-4">Categoría</th>
+                <th class="py-3 px-4">Probabilidad</th>
+                <th class="py-3 px-4">Impacto</th>
+                <th class="py-3 px-4">Nivel (Score)</th>
+                <th class="py-3 px-4">Mitigación</th>
+              </tr>
+            </thead>
+            <tbody id="risksTableBody" class="text-sm">
+              <tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando registro...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="deliverablesSection" class="hidden">
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h2 class="text-lg font-bold">Plan de Implementación (Project Tracker)</h2>
+            <p class="text-sm text-slate-400">Tareas y entregables para cerrar las brechas de gobernanza.</p>
+          </div>
+          <button id="openDeliverableModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition shadow-lg shadow-teal-500/20">+ Nueva Tarea</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Tarea / Entregable</th><th class="py-3 px-4">Fase</th><th class="py-3 px-4">Responsable</th><th class="py-3 px-4">Estatus</th></tr></thead>
+            <tbody id="deliverablesTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando plan de trabajo...</td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -73,7 +120,7 @@
     <div id="companiesSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Directorio de Filiales</h2></div><button id="openCompanyModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nueva Filial</button></div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre de la Empresa</th><th class="py-3 px-4">Perfil de Riesgo</th><th class="py-3 px-4">Estado</th><th class="py-3 px-4">ID</th></tr></thead><tbody id="companiesTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando datos...</td></tr></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Perfil</th><th class="py-3 px-4">Estado</th><th class="py-3 px-4">ID</th></tr></thead><tbody id="companiesTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando datos...</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -96,7 +143,7 @@
         <div class="mb-6"><h2 class="text-lg font-bold">Expediente Digital de Evidencias</h2><p class="text-sm text-slate-400">Documentos validados por la IA y almacenados en R2.</p></div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Fecha</th><th class="py-3 px-4">Archivo</th><th class="py-3 px-4">Pregunta / Control</th><th class="py-3 px-4">Estatus IA</th><th class="py-3 px-4">Acciones</th></tr></thead>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Fecha</th><th class="py-3 px-4">Archivo</th><th class="py-3 px-4">Pregunta</th><th class="py-3 px-4">Estatus IA</th><th class="py-3 px-4">Acciones</th></tr></thead>
             <tbody id="evidenceTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando expediente...</td></tr></tbody>
           </table>
         </div>
@@ -147,32 +194,52 @@
     </div>
   </div>
 
-  <!-- MODAL DIAGNÓSTICO CON SELECTOR DE MARCO -->
+  <div id="newDeliverableModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Agregar Tarea al Plan</h2>
+      <form id="newDeliverableForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Tarea / Entregable</label><input type="text" id="taskName" required placeholder="Ej. Redactar Política de IA" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Fase</label><select id="taskPhase" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Fase 1: Diagnóstico">Fase 1: Diagnóstico</option><option value="Fase 2: Diseño">Fase 2: Diseño</option><option value="Fase 3: Implementación">Fase 3: Implementación</option><option value="Fase 4: Auditoría">Fase 4: Auditoría</option></select></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Responsable</label><select id="taskAssignee" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Equipo BehAvIorLab">Equipo BehAvIorLab</option><option value="Cliente">Cliente</option><option value="Ambos">Ambos</option></select></div>
+        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Fecha de Entrega (Opcional)</label><input type="date" id="taskDate" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeDeliverableModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Tarea</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- NUEVO MODAL: NUEVO RIESGO -->
+  <div id="newRiskModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Riesgo</h2>
+      <form id="newRiskForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Riesgo</label><input type="text" id="riskName" required placeholder="Ej. Fuga de datos en ChatGPT" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label><select id="riskCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Privacidad">Privacidad</option><option value="Sesgo">Sesgo</option><option value="Seguridad">Seguridad</option><option value="Operacional">Operacional</option><option value="Regulatorio">Regulatorio</option></select></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial</label><select id="riskCompany" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">Global (Toda la org)</option></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Probabilidad (1-5)</label><select id="riskProb" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="1">1 - Muy Baja</option><option value="2">2 - Baja</option><option value="3">3 - Media</option><option value="4">4 - Alta</option><option value="5">5 - Muy Alta</option></select></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Impacto (1-5)</label><select id="riskImpact" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="1">1 - Insignificante</option><option value="2">2 - Menor</option><option value="3">3 - Moderado</option><option value="4">4 - Mayor</option><option value="5">5 - Catastrófico</option></select></div>
+        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Plan de Mitigación</label><textarea id="riskMitigation" rows="2" placeholder="¿Cómo vamos a reducir este riesgo?" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></textarea></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeRiskModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Riesgo</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DIAGNÓSTICO -->
   <div id="diagnosticModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 w-full max-w-4xl shadow-2xl my-8">
       <div id="diagnosticFormContainer">
-        <div class="mb-6 border-b border-slate-700 pb-4">
-          <h2 class="text-2xl font-bold text-white">Evaluación de Madurez y Riesgo</h2>
-          <p class="text-sm text-slate-400 mt-2">Evalúa del 0 al 5. Sube un PDF de evidencia en cada pregunta para validar el puntaje.</p>
-        </div>
+        <div class="mb-6 border-b border-slate-700 pb-4"><h2 class="text-2xl font-bold text-white">Evaluación de Madurez y Riesgo</h2><p class="text-sm text-slate-400 mt-2">Evalúa del 0 al 5. Sube un PDF de evidencia en cada pregunta para validar el puntaje.</p></div>
         <form id="diagnosticForm" class="space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-slate-300 mb-1">Filial a Evaluar</label>
-              <select id="diagCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select>
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-slate-300 mb-1">Marco Normativo (Framework)</label>
-              <select id="diagFramework" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none font-bold text-teal-400">
-                <option value="ISO 42001">ISO/IEC 42001 (Sistema de Gestión de IA)</option>
-                <option value="NIST AI RMF">NIST AI RMF (EE. UU.)</option>
-                <option value="EU AI Act">EU AI Act (Regulación Europea)</option>
-                <option value="LFPDPPP">LFPDPPP (Protección de Datos - México)</option>
-              </select>
-            </div>
+            <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial a Evaluar</label><select id="diagCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
+            <div><label class="block text-sm font-semibold text-slate-300 mb-1">Marco Normativo</label><select id="diagFramework" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none font-bold text-teal-400"><option value="ISO 42001">ISO/IEC 42001</option><option value="NIST AI RMF">NIST AI RMF</option><option value="EU AI Act">EU AI Act</option><option value="LFPDPPP">LFPDPPP</option></select></div>
           </div>
           
-          <!-- (Las 12 preguntas se mantienen igual, omitidas por brevedad pero presentes en el código completo) -->
           <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
             <h3 class="font-bold text-teal-400 mb-4 border-b border-slate-700 pb-2">1. Gobernanza y Políticas</h3>
             <div class="space-y-3">

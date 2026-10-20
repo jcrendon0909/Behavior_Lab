@@ -19,31 +19,29 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('gov_token'); localStorage.removeItem('gov_user'); window.location.href = 'index.html';
 });
 
-const tabInvBtn = document.getElementById('tabInventoryBtn');
-const tabMatrixBtn = document.getElementById('tabMatrixBtn');
-const tabCompBtn = document.getElementById('tabCompaniesBtn');
-const tabLeadsBtn = document.getElementById('tabLeadsBtn');
-const tabUsersBtn = document.getElementById('tabUsersBtn');
-const tabEvidenceBtn = document.getElementById('tabEvidenceBtn');
-
-const secInv = document.getElementById('inventorySection');
-const secMatrix = document.getElementById('matrixSection');
-const secComp = document.getElementById('companiesSection');
-const secLeads = document.getElementById('leadsSection');
-const secUsers = document.getElementById('usersSection');
-const secEvidence = document.getElementById('evidenceSection');
+const tabs = ['tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabLeadsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
+const sections = ['inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'leadsSection', 'usersSection', 'evidenceSection'];
 
 function resetTabs() {
-  [tabInvBtn, tabMatrixBtn, tabCompBtn, tabLeadsBtn, tabUsersBtn, tabEvidenceBtn].forEach(b => b.className = 'text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap');
-  [secInv, secMatrix, secComp, secLeads, secUsers, secEvidence].forEach(s => { s.classList.add('hidden'); s.classList.remove('block'); });
+  tabs.forEach(id => { const el = document.getElementById(id); if(el) el.className = 'text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap'; });
+  sections.forEach(id => { const el = document.getElementById(id); if(el) { el.classList.add('hidden'); el.classList.remove('block'); } });
 }
 
-tabInvBtn.addEventListener('click', () => { resetTabs(); tabInvBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secInv.classList.remove('hidden'); secInv.classList.add('block'); });
-tabMatrixBtn.addEventListener('click', () => { resetTabs(); tabMatrixBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secMatrix.classList.remove('hidden'); secMatrix.classList.add('block'); loadMatrix(); });
-tabCompBtn.addEventListener('click', () => { resetTabs(); tabCompBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secComp.classList.remove('hidden'); secComp.classList.add('block'); });
-tabLeadsBtn.addEventListener('click', () => { resetTabs(); tabLeadsBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secLeads.classList.remove('hidden'); secLeads.classList.add('block'); loadLeads(); });
-tabUsersBtn.addEventListener('click', () => { resetTabs(); tabUsersBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secUsers.classList.remove('hidden'); secUsers.classList.add('block'); loadUsers(); });
-tabEvidenceBtn.addEventListener('click', () => { resetTabs(); tabEvidenceBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secEvidence.classList.remove('hidden'); secEvidence.classList.add('block'); loadEvidence(); });
+function setTab(tabId, secId, loadFn) {
+  resetTabs(); 
+  const tab = document.getElementById(tabId); if(tab) tab.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; 
+  const sec = document.getElementById(secId); if(sec) { sec.classList.remove('hidden'); sec.classList.add('block'); }
+  if(loadFn) loadFn();
+}
+
+document.getElementById('tabInventoryBtn').addEventListener('click', () => setTab('tabInventoryBtn', 'inventorySection'));
+document.getElementById('tabMatrixBtn').addEventListener('click', () => setTab('tabMatrixBtn', 'matrixSection', loadMatrix));
+document.getElementById('tabRisksBtn').addEventListener('click', () => setTab('tabRisksBtn', 'risksSection', loadRisks));
+document.getElementById('tabDeliverablesBtn').addEventListener('click', () => setTab('tabDeliverablesBtn', 'deliverablesSection', loadDeliverables));
+document.getElementById('tabCompaniesBtn').addEventListener('click', () => setTab('tabCompaniesBtn', 'companiesSection'));
+document.getElementById('tabLeadsBtn').addEventListener('click', () => setTab('tabLeadsBtn', 'leadsSection', loadLeads));
+document.getElementById('tabUsersBtn').addEventListener('click', () => setTab('tabUsersBtn', 'usersSection', loadUsers));
+document.getElementById('tabEvidenceBtn').addEventListener('click', () => setTab('tabEvidenceBtn', 'evidenceSection', loadEvidence));
 
 // MODALES
 const modalModel = document.getElementById('newModelModal');
@@ -62,6 +60,18 @@ document.getElementById('openUserModalBtn').addEventListener('click', async () =
   modalUser.classList.remove('hidden');
 });
 document.getElementById('closeUserModalBtn').addEventListener('click', () => modalUser.classList.add('hidden'));
+
+const modalDeliverable = document.getElementById('newDeliverableModal');
+document.getElementById('openDeliverableModalBtn').addEventListener('click', () => modalDeliverable.classList.remove('hidden'));
+document.getElementById('closeDeliverableModalBtn').addEventListener('click', () => modalDeliverable.classList.add('hidden'));
+
+const modalRisk = document.getElementById('newRiskModal');
+document.getElementById('openRiskModalBtn').addEventListener('click', () => {
+  const selectCompany = document.getElementById('riskCompany');
+  selectCompany.innerHTML = `<option value="">Global (Toda la org)</option>` + companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+  modalRisk.classList.remove('hidden');
+});
+document.getElementById('closeRiskModalBtn').addEventListener('click', () => modalRisk.classList.add('hidden'));
 
 const modalDiag = document.getElementById('diagnosticModal');
 const diagFormCont = document.getElementById('diagnosticFormContainer');
@@ -96,8 +106,10 @@ async function init() {
         selector.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
         selector.addEventListener('change', (e) => {
           currentOrgId = e.target.value; loadDashboardData();
-          if(!secMatrix.classList.contains('hidden')) loadMatrix();
-          if(!secEvidence.classList.contains('hidden')) loadEvidence();
+          if(!document.getElementById('matrixSection').classList.contains('hidden')) loadMatrix();
+          if(!document.getElementById('risksSection').classList.contains('hidden')) loadRisks();
+          if(!document.getElementById('deliverablesSection').classList.contains('hidden')) loadDeliverables();
+          if(!document.getElementById('evidenceSection').classList.contains('hidden')) loadEvidence();
         });
       }
     } catch (e) { console.error("Error cargando orgs:", e); }
@@ -150,12 +162,9 @@ async function loadMatrix() {
     const evaluations = await res.json();
     const matrixGrid = document.getElementById('matrixGrid');
     const frameworks = ["ISO 42001", "NIST AI RMF", "EU AI Act", "LFPDPPP"];
-    
     matrixGrid.innerHTML = frameworks.map(fw => {
-      // Buscar la evaluación más reciente para este framework
       const evalForFw = evaluations.find(e => e.framework === fw && e.orgId === currentOrgId);
       let score = "--"; let statusText = "No Evaluado"; let color = "text-slate-500"; let border = "border-slate-700"; let bg = "bg-slate-800/30";
-      
       if (evalForFw) {
         score = `${evalForFw.score}%`;
         if (evalForFw.score > 85) { statusText = "Excelente"; color = "text-teal-400"; border = "border-teal-800"; bg = "bg-teal-950/20"; }
@@ -163,29 +172,88 @@ async function loadMatrix() {
         else if (evalForFw.score > 30) { statusText = "En Desarrollo"; color = "text-amber-400"; border = "border-amber-800"; bg = "bg-amber-950/20"; }
         else { statusText = "Crítico"; color = "text-rose-400"; border = "border-rose-800"; bg = "bg-rose-950/20"; }
       }
-
-      return `
-        <div class="p-6 rounded-2xl border ${border} ${bg}">
-          <h3 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">${fw}</h3>
-          <div class="flex justify-between items-end">
-            <div>
-              <p class="text-4xl font-black ${color} mb-1">${score}</p>
-              <p class="text-xs font-semibold ${color}">${statusText}</p>
-            </div>
-            <button onclick="openDiagnosticFor('${fw}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition">Evaluar</button>
-          </div>
-        </div>
-      `;
+      return `<div class="p-6 rounded-2xl border ${border} ${bg}"><h3 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">${fw}</h3><div class="flex justify-between items-end"><div><p class="text-4xl font-black ${color} mb-1">${score}</p><p class="text-xs font-semibold ${color}">${statusText}</p></div><button onclick="openDiagnosticFor('${fw}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition">Evaluar</button></div></div>`;
     }).join('');
   } catch (error) { console.error("Error cargando matriz:", error); }
 }
 
-function openDiagnosticFor(fw) {
-  document.getElementById('tabInventoryBtn').click(); // Volver a inventario
-  document.getElementById('openDiagnosticBtn').click(); // Abrir modal
-  document.getElementById('diagFramework').value = fw; // Seleccionar el framework
+function openDiagnosticFor(fw) { document.getElementById('tabInventoryBtn').click(); document.getElementById('openDiagnosticBtn').click(); document.getElementById('diagFramework').value = fw; }
+
+// 4. PLAN DE TRABAJO
+async function loadDeliverables() {
+  try {
+    const res = await fetch(`${API_URL}/gov/deliverables`, { headers });
+    let deliverables = await res.json(); deliverables = deliverables.filter(d => d.orgId === currentOrgId);
+    const tbody = document.getElementById('deliverablesTableBody');
+    if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
+    tbody.innerHTML = deliverables.map(d => {
+      let badgeColor = 'bg-slate-700 text-slate-300';
+      if (d.status === 'Pendiente') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
+      if (d.status === 'En Progreso') badgeColor = 'bg-amber-950 text-amber-400 border border-amber-800';
+      if (d.status === 'Completado') badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+      return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${d.taskName}</td><td class="py-3 px-4 text-slate-400">${d.phase}</td><td class="py-3 px-4 text-slate-400">${d.assignedTo}</td><td class="py-3 px-4"><select onchange="updateDeliverableStatus('${d._id}', this.value)" class="px-3 py-1 rounded-lg text-xs font-semibold uppercase ${badgeColor} outline-none cursor-pointer appearance-none text-center"><option value="Pendiente" ${d.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option><option value="En Progreso" ${d.status === 'En Progreso' ? 'selected' : ''}>En Progreso</option><option value="Completado" ${d.status === 'Completado' ? 'selected' : ''}>Completado</option></select></td></tr>`;
+    }).join('');
+  } catch (error) { console.error("Error plan:", error); }
 }
 
+async function updateDeliverableStatus(id, newStatus) {
+  try { await fetch(`${API_URL}/gov/deliverables/${id}`, { method: 'PUT', headers, body: JSON.stringify({ status: newStatus }) }); loadDeliverables(); } catch (error) { alert("Error actualizando estado"); }
+}
+
+document.getElementById('newDeliverableForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
+  const payload = { orgId: currentOrgId, taskName: document.getElementById('taskName').value, phase: document.getElementById('taskPhase').value, assignedTo: document.getElementById('taskAssignee').value, dueDate: document.getElementById('taskDate').value || null };
+  try { const res = await fetch(`${API_URL}/gov/deliverables`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newDeliverableModal').classList.add('hidden'); e.target.reset(); loadDeliverables(); } else alert('Error al guardar tarea'); } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Tarea'; btn.disabled = false; }
+});
+
+// 5. REGISTRO DE RIESGOS
+async function loadRisks() {
+  try {
+    const res = await fetch(`${API_URL}/gov/risks`, { headers });
+    let risks = await res.json(); risks = risks.filter(r => r.orgId === currentOrgId);
+    const tbody = document.getElementById('risksTableBody');
+    if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
+    
+    tbody.innerHTML = risks.map(r => {
+      let badgeColor = 'bg-slate-700 text-slate-300';
+      if (r.riskLevel === 'Crítico') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
+      if (r.riskLevel === 'Alto') badgeColor = 'bg-orange-950 text-orange-400 border border-orange-800';
+      if (r.riskLevel === 'Medio') badgeColor = 'bg-amber-950 text-amber-400 border border-amber-800';
+      if (r.riskLevel === 'Bajo') badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+
+      return `
+        <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+          <td class="py-3 px-4 font-semibold text-slate-200">${r.riskName}</td>
+          <td class="py-3 px-4 text-slate-400">${r.category}</td>
+          <td class="py-3 px-4 text-slate-400 text-center">${r.probability} / 5</td>
+          <td class="py-3 px-4 text-slate-400 text-center">${r.impact} / 5</td>
+          <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${r.riskLevel} (${r.riskScore})</span></td>
+          <td class="py-3 px-4 text-slate-400 text-xs max-w-xs truncate" title="${r.mitigationPlan}">${r.mitigationPlan}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (error) { console.error("Error cargando riesgos:", error); }
+}
+
+document.getElementById('newRiskForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
+  const payload = {
+    orgId: currentOrgId,
+    companyId: document.getElementById('riskCompany').value,
+    riskName: document.getElementById('riskName').value,
+    category: document.getElementById('riskCategory').value,
+    probability: parseInt(document.getElementById('riskProb').value),
+    impact: parseInt(document.getElementById('riskImpact').value),
+    mitigationPlan: document.getElementById('riskMitigation').value
+  };
+  try { 
+    const res = await fetch(`${API_URL}/gov/risks`, { method: 'POST', headers, body: JSON.stringify(payload) }); 
+    if (res.ok) { document.getElementById('newRiskModal').classList.add('hidden'); e.target.reset(); loadRisks(); } 
+    else alert('Error al guardar riesgo'); 
+  } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
+});
+
+// 6. RESTO DE FUNCIONES
 async function loadLeads() {
   try {
     const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
@@ -221,7 +289,6 @@ async function loadEvidence() {
   } catch (error) { document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error al cargar el expediente.</td></tr>`; }
 }
 
-// 4. SUBIR EVIDENCIA
 async function subirEvidencia(event, qId) {
   const file = event.target.files[0]; if (!file) return;
   const btn = document.getElementById(`btn_${qId}`); const status = document.getElementById(`status_${qId}`); const select = document.getElementById(qId);
@@ -238,12 +305,9 @@ async function subirEvidencia(event, qId) {
       btn.textContent = "❌ Rechazado"; btn.classList.replace('bg-slate-700', 'bg-rose-900');
       const errorMsg = data.error || (data.validation ? data.validation.razon : "No válido"); status.textContent = errorMsg; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate"; select.value = "0"; select.dataset.hasEvidence = "false";
     }
-  } catch (err) {
-    console.error(err); btn.textContent = "📎 Subir Evidencia"; status.textContent = "Error de conexión"; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate"; select.dataset.hasEvidence = "false";
-  } finally { btn.disabled = false; event.target.value = ""; }
+  } catch (err) { console.error(err); btn.textContent = "📎 Subir Evidencia"; status.textContent = "Error de conexión"; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate"; select.dataset.hasEvidence = "false"; } finally { btn.disabled = false; event.target.value = ""; }
 }
 
-// 5. FORMULARIOS
 document.getElementById('newModelForm').addEventListener('submit', async (e) => {
   e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
   const payload = { companyId: document.getElementById('modelCompany').value, model_name: document.getElementById('modelName').value, category: document.getElementById('modelCategory').value, risk_level: document.getElementById('modelRisk').value, vendor: 'Desconocido', status: 'en_uso' };
@@ -262,13 +326,11 @@ document.getElementById('newUserForm').addEventListener('submit', async (e) => {
   try { const res = await fetch(`${API_URL}/gov/users`, { method: 'POST', headers, body: JSON.stringify(payload) }); let data = {}; try { data = await res.json(); } catch (e) {} if (res.ok) { document.getElementById('newUserModal').classList.add('hidden'); e.target.reset(); loadUsers(); alert("Usuario creado exitosamente."); } else { alert('Error: ' + (data.error || 'Revisa la terminal')); } } catch (err) { alert('Error de red.'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
 });
 
-// 6. DIAGNÓSTICO (CON FRAMEWORK)
 document.getElementById('diagnosticForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Calculando...'; btn.disabled = true;
   const companySelect = document.getElementById('diagCompany'); const companyId = companySelect.value; const companyName = companySelect.options[companySelect.selectedIndex].text;
   const framework = document.getElementById('diagFramework').value;
-  
   const qSelects = document.querySelectorAll('.diag-q');
   let totalScore = 0; const answers = {}; let phase1 = [], phase2 = [], phase3 = [];
   const recs = [ {p1:"Política IA.",p2:"Capacitar.",p3:"Auditar."}, {p1:"Oficial IA.",p2:"Comité.",p3:"Revisión."}, {p1:"Presupuesto.",p2:"Plan anual.",p3:"ROI."}, {p1:"Checklist AIA.",p2:"Automatizar.",p3:"Auditoría."}, {p1:"Modelos críticos.",p2:"Equidad.",p3:"Monitoreo."}, {p1:"Kill Switch.",p2:"Simulacros.",p3:"BCP."}, {p1:"Linaje.",p2:"Catálogo.",p3:"DPIA."}, {p1:"Métricas.",p2:"MLOps.",p3:"Reentrenar."}, {p1:"Backup prompts.",p2:"Git.",p3:"Trazabilidad."}, {p1:"Aviso IA.",p2:"Explicar.",p3:"XAI."}, {p1:"Caja negra.",p2:"Reportes.",p3:"Razones."}, {p1:"Buzón quejas.",p2:"Human-in-loop.",p3:"Métricas."} ];
