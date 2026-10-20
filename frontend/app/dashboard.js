@@ -15,7 +15,7 @@ let companiesCache = [];
 let orgsCache = [];
 
 // ==========================================
-// 1. EVENTOS BÁSICOS (Se configuran primero para que no fallen)
+// 1. EVENTOS BÁSICOS
 // ==========================================
 document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('gov_token');
@@ -23,25 +23,28 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   window.location.href = 'index.html';
 });
 
-// TABS
 const tabInvBtn = document.getElementById('tabInventoryBtn');
 const tabCompBtn = document.getElementById('tabCompaniesBtn');
 const tabLeadsBtn = document.getElementById('tabLeadsBtn');
 const tabUsersBtn = document.getElementById('tabUsersBtn');
+const tabEvidenceBtn = document.getElementById('tabEvidenceBtn');
+
 const secInv = document.getElementById('inventorySection');
 const secComp = document.getElementById('companiesSection');
 const secLeads = document.getElementById('leadsSection');
 const secUsers = document.getElementById('usersSection');
+const secEvidence = document.getElementById('evidenceSection');
 
 function resetTabs() {
-  [tabInvBtn, tabCompBtn, tabLeadsBtn, tabUsersBtn].forEach(b => b.className = 'text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap');
-  [secInv, secComp, secLeads, secUsers].forEach(s => { s.classList.add('hidden'); s.classList.remove('block'); });
+  [tabInvBtn, tabCompBtn, tabLeadsBtn, tabUsersBtn, tabEvidenceBtn].forEach(b => b.className = 'text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap');
+  [secInv, secComp, secLeads, secUsers, secEvidence].forEach(s => { s.classList.add('hidden'); s.classList.remove('block'); });
 }
 
 tabInvBtn.addEventListener('click', () => { resetTabs(); tabInvBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secInv.classList.remove('hidden'); secInv.classList.add('block'); });
 tabCompBtn.addEventListener('click', () => { resetTabs(); tabCompBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secComp.classList.remove('hidden'); secComp.classList.add('block'); });
 tabLeadsBtn.addEventListener('click', () => { resetTabs(); tabLeadsBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secLeads.classList.remove('hidden'); secLeads.classList.add('block'); loadLeads(); });
 tabUsersBtn.addEventListener('click', () => { resetTabs(); tabUsersBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secUsers.classList.remove('hidden'); secUsers.classList.add('block'); loadUsers(); });
+tabEvidenceBtn.addEventListener('click', () => { resetTabs(); tabEvidenceBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secEvidence.classList.remove('hidden'); secEvidence.classList.add('block'); loadEvidence(); });
 
 // MODALES
 const modalModel = document.getElementById('newModelModal');
@@ -56,10 +59,7 @@ const modalUser = document.getElementById('newUserModal');
 document.getElementById('openUserModalBtn').addEventListener('click', async () => {
   const userOrgSelect = document.getElementById('userOrg');
   if (orgsCache.length === 0) {
-    try {
-      const res = await fetch(`${API_URL}/gov/orgs`, { headers });
-      if (res.ok) orgsCache = await res.json();
-    } catch(e) {}
+    try { const res = await fetch(`${API_URL}/gov/orgs`, { headers }); if (res.ok) orgsCache = await res.json(); } catch(e) {}
   }
   userOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
   modalUser.classList.remove('hidden');
@@ -94,7 +94,7 @@ document.getElementById('closeDiagBtn').addEventListener('click', () => { modalD
 document.getElementById('closeResultBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
 
 // ==========================================
-// 2. CARGAR DATOS
+// 2. CARGA DE DATOS
 // ==========================================
 async function init() {
   currentUser = JSON.parse(localStorage.getItem('gov_user'));
@@ -105,9 +105,7 @@ async function init() {
 
   if (currentUser.role === 'superadmin') {
     const container = document.getElementById('orgSelectorContainer');
-    container.classList.remove('hidden');
-    container.classList.add('flex');
-    
+    container.classList.remove('hidden'); container.classList.add('flex');
     try {
       const res = await fetch(`${API_URL}/gov/orgs`, { headers });
       if (res.ok) {
@@ -117,6 +115,7 @@ async function init() {
         selector.addEventListener('change', (e) => {
           currentOrgId = e.target.value;
           loadDashboardData();
+          if(!secEvidence.classList.contains('hidden')) loadEvidence();
         });
       }
     } catch (e) { console.error("Error cargando orgs:", e); }
@@ -208,17 +207,11 @@ async function loadLeads() {
     const res = await fetch(`${API_URL}/leads`, { headers });
     const leads = await res.json();
     const tbody = document.getElementById('leadsTableBody');
-    
-    if (leads.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Aún no hay prospectos.</td></tr>`;
-      return;
-    }
-    
+    if (leads.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Aún no hay prospectos.</td></tr>`; return; }
     tbody.innerHTML = leads.map(l => {
       const date = new Date(l.ts).toLocaleDateString('es-MX');
       let badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
       if (l.risk_level === 'alto') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
-      
       return `
         <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
           <td class="py-3 px-4 text-slate-500">${date}</td>
@@ -226,8 +219,7 @@ async function loadLeads() {
           <td class="py-3 px-4 text-teal-400">${l.email}</td>
           <td class="py-3 px-4 text-slate-300">${l.company}</td>
           <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${l.risk_level}</span></td>
-        </tr>
-      `;
+        </tr>`;
     }).join('');
   } catch (error) {}
 }
@@ -237,7 +229,6 @@ async function loadUsers() {
     const res = await fetch(`${API_URL}/gov/users`, { headers });
     const users = await res.json();
     const tbody = document.getElementById('usersTableBody');
-    
     tbody.innerHTML = users.map(u => `
       <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
         <td class="py-3 px-4 font-semibold text-slate-200">${u.name || 'Sin nombre'}</td>
@@ -250,7 +241,51 @@ async function loadUsers() {
 }
 
 // ==========================================
-// 3. SUBIR EVIDENCIA
+// 3. EXPEDIENTE DIGITAL (EVIDENCIAS)
+// ==========================================
+async function loadEvidence() {
+  try {
+    const res = await fetch(`${API_URL}/gov/evidence`, { headers });
+    if (!res.ok) throw new Error('Error al cargar evidencias');
+    
+    let evidence = await res.json();
+    const tbody = document.getElementById('evidenceTableBody');
+    
+    if (evidence.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay evidencias subidas aún.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = evidence.map(e => {
+      const date = new Date(e.ts).toLocaleDateString('es-MX');
+      let statusColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+      if (!e.validation.valido) statusColor = 'bg-rose-950 text-rose-400 border border-rose-800';
+      
+      const downloadBtn = `<a href="${e.r2Url}" target="_blank" class="text-teal-400 hover:text-teal-300 underline text-xs font-bold">Descargar PDF</a>`;
+
+      return `
+        <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+          <td class="py-3 px-4 text-slate-500">${date}</td>
+          <td class="py-3 px-4 text-slate-300 font-mono text-xs">${e.fileName.split('/').pop()}</td>
+          <td class="py-3 px-4 text-slate-200 font-semibold uppercase">${e.questionId.replace('_', ' ')}</td>
+          <td class="py-3 px-4">
+            <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${statusColor}">
+              ${e.validation.valido ? 'Válido' : 'Rechazado'}
+            </span>
+            <div class="text-[10px] text-slate-500 mt-1 max-w-xs truncate" title="${e.validation.razon}">${e.validation.razon}</div>
+          </td>
+          <td class="py-3 px-4">${downloadBtn}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error(error);
+    document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error al cargar el expediente.</td></tr>`;
+  }
+}
+
+// ==========================================
+// 4. SUBIR EVIDENCIA
 // ==========================================
 async function subirEvidencia(event, qId) {
   const file = event.target.files[0];
@@ -261,15 +296,9 @@ async function subirEvidencia(event, qId) {
   const select = document.getElementById(qId);
   const companyId = document.getElementById('diagCompany').value;
 
-  if (!companyId) {
-    alert("Por favor selecciona una filial primero.");
-    event.target.value = "";
-    return;
-  }
+  if (!companyId) { alert("Por favor selecciona una filial primero."); event.target.value = ""; return; }
 
-  btn.textContent = "⏳ Analizando...";
-  btn.disabled = true;
-  status.textContent = "";
+  btn.textContent = "⏳ Analizando..."; btn.disabled = true; status.textContent = "";
   
   const formData = new FormData();
   formData.append("file", file);
@@ -286,36 +315,22 @@ async function subirEvidencia(event, qId) {
     const data = await res.json();
 
     if (res.ok && data.validation && data.validation.valido) {
-      btn.textContent = "✅ Validado";
-      btn.classList.replace('bg-slate-700', 'bg-teal-900');
-      btn.classList.replace('hover:bg-slate-600', 'hover:bg-teal-800');
-      status.textContent = "Aprobado";
-      status.className = "text-[10px] mt-1 text-teal-400 font-bold text-right w-36 truncate";
-      select.value = "5"; 
-      select.dataset.hasEvidence = "true";
+      btn.textContent = "✅ Validado"; btn.classList.replace('bg-slate-700', 'bg-teal-900'); btn.classList.replace('hover:bg-slate-600', 'hover:bg-teal-800');
+      status.textContent = "Aprobado"; status.className = "text-[10px] mt-1 text-teal-400 font-bold text-right w-36 truncate";
+      select.value = "5"; select.dataset.hasEvidence = "true";
     } else {
-      btn.textContent = "❌ Rechazado";
-      btn.classList.replace('bg-slate-700', 'bg-rose-900');
+      btn.textContent = "❌ Rechazado"; btn.classList.replace('bg-slate-700', 'bg-rose-900');
       const errorMsg = data.error || (data.validation ? data.validation.razon : "No válido");
-      status.textContent = errorMsg;
-      status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate";
-      select.value = "0";
-      select.dataset.hasEvidence = "false";
+      status.textContent = errorMsg; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate";
+      select.value = "0"; select.dataset.hasEvidence = "false";
     }
   } catch (err) {
-    console.error(err);
-    btn.textContent = "📎 Subir Evidencia";
-    status.textContent = "Error de conexión";
-    status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate";
-    select.dataset.hasEvidence = "false";
-  } finally {
-    btn.disabled = false;
-    event.target.value = "";
-  }
+    console.error(err); btn.textContent = "📎 Subir Evidencia"; status.textContent = "Error de conexión"; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate"; select.dataset.hasEvidence = "false";
+  } finally { btn.disabled = false; event.target.value = ""; }
 }
 
 // ==========================================
-// 4. FORMULARIOS (MODELOS, FILIALES, USUARIOS)
+// 5. FORMULARIOS
 // ==========================================
 document.getElementById('newModelForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -323,8 +338,7 @@ document.getElementById('newModelForm').addEventListener('submit', async (e) => 
   const payload = { companyId: document.getElementById('modelCompany').value, model_name: document.getElementById('modelName').value, category: document.getElementById('modelCategory').value, risk_level: document.getElementById('modelRisk').value, vendor: 'Desconocido', status: 'en_uso' };
   try {
     const res = await fetch(`${API_URL}/gov/ai-inventory`, { method: 'POST', headers, body: JSON.stringify(payload) });
-    if (res.ok) { document.getElementById('newModelModal').classList.add('hidden'); e.target.reset(); loadInventory(); } 
-    else alert('Error al guardar');
+    if (res.ok) { document.getElementById('newModelModal').classList.add('hidden'); e.target.reset(); loadInventory(); } else alert('Error al guardar');
   } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Modelo'; btn.disabled = false; }
 });
 
@@ -334,8 +348,7 @@ document.getElementById('newCompanyForm').addEventListener('submit', async (e) =
   const payload = { name: document.getElementById('companyNameInput').value, riskProfile: document.getElementById('companyProfileInput').value };
   try {
     const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { method: 'POST', headers, body: JSON.stringify(payload) });
-    if (res.ok) { document.getElementById('newCompanyModal').classList.add('hidden'); e.target.reset(); loadCompanies(); } 
-    else alert('Error al guardar');
+    if (res.ok) { document.getElementById('newCompanyModal').classList.add('hidden'); e.target.reset(); loadCompanies(); } else alert('Error al guardar');
   } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Filial'; btn.disabled = false; }
 });
 
@@ -352,7 +365,7 @@ document.getElementById('newUserForm').addEventListener('submit', async (e) => {
 });
 
 // ==========================================
-// 5. DIAGNÓSTICO (EVALUACIÓN)
+// 6. DIAGNÓSTICO
 // ==========================================
 document.getElementById('diagnosticForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -367,7 +380,6 @@ document.getElementById('diagnosticForm').addEventListener('submit', async (e) =
     let val = parseInt(sel.value);
     const hasEvidence = sel.dataset.hasEvidence === "true";
     if (val >= 4 && !hasEvidence) val = 2; 
-    
     totalScore += val; answers[`q${index+1}`] = { score: val, evidence: hasEvidence };
     const rec = recs[index];
     if (val <= 2) { phase1.push(rec.p1); phase2.push(rec.p2); phase3.push(rec.p3); }
@@ -421,5 +433,4 @@ document.getElementById('btnGeneratePolicy').addEventListener('click', () => {
   policyWindow.document.close();
 });
 
-// Arrancar
 init();
