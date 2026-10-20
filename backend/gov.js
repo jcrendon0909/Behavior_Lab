@@ -77,13 +77,15 @@ export function createGovRouter() {
   });
 
   router.post("/ai-inventory", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
-    const { companyId, model_name, category, vendor, data_sensitivity = [], risk_level = "medio", status = "evaluacion", description } = req.body;
-    const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
-    if (!company) return res.status(404).json({ error: "Company no encontrada" });
-    if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
-    const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), model_name, category, vendor: vendor || null, data_sensitivity, risk_level, status, description, createdAt: new Date(), updatedAt: new Date(), createdBy: req.user.userId };
-    const result = await db(req).collection("ai_inventory").insertOne(doc);
-    res.json({ _id: result.insertedId, ...doc });
+    try {
+      const { companyId, model_name, category, vendor, data_sensitivity = [], risk_level = "medio", status = "evaluacion", description } = req.body;
+      const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
+      if (!company) return res.status(404).json({ error: "Company no encontrada" });
+      if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
+      const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), model_name, category, vendor: vendor || null, data_sensitivity, risk_level, status, description, createdAt: new Date(), updatedAt: new Date(), createdBy: req.user.userId };
+      const result = await db(req).collection("ai_inventory").insertOne(doc);
+      res.json({ _id: result.insertedId, ...doc });
+    } catch(e) { res.status(500).json({ error: e.message }); }
   });
 
   router.get("/ai-inventory", auth(), async (req, res) => {
@@ -92,13 +94,15 @@ export function createGovRouter() {
   });
 
   router.post("/evaluations", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
-    const { companyId, framework, answers, score, risk_level, recommendations } = req.body;
-    const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
-    if (!company) return res.status(404).json({ error: "Company no encontrada" });
-    if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
-    const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), framework, answers, score, risk_level, recommendations, createdAt: new Date(), createdBy: req.user.userId };
-    const result = await db(req).collection("risk_evaluations").insertOne(doc);
-    res.json({ _id: result.insertedId, ...doc });
+    try {
+      const { companyId, framework, answers, score, risk_level, recommendations } = req.body;
+      const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
+      if (!company) return res.status(404).json({ error: "Company no encontrada" });
+      if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
+      const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), framework, answers, score, risk_level, recommendations, createdAt: new Date(), createdBy: req.user.userId };
+      const result = await db(req).collection("risk_evaluations").insertOne(doc);
+      res.json({ _id: result.insertedId, ...doc });
+    } catch(e) { res.status(500).json({ error: e.message }); }
   });
 
   router.get("/evaluations", auth(), async (req, res) => {
@@ -121,11 +125,14 @@ export function createGovRouter() {
   });
 
   router.post("/deliverables", auth(["superadmin", "admin"]), async (req, res) => {
-    const { orgId, taskName, phase, assignedTo, dueDate } = req.body;
-    if (req.user.role !== "superadmin" && req.user.orgId !== orgId) return res.status(403).json({ error: "Sin permisos" });
-    const doc = { orgId: new ObjectId(orgId), taskName, phase: phase || "Fase 1: Diagnóstico", assignedTo: assignedTo || "Equipo BehAvIorLab", dueDate: dueDate || null, status: "Pendiente", createdAt: new Date() };
-    const result = await db(req).collection("deliverables").insertOne(doc);
-    res.json({ _id: result.insertedId, ...doc });
+    try {
+      const { orgId, taskName, phase, assignedTo, dueDate } = req.body;
+      if (!orgId || !taskName) return res.status(400).json({ error: "Falta orgId o taskName" });
+      if (req.user.role !== "superadmin" && req.user.orgId !== orgId) return res.status(403).json({ error: "Sin permisos" });
+      const doc = { orgId: new ObjectId(orgId), taskName, phase: phase || "Fase 1: Diagnóstico", assignedTo: assignedTo || "Equipo BehAvIorLab", dueDate: dueDate || null, status: "Pendiente", createdAt: new Date() };
+      const result = await db(req).collection("deliverables").insertOne(doc);
+      res.json({ ok: true, _id: result.insertedId, ...doc });
+    } catch (error) { res.status(500).json({ error: error.message }); }
   });
 
   router.put("/deliverables/:id", auth(["superadmin", "admin"]), async (req, res) => {
@@ -133,7 +140,6 @@ export function createGovRouter() {
     res.json({ ok: true });
   });
 
-  // 🚨 NUEVO: ELIMINAR TAREA
   router.delete("/deliverables/:id", auth(["superadmin", "admin"]), async (req, res) => {
     await db(req).collection("deliverables").deleteOne({ _id: new ObjectId(req.params.id) });
     res.json({ ok: true });
@@ -145,34 +151,36 @@ export function createGovRouter() {
   });
 
   router.post("/risks", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
-    const { orgId, companyId, riskName, category, probability, impact, mitigationPlan } = req.body;
-    if (req.user.role !== "superadmin" && req.user.orgId !== orgId) return res.status(403).json({ error: "Sin permisos" });
-    
-    const riskScore = probability * impact;
-    let riskLevel = "Bajo";
-    if (riskScore >= 15) riskLevel = "Crítico";
-    else if (riskScore >= 8) riskLevel = "Alto";
-    else if (riskScore >= 4) riskLevel = "Medio";
+    try {
+      const { orgId, companyId, riskName, category, probability, impact, mitigationPlan } = req.body;
+      if (!orgId || !riskName) return res.status(400).json({ error: "Falta orgId o riskName" });
+      if (req.user.role !== "superadmin" && req.user.orgId !== orgId) return res.status(403).json({ error: "Sin permisos" });
+      
+      const riskScore = probability * impact;
+      let riskLevel = "Bajo";
+      if (riskScore >= 15) riskLevel = "Crítico";
+      else if (riskScore >= 8) riskLevel = "Alto";
+      else if (riskScore >= 4) riskLevel = "Medio";
 
-    const doc = { 
-      orgId: new ObjectId(orgId), 
-      companyId: companyId ? new ObjectId(companyId) : null,
-      riskName, 
-      category: category || "Operacional", 
-      probability, 
-      impact, 
-      riskScore,
-      riskLevel,
-      mitigationPlan: mitigationPlan || "Pendiente de definir",
-      status: "Abierto",
-      createdAt: new Date(),
-      createdBy: req.user.userId
-    };
-    const result = await db(req).collection("risks").insertOne(doc);
-    res.json({ _id: result.insertedId, ...doc });
+      const doc = { 
+        orgId: new ObjectId(orgId), 
+        companyId: companyId ? new ObjectId(companyId) : null,
+        riskName, 
+        category: category || "Operacional", 
+        probability, 
+        impact, 
+        riskScore,
+        riskLevel,
+        mitigationPlan: mitigationPlan || "Pendiente de definir",
+        status: "Abierto",
+        createdAt: new Date(),
+        createdBy: req.user.userId
+      };
+      const result = await db(req).collection("risks").insertOne(doc);
+      res.json({ ok: true, _id: result.insertedId, ...doc });
+    } catch (error) { res.status(500).json({ error: error.message }); }
   });
 
-  // 🚨 NUEVO: ELIMINAR RIESGO
   router.delete("/risks/:id", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
     await db(req).collection("risks").deleteOne({ _id: new ObjectId(req.params.id) });
     res.json({ ok: true });

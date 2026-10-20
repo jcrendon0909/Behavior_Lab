@@ -307,7 +307,10 @@ function openDiagnosticFor(fw) { document.getElementById('tabInventoryBtn').clic
 async function loadDeliverables() {
   try {
     const res = await fetch(`${API_URL}/gov/deliverables`, { headers });
-    let deliverables = await res.json(); deliverables = deliverables.filter(d => d.orgId === currentOrgId);
+    let deliverables = await res.json(); 
+    // console.log("API Deliverables:", deliverables, "Current Org:", currentOrgId); // Descomentar para debug si falla
+    deliverables = deliverables.filter(d => d.orgId === currentOrgId);
+    
     const tbody = document.getElementById('deliverablesTableBody');
     if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
     tbody.innerHTML = deliverables.map(d => {
@@ -350,16 +353,36 @@ async function deleteDeliverable(id) {
 }
 
 document.getElementById('newDeliverableForm').addEventListener('submit', async (e) => {
-  e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
+  e.preventDefault(); 
+  const btn = e.target.querySelector('button[type="submit"]'); 
+  btn.textContent = 'Guardando...'; btn.disabled = true;
   const payload = { orgId: currentOrgId, taskName: document.getElementById('taskName').value, phase: document.getElementById('taskPhase').value, assignedTo: document.getElementById('taskAssignee').value, dueDate: document.getElementById('taskDate').value || null };
-  try { const res = await fetch(`${API_URL}/gov/deliverables`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newDeliverableModal').classList.add('hidden'); e.target.reset(); loadDeliverables(); } else alert('Error al guardar tarea'); } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Tarea'; btn.disabled = false; }
+  
+  try { 
+    const res = await fetch(`${API_URL}/gov/deliverables`, { method: 'POST', headers, body: JSON.stringify(payload) }); 
+    if (res.ok) { 
+      document.getElementById('newDeliverableModal').classList.add('hidden'); 
+      e.target.reset(); 
+      loadDeliverables(); 
+    } else { 
+      const err = await res.json().catch(()=>({})); 
+      alert('Error al guardar tarea: ' + (err.error || res.status)); 
+    } 
+  } catch (err) { 
+    alert('Error de red: ' + err.message); 
+  } finally { 
+    btn.textContent = 'Guardar Tarea'; btn.disabled = false; 
+  }
 });
 
 // 7. REGISTRO DE RIESGOS
 async function loadRisks() {
   try {
     const res = await fetch(`${API_URL}/gov/risks`, { headers });
-    let risks = await res.json(); risks = risks.filter(r => r.orgId === currentOrgId);
+    let risks = await res.json(); 
+    // console.log("API Risks:", risks, "Current Org:", currentOrgId); // Descomentar para debug si falla
+    risks = risks.filter(r => r.orgId === currentOrgId);
+    
     const tbody = document.getElementById('risksTableBody');
     if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
     
@@ -396,7 +419,10 @@ async function deleteRisk(id) {
 }
 
 document.getElementById('newRiskForm').addEventListener('submit', async (e) => {
-  e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
+  e.preventDefault(); 
+  const btn = e.target.querySelector('button[type="submit"]'); 
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+  
   const payload = {
     orgId: currentOrgId,
     companyId: document.getElementById('riskCompany').value,
@@ -406,14 +432,25 @@ document.getElementById('newRiskForm').addEventListener('submit', async (e) => {
     impact: parseInt(document.getElementById('riskImpact').value),
     mitigationPlan: document.getElementById('riskMitigation').value
   };
+  
   try { 
     const res = await fetch(`${API_URL}/gov/risks`, { method: 'POST', headers, body: JSON.stringify(payload) }); 
-    if (res.ok) { document.getElementById('newRiskModal').classList.add('hidden'); e.target.reset(); loadRisks(); } 
-    else alert('Error al guardar riesgo'); 
-  } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
+    if (res.ok) { 
+      document.getElementById('newRiskModal').classList.add('hidden'); 
+      e.target.reset(); 
+      loadRisks(); 
+    } else { 
+      const err = await res.json().catch(()=>({})); 
+      alert('Error al guardar riesgo: ' + (err.error || res.status)); 
+    } 
+  } catch (err) { 
+    alert('Error de red: ' + err.message); 
+  } finally { 
+    btn.textContent = 'Guardar Riesgo'; btn.disabled = false; 
+  }
 });
 
-// 8. LEADS, USUARIOS Y EVIDENCIA
+// 8. RESTO DE FUNCIONES
 async function loadLeads() {
   try {
     const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
