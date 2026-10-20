@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('gov_token'); localStorage.removeItem('gov_user'); window.location.href = 'index.html';
   });
 
-  const tabs = ['tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabLeadsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
-  const sections = ['inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'leadsSection', 'usersSection', 'evidenceSection'];
+  const tabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabLeadsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
+  const sections = ['dashboardSection', 'inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'leadsSection', 'usersSection', 'evidenceSection'];
 
   function resetTabs() {
     tabs.forEach(id => { const el = document.getElementById(id); if(el) el.className = 'text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap'; });
@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(loadFn) loadFn();
   }
 
+  const tabDash = document.getElementById('tabDashboardBtn'); if(tabDash) tabDash.addEventListener('click', () => setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard));
   const tabInv = document.getElementById('tabInventoryBtn'); if(tabInv) tabInv.addEventListener('click', () => setTab('tabInventoryBtn', 'inventorySection'));
   const tabMat = document.getElementById('tabMatrixBtn'); if(tabMat) tabMat.addEventListener('click', () => setTab('tabMatrixBtn', 'matrixSection', loadMatrix));
   const tabRis = document.getElementById('tabRisksBtn'); if(tabRis) tabRis.addEventListener('click', () => setTab('tabRisksBtn', 'risksSection', loadRisks));
@@ -234,7 +235,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const selector = document.getElementById('orgSelector');
           selector.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
           selector.addEventListener('change', (e) => {
-            currentOrgId = e.target.value; loadDashboardData();
+            currentOrgId = e.target.value; 
+            loadDashboardData();
+            // Recargar la pestaña activa si es diferente al dashboard
+            if(!document.getElementById('dashboardSection').classList.contains('hidden')) loadExecutiveDashboard();
             if(!document.getElementById('matrixSection').classList.contains('hidden')) loadMatrix();
             if(!document.getElementById('risksSection').classList.contains('hidden')) loadRisks();
             if(!document.getElementById('deliverablesSection').classList.contains('hidden')) loadDeliverables();
@@ -246,10 +250,80 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('tabLeadsBtn').classList.add('hidden');
       document.getElementById('tabUsersBtn').classList.add('hidden');
     }
-    loadDashboardData();
+    
+    // Al iniciar, forzamos la carga del Dashboard Ejecutivo
+    setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard);
+    loadDashboardData(); // Para llenar companiesCache
   }
 
   async function loadDashboardData() { await loadCompanies(); await loadInventory(); }
+
+  // NUEVO: DASHBOARD EJECUTIVO
+  async function loadExecutiveDashboard() {
+    try {
+      const [risksRes, tasksRes, evalsRes, evidenceRes] = await Promise.all([
+        fetch(`${API_URL}/gov/risks`, { headers }),
+        fetch(`${API_URL}/gov/deliverables`, { headers }),
+        fetch(`${API_URL}/gov/evaluations`, { headers }),
+        fetch(`${API_URL}/gov/evidence`, { headers })
+      ]);
+
+      const risks = (await risksRes.json()).filter(r => r.orgId === currentOrgId);
+      const tasks = (await tasksRes.json()).filter(d => d.orgId === currentOrgId);
+      const evaluations = (await evalsRes.json()).filter(e => e.orgId === currentOrgId);
+      const evidence = (await evidenceRes.json()).filter(e => {
+        // Filtrar evidencia es un poco más complejo porque usa companyId, pero podemos mostrarla toda si somos superadmin
+        return true; 
+      });
+
+      // 1. KPI Cumplimiento
+      const latestEval = evaluations[0]; // Asumiendo que vienen ordenadas por fecha desc
+      if (latestEval) {
+        document.getElementById('kpiCompliance').textContent = `${latestEval.score}%`;
+        document.getElementById('kpiCompliance').className = latestEval.score > 60 ? 'text-5xl font-black text-teal-400' : 'text-5xl font-black text-amber-400';
+      } else {
+        document.getElementById('kpiCompliance').textContent = `0%`;
+        document.getElementById('kpiCompliance').className = 'text-5xl font-black text-slate-500';
+      }
+
+      // 2. KPI Riesgos (Críticos + Altos)
+      const criticalRisks = risks.filter(r => r.riskLevel === 'Crítico' || r.riskLevel === 'Alto').length;
+      document.getElementById('kpiRisks').textContent = criticalRisks;
+      document.getElementById('kpiRisks').className = criticalRisks > 0 ? 'text-5xl font-black text-rose-400' : 'text-5xl font-black text-teal-400';
+
+      // 3. KPI Tareas
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter(t => t.status === 'Completado').length;
+      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      document.getElementById('kpiTasks').textContent = `${progress}%`;
+      document.getElementById('kpiTasksBar').style.width = `${progress}%`;
+
+      // 4. Riesgos Recientes
+      const recentRisksDiv = document.getElementById('dashRecentRisks');
+      if (risks.length === 0) {
+        recentRisksDiv.innerHTML = `<p class="text-sm text-slate-500">No hay riesgos registrados.</p>`;
+      } else {
+        recentRisksDiv.innerHTML = risks.slice(0, 3).map(r => {
+          let badgeColor = r.riskLevel === 'Crítico' ? 'text-rose-400' : (r.riskLevel === 'Alto' ? 'text-orange-400' : 'text-amber-400');
+          return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><p class="text-sm text-slate-300 truncate w-3/4">${r.riskName}</p><span class="text-xs font-bold ${badgeColor}">${r.riskLevel}</span></div>`;
+        }).join('');
+      }
+
+      // 5. Evidencias Recientes
+      const recentEvidenceDiv = document.getElementById('dashRecentEvidence');
+      if (evidence.length === 0) {
+        recentEvidenceDiv.innerHTML = `<p class="text-sm text-slate-500">No hay evidencias subidas.</p>`;
+      } else {
+        recentEvidenceDiv.innerHTML = evidence.slice(0, 3).map(e => {
+          const date = new Date(e.ts).toLocaleDateString('es-MX');
+          return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><div><p class="text-sm text-slate-300 truncate w-48">${e.fileName.split('/').pop()}</p><p class="text-[10px] text-slate-500">${date} · ${e.questionId.replace('_',' ')}</p></div><a href="${e.r2Url}" target="_blank" class="text-xs text-teal-400 hover:underline">Ver</a></div>`;
+        }).join('');
+      }
+
+    } catch (error) {
+      console.error("Error cargando Dashboard Ejecutivo:", error);
+    }
+  }
 
   async function loadCompanies() {
     try {
