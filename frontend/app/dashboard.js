@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3000'; // En producción será https://behavior-lab.onrender.com
+//const API_URL = 'http://localhost:3000'; // En producción será https://behavior-lab.onrender.com
+const API_URL = 'https://behavior-lab.onrender.com';
 const token = localStorage.getItem('gov_token');
 
 // 1. Escudo de seguridad (Auth Guard)

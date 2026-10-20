@@ -1,5 +1,5 @@
-const API_URL = 'http://localhost:3000'; // En producción será https://behavior-lab.onrender.com
-
+// const API_URL = 'http://localhost:3000'; En producción será https://behavior-lab.onrender.com
+const API_URL = 'https://behavior-lab.onrender.com';
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
