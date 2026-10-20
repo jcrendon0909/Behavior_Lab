@@ -14,33 +14,32 @@ let currentOrgId = null;
 let companiesCache = []; 
 let orgsCache = [];
 
-// ==========================================
 // 1. EVENTOS BÁSICOS
-// ==========================================
 document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.removeItem('gov_token');
-  localStorage.removeItem('gov_user');
-  window.location.href = 'index.html';
+  localStorage.removeItem('gov_token'); localStorage.removeItem('gov_user'); window.location.href = 'index.html';
 });
 
 const tabInvBtn = document.getElementById('tabInventoryBtn');
+const tabMatrixBtn = document.getElementById('tabMatrixBtn');
 const tabCompBtn = document.getElementById('tabCompaniesBtn');
 const tabLeadsBtn = document.getElementById('tabLeadsBtn');
 const tabUsersBtn = document.getElementById('tabUsersBtn');
 const tabEvidenceBtn = document.getElementById('tabEvidenceBtn');
 
 const secInv = document.getElementById('inventorySection');
+const secMatrix = document.getElementById('matrixSection');
 const secComp = document.getElementById('companiesSection');
 const secLeads = document.getElementById('leadsSection');
 const secUsers = document.getElementById('usersSection');
 const secEvidence = document.getElementById('evidenceSection');
 
 function resetTabs() {
-  [tabInvBtn, tabCompBtn, tabLeadsBtn, tabUsersBtn, tabEvidenceBtn].forEach(b => b.className = 'text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap');
-  [secInv, secComp, secLeads, secUsers, secEvidence].forEach(s => { s.classList.add('hidden'); s.classList.remove('block'); });
+  [tabInvBtn, tabMatrixBtn, tabCompBtn, tabLeadsBtn, tabUsersBtn, tabEvidenceBtn].forEach(b => b.className = 'text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap');
+  [secInv, secMatrix, secComp, secLeads, secUsers, secEvidence].forEach(s => { s.classList.add('hidden'); s.classList.remove('block'); });
 }
 
 tabInvBtn.addEventListener('click', () => { resetTabs(); tabInvBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secInv.classList.remove('hidden'); secInv.classList.add('block'); });
+tabMatrixBtn.addEventListener('click', () => { resetTabs(); tabMatrixBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secMatrix.classList.remove('hidden'); secMatrix.classList.add('block'); loadMatrix(); });
 tabCompBtn.addEventListener('click', () => { resetTabs(); tabCompBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secComp.classList.remove('hidden'); secComp.classList.add('block'); });
 tabLeadsBtn.addEventListener('click', () => { resetTabs(); tabLeadsBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secLeads.classList.remove('hidden'); secLeads.classList.add('block'); loadLeads(); });
 tabUsersBtn.addEventListener('click', () => { resetTabs(); tabUsersBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secUsers.classList.remove('hidden'); secUsers.classList.add('block'); loadUsers(); });
@@ -58,9 +57,7 @@ document.getElementById('closeCompanyModalBtn').addEventListener('click', () => 
 const modalUser = document.getElementById('newUserModal');
 document.getElementById('openUserModalBtn').addEventListener('click', async () => {
   const userOrgSelect = document.getElementById('userOrg');
-  if (orgsCache.length === 0) {
-    try { const res = await fetch(`${API_URL}/gov/orgs`, { headers }); if (res.ok) orgsCache = await res.json(); } catch(e) {}
-  }
+  if (orgsCache.length === 0) { try { const res = await fetch(`${API_URL}/gov/orgs`, { headers }); if (res.ok) orgsCache = await res.json(); } catch(e) {} }
   userOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
   modalUser.classList.remove('hidden');
 });
@@ -70,36 +67,21 @@ const modalDiag = document.getElementById('diagnosticModal');
 const diagFormCont = document.getElementById('diagnosticFormContainer');
 const diagResultCont = document.getElementById('diagnosticResultContainer');
 document.getElementById('openDiagnosticBtn').addEventListener('click', () => {
-  diagFormCont.classList.remove('hidden'); 
-  diagResultCont.classList.add('hidden'); 
-  modalDiag.classList.remove('hidden'); 
-  modalDiag.classList.add('flex');
-  const btnAI = document.getElementById('btnGenerateAIReport'); 
-  btnAI.classList.add('hidden'); 
-  btnAI.textContent = '🧠 Generando Reporte...';
+  diagFormCont.classList.remove('hidden'); diagResultCont.classList.add('hidden'); modalDiag.classList.remove('hidden'); modalDiag.classList.add('flex');
+  const btnAI = document.getElementById('btnGenerateAIReport'); btnAI.classList.add('hidden'); btnAI.textContent = '🧠 Generando Reporte...';
   for(let i=1; i<=12; i++) {
-    const qId = `q${i}`;
-    const st = document.getElementById(`status_${qId}`);
-    if(st) st.textContent = "";
-    const btnUp = document.getElementById(`btn_${qId}`);
-    if(btnUp) {
-      btnUp.textContent = "📎 Subir Evidencia";
-      btnUp.className = "text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition w-36";
-    }
-    const sel = document.getElementById(qId);
-    if(sel) sel.dataset.hasEvidence = "false";
+    const qId = `q${i}`; const st = document.getElementById(`status_${qId}`); if(st) st.textContent = "";
+    const btnUp = document.getElementById(`btn_${qId}`); if(btnUp) { btnUp.textContent = "📎 Subir Evidencia"; btnUp.className = "text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition w-36"; }
+    const sel = document.getElementById(qId); if(sel) sel.dataset.hasEvidence = "false";
   }
 });
 document.getElementById('closeDiagBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
 document.getElementById('closeResultBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
 
-// ==========================================
 // 2. CARGA DE DATOS
-// ==========================================
 async function init() {
   currentUser = JSON.parse(localStorage.getItem('gov_user'));
   if (!currentUser) return window.location.href = 'index.html';
-  
   document.getElementById('userEmail').textContent = currentUser.email;
   currentOrgId = currentUser.orgId;
 
@@ -113,8 +95,8 @@ async function init() {
         const selector = document.getElementById('orgSelector');
         selector.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
         selector.addEventListener('change', (e) => {
-          currentOrgId = e.target.value;
-          loadDashboardData();
+          currentOrgId = e.target.value; loadDashboardData();
+          if(!secMatrix.classList.contains('hidden')) loadMatrix();
           if(!secEvidence.classList.contains('hidden')) loadEvidence();
         });
       }
@@ -123,262 +105,176 @@ async function init() {
     document.getElementById('tabLeadsBtn').classList.add('hidden');
     document.getElementById('tabUsersBtn').classList.add('hidden');
   }
-
   loadDashboardData();
 }
 
-async function loadDashboardData() {
-  await loadCompanies();
-  await loadInventory();
-}
+async function loadDashboardData() { await loadCompanies(); await loadInventory(); }
 
 async function loadCompanies() {
   try {
-    const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers });
-    if (!res.ok) throw new Error('Error');
+    const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers }); if (!res.ok) throw new Error('Error');
     companiesCache = await res.json();
-    
     document.getElementById('statCompanies').textContent = companiesCache.length;
     const tbody = document.getElementById('companiesTableBody');
-    
-    if (companiesCache.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">No hay filiales registradas.</td></tr>`;
-    } else {
-      tbody.innerHTML = companiesCache.map(c => `
-        <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
-          <td class="py-3 px-4 font-semibold text-slate-200">${c.name}</td>
-          <td class="py-3 px-4 text-slate-400 capitalize">${c.riskProfile.replace('_', ' ')}</td>
-          <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-teal-950 text-teal-400 border border-teal-800">Activa</span></td>
-          <td class="py-3 px-4 text-slate-500 font-mono text-xs">${c._id}</td>
-        </tr>
-      `).join('');
+    if (companiesCache.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">No hay filiales.</td></tr>`; } 
+    else {
+      tbody.innerHTML = companiesCache.map(c => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${c.name}</td><td class="py-3 px-4 text-slate-400 capitalize">${c.riskProfile.replace('_', ' ')}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-teal-950 text-teal-400 border border-teal-800">Activa</span></td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${c._id}</td></tr>`).join('');
     }
-    
     const selectModel = document.getElementById('modelCompany');
     selectModel.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
-
     const selectDiag = document.getElementById('diagCompany');
     selectDiag.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
-
-  } catch (error) { console.error("Error companies:", error); }
+  } catch (error) {}
 }
 
 async function loadInventory() {
   try {
-    const res = await fetch(`${API_URL}/gov/ai-inventory`, { headers });
-    if (!res.ok) throw new Error('Error');
-    
-    let inventory = await res.json();
-    inventory = inventory.filter(item => item.orgId === currentOrgId);
-
+    const res = await fetch(`${API_URL}/gov/ai-inventory`, { headers }); if (!res.ok) throw new Error('Error');
+    let inventory = await res.json(); inventory = inventory.filter(item => item.orgId === currentOrgId);
     document.getElementById('statTotalModels').textContent = inventory.length;
     document.getElementById('statHighRisk').textContent = inventory.filter(i => i.risk_level === 'alto').length;
-
     const tbody = document.getElementById('inventoryTableBody');
-    if (inventory.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay modelos registrados.</td></tr>`;
-      return;
-    }
-
+    if (inventory.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay modelos.</td></tr>`; return; }
     tbody.innerHTML = inventory.map(item => {
-      let riskColor = 'bg-slate-700 text-slate-300';
-      if (item.risk_level === 'alto') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800';
-      if (item.risk_level === 'medio') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800';
-      if (item.risk_level === 'bajo') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+      let riskColor = 'bg-slate-700 text-slate-300'; if (item.risk_level === 'alto') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800'; if (item.risk_level === 'medio') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800'; if (item.risk_level === 'bajo') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+      const company = companiesCache.find(c => c._id === item.companyId); const companyName = company ? company.name : 'Desconocida';
+      return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status.replace('_', ' ')}</td></tr>`;
+    }).join('');
+  } catch (error) {}
+}
+
+// 3. MATRIZ GLOBAL
+async function loadMatrix() {
+  try {
+    const res = await fetch(`${API_URL}/gov/evaluations`, { headers });
+    const evaluations = await res.json();
+    const matrixGrid = document.getElementById('matrixGrid');
+    const frameworks = ["ISO 42001", "NIST AI RMF", "EU AI Act", "LFPDPPP"];
+    
+    matrixGrid.innerHTML = frameworks.map(fw => {
+      // Buscar la evaluación más reciente para este framework
+      const evalForFw = evaluations.find(e => e.framework === fw && e.orgId === currentOrgId);
+      let score = "--"; let statusText = "No Evaluado"; let color = "text-slate-500"; let border = "border-slate-700"; let bg = "bg-slate-800/30";
       
-      const company = companiesCache.find(c => c._id === item.companyId);
-      const companyName = company ? company.name : 'Desconocida';
+      if (evalForFw) {
+        score = `${evalForFw.score}%`;
+        if (evalForFw.score > 85) { statusText = "Excelente"; color = "text-teal-400"; border = "border-teal-800"; bg = "bg-teal-950/20"; }
+        else if (evalForFw.score > 60) { statusText = "Maduro"; color = "text-blue-400"; border = "border-blue-800"; bg = "bg-blue-950/20"; }
+        else if (evalForFw.score > 30) { statusText = "En Desarrollo"; color = "text-amber-400"; border = "border-amber-800"; bg = "bg-amber-950/20"; }
+        else { statusText = "Crítico"; color = "text-rose-400"; border = "border-rose-800"; bg = "bg-rose-950/20"; }
+      }
 
       return `
-        <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
-          <td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td>
-          <td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td>
-          <td class="py-3 px-4 text-slate-400">${companyName}</td>
-          <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td>
-          <td class="py-3 px-4 text-slate-400 capitalize">${item.status.replace('_', ' ')}</td>
-        </tr>
+        <div class="p-6 rounded-2xl border ${border} ${bg}">
+          <h3 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">${fw}</h3>
+          <div class="flex justify-between items-end">
+            <div>
+              <p class="text-4xl font-black ${color} mb-1">${score}</p>
+              <p class="text-xs font-semibold ${color}">${statusText}</p>
+            </div>
+            <button onclick="openDiagnosticFor('${fw}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition">Evaluar</button>
+          </div>
+        </div>
       `;
     }).join('');
-  } catch (error) { console.error("Error inventario:", error); }
+  } catch (error) { console.error("Error cargando matriz:", error); }
+}
+
+function openDiagnosticFor(fw) {
+  document.getElementById('tabInventoryBtn').click(); // Volver a inventario
+  document.getElementById('openDiagnosticBtn').click(); // Abrir modal
+  document.getElementById('diagFramework').value = fw; // Seleccionar el framework
 }
 
 async function loadLeads() {
   try {
-    const res = await fetch(`${API_URL}/leads`, { headers });
-    const leads = await res.json();
+    const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
     const tbody = document.getElementById('leadsTableBody');
     if (leads.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Aún no hay prospectos.</td></tr>`; return; }
     tbody.innerHTML = leads.map(l => {
-      const date = new Date(l.ts).toLocaleDateString('es-MX');
-      let badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+      const date = new Date(l.ts).toLocaleDateString('es-MX'); let badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
       if (l.risk_level === 'alto') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
-      return `
-        <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
-          <td class="py-3 px-4 text-slate-500">${date}</td>
-          <td class="py-3 px-4 font-semibold text-slate-200">${l.name}</td>
-          <td class="py-3 px-4 text-teal-400">${l.email}</td>
-          <td class="py-3 px-4 text-slate-300">${l.company}</td>
-          <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${l.risk_level}</span></td>
-        </tr>`;
+      return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 text-slate-500">${date}</td><td class="py-3 px-4 font-semibold text-slate-200">${l.name}</td><td class="py-3 px-4 text-teal-400">${l.email}</td><td class="py-3 px-4 text-slate-300">${l.company}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${l.risk_level}</span></td></tr>`;
     }).join('');
   } catch (error) {}
 }
 
 async function loadUsers() {
   try {
-    const res = await fetch(`${API_URL}/gov/users`, { headers });
-    const users = await res.json();
+    const res = await fetch(`${API_URL}/gov/users`, { headers }); const users = await res.json();
     const tbody = document.getElementById('usersTableBody');
-    tbody.innerHTML = users.map(u => `
-      <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
-        <td class="py-3 px-4 font-semibold text-slate-200">${u.name || 'Sin nombre'}</td>
-        <td class="py-3 px-4 text-slate-300">${u.email}</td>
-        <td class="py-3 px-4 text-teal-400 capitalize">${u.role}</td>
-        <td class="py-3 px-4 text-slate-500 font-mono text-xs">${u.orgId}</td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = users.map(u => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${u.name || 'Sin nombre'}</td><td class="py-3 px-4 text-slate-300">${u.email}</td><td class="py-3 px-4 text-teal-400 capitalize">${u.role}</td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${u.orgId}</td></tr>`).join('');
   } catch (error) { console.error("Error users:", error); }
 }
 
-// ==========================================
-// 3. EXPEDIENTE DIGITAL (EVIDENCIAS)
-// ==========================================
 async function loadEvidence() {
   try {
-    const res = await fetch(`${API_URL}/gov/evidence`, { headers });
-    if (!res.ok) throw new Error('Error al cargar evidencias');
-    
-    let evidence = await res.json();
-    const tbody = document.getElementById('evidenceTableBody');
-    
-    if (evidence.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay evidencias subidas aún.</td></tr>`;
-      return;
-    }
-
+    const res = await fetch(`${API_URL}/gov/evidence`, { headers }); if (!res.ok) throw new Error('Error');
+    let evidence = await res.json(); const tbody = document.getElementById('evidenceTableBody');
+    if (evidence.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay evidencias subidas aún.</td></tr>`; return; }
     tbody.innerHTML = evidence.map(e => {
-      const date = new Date(e.ts).toLocaleDateString('es-MX');
-      let statusColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+      const date = new Date(e.ts).toLocaleDateString('es-MX'); let statusColor = 'bg-teal-950 text-teal-400 border border-teal-800';
       if (!e.validation.valido) statusColor = 'bg-rose-950 text-rose-400 border border-rose-800';
-      
       const downloadBtn = `<a href="${e.r2Url}" target="_blank" class="text-teal-400 hover:text-teal-300 underline text-xs font-bold">Descargar PDF</a>`;
-
-      return `
-        <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
-          <td class="py-3 px-4 text-slate-500">${date}</td>
-          <td class="py-3 px-4 text-slate-300 font-mono text-xs">${e.fileName.split('/').pop()}</td>
-          <td class="py-3 px-4 text-slate-200 font-semibold uppercase">${e.questionId.replace('_', ' ')}</td>
-          <td class="py-3 px-4">
-            <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${statusColor}">
-              ${e.validation.valido ? 'Válido' : 'Rechazado'}
-            </span>
-            <div class="text-[10px] text-slate-500 mt-1 max-w-xs truncate" title="${e.validation.razon}">${e.validation.razon}</div>
-          </td>
-          <td class="py-3 px-4">${downloadBtn}</td>
-        </tr>
-      `;
+      return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 text-slate-500">${date}</td><td class="py-3 px-4 text-slate-300 font-mono text-xs">${e.fileName.split('/').pop()}</td><td class="py-3 px-4 text-slate-200 font-semibold uppercase">${e.questionId.replace('_', ' ')}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${statusColor}">${e.validation.valido ? 'Válido' : 'Rechazado'}</span><div class="text-[10px] text-slate-500 mt-1 max-w-xs truncate" title="${e.validation.razon}">${e.validation.razon}</div></td><td class="py-3 px-4">${downloadBtn}</td></tr>`;
     }).join('');
-  } catch (error) {
-    console.error(error);
-    document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error al cargar el expediente.</td></tr>`;
-  }
+  } catch (error) { document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error al cargar el expediente.</td></tr>`; }
 }
 
-// ==========================================
 // 4. SUBIR EVIDENCIA
-// ==========================================
 async function subirEvidencia(event, qId) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const btn = document.getElementById(`btn_${qId}`);
-  const status = document.getElementById(`status_${qId}`);
-  const select = document.getElementById(qId);
+  const file = event.target.files[0]; if (!file) return;
+  const btn = document.getElementById(`btn_${qId}`); const status = document.getElementById(`status_${qId}`); const select = document.getElementById(qId);
   const companyId = document.getElementById('diagCompany').value;
-
   if (!companyId) { alert("Por favor selecciona una filial primero."); event.target.value = ""; return; }
-
   btn.textContent = "⏳ Analizando..."; btn.disabled = true; status.textContent = "";
-  
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("companyId", companyId);
-  formData.append("questionId", qId);
-
+  const formData = new FormData(); formData.append("file", file); formData.append("companyId", companyId); formData.append("questionId", qId);
   try {
-    const res = await fetch(`${API_URL}/gov/upload-evidence`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: formData
-    });
-
+    const res = await fetch(`${API_URL}/gov/upload-evidence`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
     const data = await res.json();
-
     if (res.ok && data.validation && data.validation.valido) {
-      btn.textContent = "✅ Validado"; btn.classList.replace('bg-slate-700', 'bg-teal-900'); btn.classList.replace('hover:bg-slate-600', 'hover:bg-teal-800');
-      status.textContent = "Aprobado"; status.className = "text-[10px] mt-1 text-teal-400 font-bold text-right w-36 truncate";
-      select.value = "5"; select.dataset.hasEvidence = "true";
+      btn.textContent = "✅ Validado"; btn.classList.replace('bg-slate-700', 'bg-teal-900'); btn.classList.replace('hover:bg-slate-600', 'hover:bg-teal-800'); status.textContent = "Aprobado"; status.className = "text-[10px] mt-1 text-teal-400 font-bold text-right w-36 truncate"; select.value = "5"; select.dataset.hasEvidence = "true";
     } else {
       btn.textContent = "❌ Rechazado"; btn.classList.replace('bg-slate-700', 'bg-rose-900');
-      const errorMsg = data.error || (data.validation ? data.validation.razon : "No válido");
-      status.textContent = errorMsg; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate";
-      select.value = "0"; select.dataset.hasEvidence = "false";
+      const errorMsg = data.error || (data.validation ? data.validation.razon : "No válido"); status.textContent = errorMsg; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate"; select.value = "0"; select.dataset.hasEvidence = "false";
     }
   } catch (err) {
     console.error(err); btn.textContent = "📎 Subir Evidencia"; status.textContent = "Error de conexión"; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate"; select.dataset.hasEvidence = "false";
   } finally { btn.disabled = false; event.target.value = ""; }
 }
 
-// ==========================================
 // 5. FORMULARIOS
-// ==========================================
 document.getElementById('newModelForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
+  e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
   const payload = { companyId: document.getElementById('modelCompany').value, model_name: document.getElementById('modelName').value, category: document.getElementById('modelCategory').value, risk_level: document.getElementById('modelRisk').value, vendor: 'Desconocido', status: 'en_uso' };
-  try {
-    const res = await fetch(`${API_URL}/gov/ai-inventory`, { method: 'POST', headers, body: JSON.stringify(payload) });
-    if (res.ok) { document.getElementById('newModelModal').classList.add('hidden'); e.target.reset(); loadInventory(); } else alert('Error al guardar');
-  } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Modelo'; btn.disabled = false; }
+  try { const res = await fetch(`${API_URL}/gov/ai-inventory`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newModelModal').classList.add('hidden'); e.target.reset(); loadInventory(); } else alert('Error'); } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Modelo'; btn.disabled = false; }
 });
 
 document.getElementById('newCompanyForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
+  e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
   const payload = { name: document.getElementById('companyNameInput').value, riskProfile: document.getElementById('companyProfileInput').value };
-  try {
-    const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { method: 'POST', headers, body: JSON.stringify(payload) });
-    if (res.ok) { document.getElementById('newCompanyModal').classList.add('hidden'); e.target.reset(); loadCompanies(); } else alert('Error al guardar');
-  } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Filial'; btn.disabled = false; }
+  try { const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newCompanyModal').classList.add('hidden'); e.target.reset(); loadCompanies(); } else alert('Error'); } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Filial'; btn.disabled = false; }
 });
 
 document.getElementById('newUserForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Creando...'; btn.disabled = true;
+  e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Creando...'; btn.disabled = true;
   const payload = { name: document.getElementById('userName').value, email: document.getElementById('userEmailInput').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value, orgId: document.getElementById('userOrg').value };
-  try {
-    const res = await fetch(`${API_URL}/gov/users`, { method: 'POST', headers, body: JSON.stringify(payload) });
-    let data = {}; try { data = await res.json(); } catch (e) {}
-    if (res.ok) { document.getElementById('newUserModal').classList.add('hidden'); e.target.reset(); loadUsers(); alert("Usuario creado exitosamente."); } 
-    else { alert('Error del Servidor: ' + (data.error || 'Revisa la terminal')); }
-  } catch (err) { alert('Error de red.'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
+  try { const res = await fetch(`${API_URL}/gov/users`, { method: 'POST', headers, body: JSON.stringify(payload) }); let data = {}; try { data = await res.json(); } catch (e) {} if (res.ok) { document.getElementById('newUserModal').classList.add('hidden'); e.target.reset(); loadUsers(); alert("Usuario creado exitosamente."); } else { alert('Error: ' + (data.error || 'Revisa la terminal')); } } catch (err) { alert('Error de red.'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
 });
 
-// ==========================================
-// 6. DIAGNÓSTICO
-// ==========================================
+// 6. DIAGNÓSTICO (CON FRAMEWORK)
 document.getElementById('diagnosticForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Calculando...'; btn.disabled = true;
   const companySelect = document.getElementById('diagCompany'); const companyId = companySelect.value; const companyName = companySelect.options[companySelect.selectedIndex].text;
+  const framework = document.getElementById('diagFramework').value;
   
   const qSelects = document.querySelectorAll('.diag-q');
   let totalScore = 0; const answers = {}; let phase1 = [], phase2 = [], phase3 = [];
   const recs = [ {p1:"Política IA.",p2:"Capacitar.",p3:"Auditar."}, {p1:"Oficial IA.",p2:"Comité.",p3:"Revisión."}, {p1:"Presupuesto.",p2:"Plan anual.",p3:"ROI."}, {p1:"Checklist AIA.",p2:"Automatizar.",p3:"Auditoría."}, {p1:"Modelos críticos.",p2:"Equidad.",p3:"Monitoreo."}, {p1:"Kill Switch.",p2:"Simulacros.",p3:"BCP."}, {p1:"Linaje.",p2:"Catálogo.",p3:"DPIA."}, {p1:"Métricas.",p2:"MLOps.",p3:"Reentrenar."}, {p1:"Backup prompts.",p2:"Git.",p3:"Trazabilidad."}, {p1:"Aviso IA.",p2:"Explicar.",p3:"XAI."}, {p1:"Caja negra.",p2:"Reportes.",p3:"Razones."}, {p1:"Buzón quejas.",p2:"Human-in-loop.",p3:"Métricas."} ];
 
   qSelects.forEach((sel, index) => {
-    let val = parseInt(sel.value);
-    const hasEvidence = sel.dataset.hasEvidence === "true";
+    let val = parseInt(sel.value); const hasEvidence = sel.dataset.hasEvidence === "true";
     if (val >= 4 && !hasEvidence) val = 2; 
     totalScore += val; answers[`q${index+1}`] = { score: val, evidence: hasEvidence };
     const rec = recs[index];
@@ -393,7 +289,7 @@ document.getElementById('diagnosticForm').addEventListener('submit', async (e) =
   else if (percentage > 60 && percentage <= 85) { riskLevel = 'bajo'; label = 'Maduro'; color = 'text-blue-400'; }
   else if (percentage > 85) { riskLevel = 'bajo'; label = 'Excelente'; color = 'text-teal-400'; }
 
-  const payload = { companyId, framework: "ISO42001", answers, score: percentage, risk_level: riskLevel, recommendations: { phase1, phase2, phase3 } };
+  const payload = { companyId, framework, answers, score: percentage, risk_level: riskLevel, recommendations: { phase1, phase2, phase3 } };
 
   try {
     const res = await fetch(`${API_URL}/gov/evaluations`, { method: 'POST', headers, body: JSON.stringify(payload) });
@@ -401,6 +297,7 @@ document.getElementById('diagnosticForm').addEventListener('submit', async (e) =
       document.getElementById('statMaturity').textContent = `${percentage}%`; document.getElementById('statMaturity').className = `text-4xl font-bold ${color}`;
       document.getElementById('finalScore').textContent = `${percentage}%`; document.getElementById('finalScore').className = `text-5xl font-black mb-1 ${color}`;
       document.getElementById('finalRiskLabel').textContent = label;
+      document.getElementById('resultFrameworkName').textContent = `Marco: ${framework}`;
       document.getElementById('roadmapPhase1').textContent = phase1.join(" ") || "Nada pendiente.";
       document.getElementById('roadmapPhase2').textContent = phase2.join(" ") || "Nada pendiente.";
       document.getElementById('roadmapPhase3').textContent = phase3.join(" ") || "Nada pendiente.";
@@ -408,17 +305,16 @@ document.getElementById('diagnosticForm').addEventListener('submit', async (e) =
       const btnAI = document.getElementById('btnGenerateAIReport');
       btnAI.classList.remove('hidden'); btnAI.textContent = '🧠 Generando Reporte...'; btnAI.disabled = true;
 
-      const aiRes = await fetch(`${API_URL}/gov/generate-report`, { method: 'POST', headers, body: JSON.stringify({ companyName, score: percentage, riskLevel, answers }) });
+      const aiRes = await fetch(`${API_URL}/gov/generate-report`, { method: 'POST', headers, body: JSON.stringify({ companyName, score: percentage, riskLevel, answers, framework }) });
       if (aiRes.ok) {
         const aiData = await aiRes.json(); document.getElementById('aiReportText').innerText = aiData.report;
         btnAI.textContent = '📄 Ver Reporte en PDF'; btnAI.disabled = false; btnAI.classList.replace('bg-slate-600', 'bg-blue-600');
         btnAI.onclick = () => {
           const w = window.open('', '_blank');
-          w.document.write(`<!DOCTYPE html><html><head><title>Reporte - ${companyName}</title><script src="https://cdn.tailwindcss.com"></script></head><body class="p-12"><div class="max-w-3xl mx-auto"><h1 class="text-3xl font-black border-b-4 border-blue-600 pb-4 mb-4">Reporte Ejecutivo de Gobernanza de IA</h1><p class="text-xl"><b>Empresa:</b> ${companyName}</p><p class="mb-6"><b>Score:</b> ${percentage}% (${label})</p><div class="prose"><h3 class="font-bold text-lg">Análisis IA:</h3><p class="whitespace-pre-wrap">${aiData.report}</p></div></div></body></html>`);
+          w.document.write(`<!DOCTYPE html><html><head><title>Reporte - ${companyName}</title><script src="https://cdn.tailwindcss.com"></script></head><body class="p-12"><div class="max-w-3xl mx-auto"><h1 class="text-3xl font-black border-b-4 border-blue-600 pb-4 mb-4">Reporte Ejecutivo (${framework})</h1><p class="text-xl"><b>Empresa:</b> ${companyName}</p><p class="mb-6"><b>Score:</b> ${percentage}% (${label})</p><div class="prose"><h3 class="font-bold text-lg">Análisis IA:</h3><p class="whitespace-pre-wrap">${aiData.report}</p></div></div></body></html>`);
           w.document.close();
         };
       } else { btnAI.textContent = '❌ Error de IA'; btnAI.disabled = false; }
-
       diagFormCont.classList.add('hidden'); diagResultCont.classList.remove('hidden');
     }
   } catch (err) { alert('Error de conexión'); } finally { btn.textContent = 'Calcular Madurez'; btn.disabled = false; }

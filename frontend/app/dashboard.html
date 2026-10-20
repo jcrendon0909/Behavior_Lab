@@ -13,9 +13,7 @@
       <span class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">BEHAVIOR LAB</span>
       <div id="orgSelectorContainer" class="hidden items-center space-x-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1">
         <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Viendo a:</span>
-        <select id="orgSelector" class="bg-transparent text-sm font-semibold text-teal-400 outline-none cursor-pointer">
-          <option value="">Cargando...</option>
-        </select>
+        <select id="orgSelector" class="bg-transparent text-sm font-semibold text-teal-400 outline-none cursor-pointer"><option value="">Cargando...</option></select>
       </div>
     </div>
     <div class="flex items-center space-x-4">
@@ -30,15 +28,14 @@
         <h1 class="text-3xl font-bold mb-2">Panel de Gobernanza</h1>
         <p class="text-slate-400">Gestiona el inventario de IA y las filiales de la organización.</p>
       </div>
-      <button id="btnGeneratePolicy" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2 px-6 rounded-lg transition shadow-lg shadow-blue-500/20 flex items-center gap-2">
-        <span>📄</span> Generar Política de IA
-      </button>
+      <button id="btnGeneratePolicy" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2 px-6 rounded-lg transition shadow-lg shadow-blue-500/20 flex items-center gap-2"><span>📄</span> Generar Política</button>
     </div>
 
     <div class="flex space-x-4 mb-6 border-b border-slate-800 pb-2 overflow-x-auto">
       <button type="button" id="tabInventoryBtn" class="text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap">Inventario de IA</button>
+      <button type="button" id="tabMatrixBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Matriz Global (Compliance)</button>
       <button type="button" id="tabCompaniesBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Empresas / Filiales</button>
-      <button type="button" id="tabLeadsBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Prospectos (Leads)</button>
+      <button type="button" id="tabLeadsBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Prospectos</button>
       <button type="button" id="tabUsersBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Usuarios</button>
       <button type="button" id="tabEvidenceBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap">Expediente Digital</button>
     </div>
@@ -54,7 +51,7 @@
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-bold">Inventario de IA</h2>
           <div class="flex gap-3">
-            <button id="openDiagnosticBtn" class="bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition shadow-lg shadow-amber-500/20">📊 Diagnóstico ISO 42001</button>
+            <button id="openDiagnosticBtn" class="bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition shadow-lg shadow-amber-500/20">📊 Nuevo Diagnóstico</button>
             <button id="openModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nuevo Modelo</button>
           </div>
         </div>
@@ -62,12 +59,20 @@
       </div>
     </div>
 
+    <!-- MATRIZ DE CUMPLIMIENTO GLOBAL -->
+    <div id="matrixSection" class="hidden">
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 mb-6">
+        <h2 class="text-lg font-bold mb-4">Estado Global de Cumplimiento</h2>
+        <p class="text-slate-400 text-sm mb-6">Semáforo de exposición regulatoria basado en los últimos diagnósticos.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="matrixGrid">
+          <!-- Se llena con JS -->
+        </div>
+      </div>
+    </div>
+
     <div id="companiesSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-        <div class="flex justify-between items-center mb-4">
-          <div><h2 class="text-lg font-bold">Directorio de Filiales</h2></div>
-          <button id="openCompanyModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nueva Filial</button>
-        </div>
+        <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Directorio de Filiales</h2></div><button id="openCompanyModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nueva Filial</button></div>
         <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre de la Empresa</th><th class="py-3 px-4">Perfil de Riesgo</th><th class="py-3 px-4">Estado</th><th class="py-3 px-4">ID</th></tr></thead><tbody id="companiesTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando datos...</td></tr></tbody></table></div>
       </div>
     </div>
@@ -86,29 +91,13 @@
       </div>
     </div>
 
-    <!-- NUEVA SECCIÓN: EXPEDIENTE DIGITAL -->
     <div id="evidenceSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-        <div class="mb-6 flex justify-between items-center">
-          <div>
-            <h2 class="text-lg font-bold">Expediente Digital de Evidencias</h2>
-            <p class="text-sm text-slate-400">Documentos validados por la IA y almacenados de forma segura en Cloudflare R2.</p>
-          </div>
-        </div>
+        <div class="mb-6"><h2 class="text-lg font-bold">Expediente Digital de Evidencias</h2><p class="text-sm text-slate-400">Documentos validados por la IA y almacenados en R2.</p></div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-slate-700 text-sm text-slate-400">
-                <th class="py-3 px-4">Fecha</th>
-                <th class="py-3 px-4">Archivo</th>
-                <th class="py-3 px-4">Pregunta / Control</th>
-                <th class="py-3 px-4">Estatus IA</th>
-                <th class="py-3 px-4">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="evidenceTableBody" class="text-sm">
-              <tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando expediente...</td></tr>
-            </tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Fecha</th><th class="py-3 px-4">Archivo</th><th class="py-3 px-4">Pregunta / Control</th><th class="py-3 px-4">Estatus IA</th><th class="py-3 px-4">Acciones</th></tr></thead>
+            <tbody id="evidenceTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando expediente...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -158,14 +147,32 @@
     </div>
   </div>
 
-  <!-- MODAL DIAGNÓSTICO -->
+  <!-- MODAL DIAGNÓSTICO CON SELECTOR DE MARCO -->
   <div id="diagnosticModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 w-full max-w-4xl shadow-2xl my-8">
       <div id="diagnosticFormContainer">
-        <div class="mb-6 border-b border-slate-700 pb-4"><h2 class="text-2xl font-bold text-white">Diagnóstico de Madurez ISO 42001</h2><p class="text-sm text-slate-400 mt-2">Evalúa del 0 al 5. Sube un PDF de evidencia en cada pregunta para validar el puntaje automáticamente.</p></div>
+        <div class="mb-6 border-b border-slate-700 pb-4">
+          <h2 class="text-2xl font-bold text-white">Evaluación de Madurez y Riesgo</h2>
+          <p class="text-sm text-slate-400 mt-2">Evalúa del 0 al 5. Sube un PDF de evidencia en cada pregunta para validar el puntaje.</p>
+        </div>
         <form id="diagnosticForm" class="space-y-6">
-          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial a Evaluar</label><select id="diagCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-1">Filial a Evaluar</label>
+              <select id="diagCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-1">Marco Normativo (Framework)</label>
+              <select id="diagFramework" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none font-bold text-teal-400">
+                <option value="ISO 42001">ISO/IEC 42001 (Sistema de Gestión de IA)</option>
+                <option value="NIST AI RMF">NIST AI RMF (EE. UU.)</option>
+                <option value="EU AI Act">EU AI Act (Regulación Europea)</option>
+                <option value="LFPDPPP">LFPDPPP (Protección de Datos - México)</option>
+              </select>
+            </div>
+          </div>
           
+          <!-- (Las 12 preguntas se mantienen igual, omitidas por brevedad pero presentes en el código completo) -->
           <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
             <h3 class="font-bold text-teal-400 mb-4 border-b border-slate-700 pb-2">1. Gobernanza y Políticas</h3>
             <div class="space-y-3">
@@ -207,9 +214,9 @@
       </div>
 
       <div id="diagnosticResultContainer" class="hidden py-4">
-        <div class="text-center mb-6"><div class="text-5xl mb-2">🎯</div><h2 class="text-2xl font-bold text-white mb-1">Diagnóstico Completado</h2><p class="text-slate-400">Plan de acción generado.</p></div>
+        <div class="text-center mb-6"><div class="text-5xl mb-2">🎯</div><h2 class="text-2xl font-bold text-white mb-1">Diagnóstico Completado</h2><p class="text-slate-400" id="resultFrameworkName">Marco: ISO 42001</p></div>
         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm mx-auto mb-6 text-center"><h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Score de Madurez</h3><div id="finalScore" class="text-5xl font-black text-amber-400 mb-1">0%</div><div id="finalRiskLabel" class="text-sm font-bold text-slate-300">Evaluando...</div></div>
-        <div class="text-center mb-8"><button type="button" id="btnGenerateAIReport" class="hidden bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition w-full max-w-md mx-auto shadow-lg">🧠 Generando Reporte Ejecutivo con IA...</button><div id="aiReportText" class="hidden"></div></div>
+        <div class="text-center mb-8"><button type="button" id="btnGenerateAIReport" class="hidden bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition w-full max-w-md mx-auto shadow-lg">🧠 Generando Reporte...</button><div id="aiReportText" class="hidden"></div></div>
         <div class="bg-slate-800 border border-slate-600 rounded-2xl p-6 mb-8 text-left"><h3 class="text-lg font-bold text-white mb-4">🗺️ Tu Roadmap de Implementación</h3><div class="space-y-4 text-sm"><div class="border-l-4 border-amber-500 pl-4"><p class="font-bold text-amber-400">Fase 1 (0-60 días)</p><p id="roadmapPhase1" class="text-slate-300 mt-1"></p></div><div class="border-l-4 border-blue-500 pl-4"><p class="font-bold text-blue-400">Fase 2 (6 meses)</p><p id="roadmapPhase2" class="text-slate-300 mt-1"></p></div><div class="border-l-4 border-teal-500 pl-4"><p class="font-bold text-teal-400">Fase 3 (12 meses)</p><p id="roadmapPhase3" class="text-slate-300 mt-1"></p></div></div></div>
         <div class="text-center"><button type="button" id="closeResultBtn" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-8 rounded-xl transition">Cerrar</button></div>
       </div>
