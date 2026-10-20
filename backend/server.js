@@ -43,9 +43,9 @@ app.use(cors({
 
 // ---------- RATE LIMITING ----------
 const chatLimiter = rateLimit({
-  windowMs: 60 * 1000, max: 30, // Subimos a 30 para pruebas
+  windowMs: 60 * 1000, max: 30,
   message: { reply: "Demasiadas peticiones. Intenta de nuevo en un minuto." },
-  validate: { xForwardedForHeader: false } // Prevenir caídas en Render
+  validate: { xForwardedForHeader: false }
 });
 
 // ---------- MULTER & R2 ----------
@@ -166,11 +166,23 @@ async function callGroq(messages, max_tokens = 600) {
         headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({ model: "openai/gpt-oss-120b", messages, max_tokens, temperature: 0.3 })
       });
-      if (!response.ok) { attempts++; continue; }
+      
+      if (!response.ok) { 
+        const errText = await response.text();
+        console.error(`Groq Error HTTP ${response.status}:`, errText);
+        attempts++; 
+        continue; 
+      }
+      
       const data = await response.json();
       if (!data.error) return data.choices?.[0]?.message?.content;
+      
+      console.error("Groq API Error:", data.error);
       attempts++;
-    } catch (e) { attempts++; }
+    } catch (e) { 
+      console.error("Error en fetch a Groq:", e.message);
+      attempts++; 
+    }
   }
   throw new Error("Todas las API keys fallaron o Groq rechazó la petición.");
 }
@@ -190,19 +202,27 @@ app.post("/chat", chatLimiter, async (req, res) => {
         else if (result.type === 'knowledge') knowledgeContext = `Información: ${result.data.title}\n${result.data.content}`;
       }
     }
+    
     const history = await getConversationHistory(userId);
+    
+    // 🚨 CORRECCIÓN: Limpiamos el historial para quitarle el campo 'ts' antes de enviarlo a Groq
+    const cleanHistory = history.map(m => ({ role: m.role, content: m.content }));
+    
     const systemPrompt = MODES[mode] || MODES.default;
     let systemContent = systemPrompt;
     if (knowledgeContext) systemContent += `\n\n**Info extra:**\n${knowledgeContext}`;
 
-    const messages = [{ role: "system", content: systemContent }, ...history, { role: "user", content: message }];
+    const messages = [{ role: "system", content: systemContent }, ...cleanHistory, { role: "user", content: message }];
     const reply = await callGroq(messages, 150);
+    
     await addToConversationHistory(userId, "user", message);
     await addToConversationHistory(userId, "assistant", reply);
+    
     res.json({ reply });
   } catch (error) { 
     console.error("❌ Error en chat:", error);
-    res.json({ reply: "❌ Error en el servidor. Intenta de nuevo." }); 
+    // Mostramos el error real en lugar del genérico para saber qué pasa
+    res.json({ reply: `❌ Error en el servidor: ${error.message}` }); 
   }
 });
 
@@ -262,12 +282,10 @@ Analiza si este documento realmente sirve como evidencia válida de gobernanza d
 Responde SOLO con un JSON válido con esta estructura:
 {"valido": true/false, "razon": "Explicación breve de por qué es válido o no"}
 `;
-    // Aumentamos a 400 tokens para que no se corte la respuesta
     const aiResult = await callGroq([{ role: "user", content: prompt }], 400);
     
     let validation = { valido: true, razon: "Documento válido aceptado." };
     try {
-      // Parseo más seguro (extrae solo lo que está entre llaves)
       const jsonStr = aiResult.substring(aiResult.indexOf('{'), aiResult.lastIndexOf('}') + 1);
       const parsed = JSON.parse(jsonStr);
       validation = parsed;
