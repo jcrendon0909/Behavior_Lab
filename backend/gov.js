@@ -133,7 +133,12 @@ export function createGovRouter() {
     res.json({ ok: true });
   });
 
-  // REGISTRO DE RIESGOS
+  // 🚨 NUEVO: ELIMINAR TAREA
+  router.delete("/deliverables/:id", auth(["superadmin", "admin"]), async (req, res) => {
+    await db(req).collection("deliverables").deleteOne({ _id: new ObjectId(req.params.id) });
+    res.json({ ok: true });
+  });
+
   router.get("/risks", auth(), async (req, res) => {
     const filter = req.user.role === "superadmin" ? {} : { orgId: new ObjectId(req.user.orgId) };
     res.json(await db(req).collection("risks").find(filter).sort({ createdAt: -1 }).toArray());
@@ -165,6 +170,12 @@ export function createGovRouter() {
     };
     const result = await db(req).collection("risks").insertOne(doc);
     res.json({ _id: result.insertedId, ...doc });
+  });
+
+  // 🚨 NUEVO: ELIMINAR RIESGO
+  router.delete("/risks/:id", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
+    await db(req).collection("risks").deleteOne({ _id: new ObjectId(req.params.id) });
+    res.json({ ok: true });
   });
 
   return router;

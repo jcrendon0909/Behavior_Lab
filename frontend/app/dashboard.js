@@ -309,19 +309,44 @@ async function loadDeliverables() {
     const res = await fetch(`${API_URL}/gov/deliverables`, { headers });
     let deliverables = await res.json(); deliverables = deliverables.filter(d => d.orgId === currentOrgId);
     const tbody = document.getElementById('deliverablesTableBody');
-    if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
+    if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
     tbody.innerHTML = deliverables.map(d => {
       let badgeColor = 'bg-slate-700 text-slate-300';
       if (d.status === 'Pendiente') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
       if (d.status === 'En Progreso') badgeColor = 'bg-amber-950 text-amber-400 border border-amber-800';
       if (d.status === 'Completado') badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
-      return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${d.taskName}</td><td class="py-3 px-4 text-slate-400">${d.phase}</td><td class="py-3 px-4 text-slate-400">${d.assignedTo}</td><td class="py-3 px-4"><select onchange="updateDeliverableStatus('${d._id}', this.value)" class="px-3 py-1 rounded-lg text-xs font-semibold uppercase ${badgeColor} outline-none cursor-pointer appearance-none text-center"><option value="Pendiente" ${d.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option><option value="En Progreso" ${d.status === 'En Progreso' ? 'selected' : ''}>En Progreso</option><option value="Completado" ${d.status === 'Completado' ? 'selected' : ''}>Completado</option></select></td></tr>`;
+      
+      return `
+        <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+          <td class="py-3 px-4 font-semibold text-slate-200">${d.taskName}</td>
+          <td class="py-3 px-4 text-slate-400">${d.phase}</td>
+          <td class="py-3 px-4 text-slate-400">${d.assignedTo}</td>
+          <td class="py-3 px-4">
+            <select onchange="updateDeliverableStatus('${d._id}', this.value)" class="px-3 py-1 rounded-lg text-xs font-semibold uppercase ${badgeColor} outline-none cursor-pointer appearance-none text-center">
+              <option value="Pendiente" ${d.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+              <option value="En Progreso" ${d.status === 'En Progreso' ? 'selected' : ''}>En Progreso</option>
+              <option value="Completado" ${d.status === 'Completado' ? 'selected' : ''}>Completado</option>
+            </select>
+          </td>
+          <td class="py-3 px-4 text-center">
+            <button onclick="deleteDeliverable('${d._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Tarea">🗑️</button>
+          </td>
+        </tr>
+      `;
     }).join('');
   } catch (error) { console.error("Error plan:", error); }
 }
 
 async function updateDeliverableStatus(id, newStatus) {
   try { await fetch(`${API_URL}/gov/deliverables/${id}`, { method: 'PUT', headers, body: JSON.stringify({ status: newStatus }) }); loadDeliverables(); } catch (error) { alert("Error actualizando estado"); }
+}
+
+async function deleteDeliverable(id) {
+  if(!confirm("¿Estás seguro de eliminar esta tarea del plan?")) return;
+  try {
+    const res = await fetch(`${API_URL}/gov/deliverables/${id}`, { method: 'DELETE', headers });
+    if (res.ok) loadDeliverables();
+  } catch (error) { alert("Error al eliminar tarea"); }
 }
 
 document.getElementById('newDeliverableForm').addEventListener('submit', async (e) => {
@@ -336,7 +361,7 @@ async function loadRisks() {
     const res = await fetch(`${API_URL}/gov/risks`, { headers });
     let risks = await res.json(); risks = risks.filter(r => r.orgId === currentOrgId);
     const tbody = document.getElementById('risksTableBody');
-    if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
+    if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
     
     tbody.innerHTML = risks.map(r => {
       let badgeColor = 'bg-slate-700 text-slate-300';
@@ -353,10 +378,21 @@ async function loadRisks() {
           <td class="py-3 px-4 text-slate-400 text-center">${r.impact} / 5</td>
           <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${r.riskLevel} (${r.riskScore})</span></td>
           <td class="py-3 px-4 text-slate-400 text-xs max-w-xs truncate" title="${r.mitigationPlan}">${r.mitigationPlan}</td>
+          <td class="py-3 px-4 text-center">
+            <button onclick="deleteRisk('${r._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Riesgo">🗑️</button>
+          </td>
         </tr>
       `;
     }).join('');
   } catch (error) { console.error("Error cargando riesgos:", error); }
+}
+
+async function deleteRisk(id) {
+  if(!confirm("¿Estás seguro de eliminar este riesgo?")) return;
+  try {
+    const res = await fetch(`${API_URL}/gov/risks/${id}`, { method: 'DELETE', headers });
+    if (res.ok) loadRisks();
+  } catch (error) { alert("Error al eliminar riesgo"); }
 }
 
 document.getElementById('newRiskForm').addEventListener('submit', async (e) => {
@@ -377,7 +413,7 @@ document.getElementById('newRiskForm').addEventListener('submit', async (e) => {
   } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
 });
 
-// 8. RESTO DE FUNCIONES (Leads, Users, Evidence, Forms, Diagnosis)
+// 8. LEADS, USUARIOS Y EVIDENCIA
 async function loadLeads() {
   try {
     const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
