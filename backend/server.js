@@ -96,7 +96,7 @@ async function searchKnowledge(query) {
 const MODES = {
   default: `
 Eres el asistente experto de BehaviorLab, una consultora líder en Inteligencia Artificial.
-PILAR 1: Creación y despliegue de Agentes de IA Empresariales (metodología de 5 pasos: Diagnóstico, Diseño, Entrenamiento, Integración, Despliegue).
+PILAR 1: Creación y despliegue de Agentes de IA Empresariales.
 PILAR 2: Gobernanza, Riesgo y Cumplimiento (GRC) de IA (ISO/IEC 42001, NIST AI RMF, LFPDPPP, COFEPRIS/SaMD).
 Plataforma BehaviorLab: Integra inventario de IA, diagnóstico de madurez, generación de políticas y expediente digital.
 **Reglas:** Responde en máximo 3 o 4 oraciones. Menciona ambos pilares si preguntan qué hacemos.
@@ -205,6 +205,47 @@ app.post("/gov/generate-report", async (req, res) => {
     const report = await callGroq([{ role: "user", content: prompt }], 800);
     res.json({ report });
   } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// 🚨 ENDPOINTS DE SUGERENCIA CON IA 🚨
+app.post("/gov/suggest-risk", async (req, res) => {
+  try {
+    const { companyName } = req.body;
+    const prompt = `
+Eres un auditor experto en ISO 42001 y NIST AI RMF.
+El cliente "${companyName}" está construyendo su matriz de riesgos de IA.
+Genera UN riesgo crítico, realista y común para el sector empresarial.
+Devuelve SOLO un objeto JSON válido con esta estructura exacta (sin markdown, solo JSON):
+{
+  "riskName": "Nombre del riesgo (max 10 palabras)",
+  "category": "Privacidad" | "Sesgo" | "Seguridad" | "Operacional" | "Regulatorio",
+  "probability": 1-5,
+  "impact": 1-5,
+  "mitigationPlan": "Plan de mitigación de 1 o 2 oraciones."
+}`;
+    const aiResult = await callGroq([{ role: "user", content: prompt }], 300);
+    const jsonStr = aiResult.substring(aiResult.indexOf('{'), aiResult.lastIndexOf('}') + 1);
+    res.json(JSON.parse(jsonStr));
+  } catch (error) { res.status(500).json({ error: "Error al generar riesgo con IA." }); }
+});
+
+app.post("/gov/suggest-task", async (req, res) => {
+  try {
+    const { companyName } = req.body;
+    const prompt = `
+Eres un consultor experto en implementación de ISO 42001.
+El cliente "${companyName}" necesita avanzar en su hoja de ruta de gobernanza.
+Genera UNA tarea de implementación accionable y realista.
+Devuelve SOLO un objeto JSON válido (sin markdown) con esta estructura exacta:
+{
+  "taskName": "Nombre de la tarea (max 12 palabras)",
+  "phase": "Fase 1: Diagnóstico" | "Fase 2: Diseño" | "Fase 3: Implementación" | "Fase 4: Auditoría",
+  "assignedTo": "Equipo BehAvIorLab" | "Cliente" | "Ambos"
+}`;
+    const aiResult = await callGroq([{ role: "user", content: prompt }], 250);
+    const jsonStr = aiResult.substring(aiResult.indexOf('{'), aiResult.lastIndexOf('}') + 1);
+    res.json(JSON.parse(jsonStr));
+  } catch (error) { res.status(500).json({ error: "Error al generar tarea con IA." }); }
 });
 
 app.use('/gov', (req, res, next) => {

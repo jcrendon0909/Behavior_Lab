@@ -92,7 +92,7 @@ document.getElementById('openDiagnosticBtn').addEventListener('click', () => {
 document.getElementById('closeDiagBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
 document.getElementById('closeResultBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
 
-// 2. FUNCIONES DE AUTOCOMPLETAR (NUEVAS)
+// 2. FUNCIONES DE AUTOCOMPLETAR
 function fillCommonRisk() {
   const val = document.getElementById('commonRiskSelect').value;
   if(!val) return;
@@ -155,7 +155,64 @@ function fillCommonTask() {
   }
 }
 
-// 3. CARGA DE DATOS
+// 3. FUNCIONES DE SUGERENCIA CON IA
+async function suggestRiskWithAI() {
+  const btn = document.getElementById('btnAI_Risk');
+  const originalText = btn.textContent;
+  btn.textContent = "🧠 Pensando..."; btn.disabled = true;
+  
+  const companyName = document.getElementById('riskCompany').options[document.getElementById('riskCompany').selectedIndex]?.text || "la organización";
+  
+  try {
+    const res = await fetch(`${API_URL}/gov/suggest-risk`, {
+      method: 'POST', headers, body: JSON.stringify({ companyName })
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+      document.getElementById('riskName').value = data.riskName || "";
+      document.getElementById('riskCategory').value = data.category || "Operacional";
+      document.getElementById('riskProb').value = data.probability || 3;
+      document.getElementById('riskImpact').value = data.impact || 3;
+      document.getElementById('riskMitigation').value = data.mitigationPlan || "";
+    } else {
+      alert("No se pudo generar el riesgo con IA.");
+    }
+  } catch (error) {
+    alert("Error de conexión con la IA.");
+  } finally {
+    btn.textContent = originalText; btn.disabled = false;
+  }
+}
+
+async function suggestTaskWithAI() {
+  const btn = document.getElementById('btnAI_Task');
+  const originalText = btn.textContent;
+  btn.textContent = "🧠 Pensando..."; btn.disabled = true;
+  
+  const companyName = document.getElementById('orgSelector')?.selectedOptions[0]?.text || "la organización";
+
+  try {
+    const res = await fetch(`${API_URL}/gov/suggest-task`, {
+      method: 'POST', headers, body: JSON.stringify({ companyName })
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+      document.getElementById('taskName').value = data.taskName || "";
+      document.getElementById('taskPhase').value = data.phase || "Fase 1: Diagnóstico";
+      document.getElementById('taskAssignee').value = data.assignedTo || "Ambos";
+    } else {
+      alert("No se pudo generar la tarea con IA.");
+    }
+  } catch (error) {
+    alert("Error de conexión con la IA.");
+  } finally {
+    btn.textContent = originalText; btn.disabled = false;
+  }
+}
+
+// 4. CARGA DE DATOS
 async function init() {
   currentUser = JSON.parse(localStorage.getItem('gov_user'));
   if (!currentUser) return window.location.href = 'index.html';
@@ -222,7 +279,7 @@ async function loadInventory() {
   } catch (error) {}
 }
 
-// 4. MATRIZ GLOBAL
+// 5. MATRIZ GLOBAL
 async function loadMatrix() {
   try {
     const res = await fetch(`${API_URL}/gov/evaluations`, { headers });
@@ -246,7 +303,7 @@ async function loadMatrix() {
 
 function openDiagnosticFor(fw) { document.getElementById('tabInventoryBtn').click(); document.getElementById('openDiagnosticBtn').click(); document.getElementById('diagFramework').value = fw; }
 
-// 5. PLAN DE TRABAJO
+// 6. PLAN DE TRABAJO
 async function loadDeliverables() {
   try {
     const res = await fetch(`${API_URL}/gov/deliverables`, { headers });
@@ -273,7 +330,7 @@ document.getElementById('newDeliverableForm').addEventListener('submit', async (
   try { const res = await fetch(`${API_URL}/gov/deliverables`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newDeliverableModal').classList.add('hidden'); e.target.reset(); loadDeliverables(); } else alert('Error al guardar tarea'); } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Tarea'; btn.disabled = false; }
 });
 
-// 6. REGISTRO DE RIESGOS
+// 7. REGISTRO DE RIESGOS
 async function loadRisks() {
   try {
     const res = await fetch(`${API_URL}/gov/risks`, { headers });
@@ -320,7 +377,7 @@ document.getElementById('newRiskForm').addEventListener('submit', async (e) => {
   } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
 });
 
-// 7. RESTO DE FUNCIONES
+// 8. RESTO DE FUNCIONES (Leads, Users, Evidence, Forms, Diagnosis)
 async function loadLeads() {
   try {
     const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
