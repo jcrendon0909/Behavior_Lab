@@ -6,6 +6,9 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { MongoClient } from "mongodb";
 import { createGovRouter } from "./gov.js";
+import multer from "multer";
+import { extractText, getDocumentProxy } from 'unpdf';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 console.log("¿EXISTE .env?:", fs.existsSync(".env"));
 dotenv.config();
@@ -31,6 +34,18 @@ app.use(cors({
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000, max: 20,
   message: { reply: "Demasiadas peticiones. Intenta de nuevo en un minuto." }
+});
+
+// ---------- MULTER & R2 ----------
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+const s3 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+  },
 });
 
 // ---------- MONGODB ----------
@@ -59,7 +74,6 @@ async function audit(entry) {
 // ---------- PROMPT INJECTION ----------
 const INJECTION_PATTERNS = [/ignora\s+(las\s+)?instrucciones/i, /system\s*prompt/i, /revela.*(api|key|token)/i];
 function detectInjection(message) { return INJECTION_PATTERNS.some(p => p.test(message)); }
-
 function escapeRegex(str) { return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
 // ---------- GROQ KEYS ----------
@@ -110,7 +124,7 @@ async function searchKnowledge(query) {
   } catch (error) { return null; }
 }
 
-// ---------- MODOS (PROMPT ACTUALIZADO) ----------
+// ---------- MODOS ----------
 const MODES = {
   default: `
 Eres el asistente experto de BehaviorLab, una consultora líder en Gobernanza de IA, Riesgos y Cumplimiento (GRC) y Ciberseguridad.
@@ -194,6 +208,70 @@ app.get("/leads", async (req, res) => {
     const leads = await db.collection("leads").find({}).sort({ ts: -1 }).toArray();
     res.json(leads);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ---------- UPLOAD EVIDENCE ----------
+app.post("/gov/upload-evidence", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No se subió ningún archivo" });
+    const { companyId, questionId } = req.body;
+    
+    let pdfText = "";
+    try {
+      const pdf = await getDocumentProxy(new Uint8Array(req.file.buffer));
+      const { text } = await extractText(pdf, { mergePages: true });
+      pdfText = text.substring(0, 3000); 
+    } catch (e) {
+      console.error("Error parseando PDF:", e);
+      return res.status(400).json({ error: "El archivo no es un PDF válido." });
+    }
+
+    if (pdfText.trim().length < 50) {
+      return res.status(400).json({ error: "El PDF parece estar vacío (se requiere texto)." });
+    }
+
+    const fileName = `company_${companyId}/q_${questionId}_${Date.now()}.pdf`;
+    const bucketName = process.env.R2_BUCKET_NAME;
+    
+    await s3.send(new PutObjectCommand({
+      Bucket: bucketName,
+      Key: fileName,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype
+    }));
+
+    const prompt = `
+Eres un auditor experto en ISO 42001. 
+El usuario ha subido un documento como evidencia para la pregunta: "${questionId}".
+Texto extraído del documento: "${pdfText}"
+Analiza si este documento realmente sirve como evidencia válida de gobernanza de IA.
+Responde SOLO con un JSON válido con esta estructura:
+{"valido": true/false, "razon": "Explicación breve de por qué es válido o no"}
+`;
+    const aiResult = await callGroq([{ role: "user", content: prompt }], 150);
+    
+    let validation = { valido: true, razon: "Documento válido aceptado." };
+    try {
+      const parsed = JSON.parse(aiResult.replace(/```json/g, '').replace(/```/g, '').trim());
+      validation = parsed;
+    } catch (e) {
+      console.error("Error parseando JSON de Groq:", aiResult);
+    }
+
+    if (db) {
+      await db.collection("evidence").insertOne({
+        ts: new Date(), companyId, questionId, fileName,
+        r2Url: `https://${bucketName}.${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${fileName}`,
+        validation
+      });
+    }
+
+    res.json({ ok: true, url: fileName, validation });
+
+  } catch (error) {
+    console.error("❌ Error en upload evidence:", error);
+    res.status(500).json({ error: "Error interno subiendo o analizando la evidencia." });
+  }
 });
 
 app.post("/gov/generate-report", async (req, res) => {

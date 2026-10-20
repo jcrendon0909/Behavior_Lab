@@ -27,7 +27,6 @@ async function init() {
   document.getElementById('userEmail').textContent = currentUser.email;
   currentOrgId = currentUser.orgId;
 
-  // Si es superadmin, cargar el selector de organizaciones
   if (currentUser.role === 'superadmin') {
     const container = document.getElementById('orgSelectorContainer');
     container.classList.remove('hidden');
@@ -44,7 +43,6 @@ async function init() {
       loadDashboardData();
     });
   } else {
-    // Si es un cliente normal (admin/auditor), ocultar pestañas de superadmin
     document.getElementById('tabLeadsBtn').classList.add('hidden');
     document.getElementById('tabUsersBtn').classList.add('hidden');
   }
@@ -68,14 +66,14 @@ const secLeads = document.getElementById('leadsSection');
 const secUsers = document.getElementById('usersSection');
 
 function resetTabs() {
-  [tabInvBtn, tabCompBtn, tabLeadsBtn, tabUsersBtn].forEach(b => b.className = 'text-slate-500 hover:text-slate-300 pb-2 transition');
+  [tabInvBtn, tabCompBtn, tabLeadsBtn, tabUsersBtn].forEach(b => b.className = 'text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap');
   [secInv, secComp, secLeads, secUsers].forEach(s => { s.classList.add('hidden'); s.classList.remove('block'); });
 }
 
-tabInvBtn.addEventListener('click', () => { resetTabs(); tabInvBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition'; secInv.classList.remove('hidden'); secInv.classList.add('block'); });
-tabCompBtn.addEventListener('click', () => { resetTabs(); tabCompBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition'; secComp.classList.remove('hidden'); secComp.classList.add('block'); });
-tabLeadsBtn.addEventListener('click', () => { resetTabs(); tabLeadsBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition'; secLeads.classList.remove('hidden'); secLeads.classList.add('block'); loadLeads(); });
-tabUsersBtn.addEventListener('click', () => { resetTabs(); tabUsersBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition'; secUsers.classList.remove('hidden'); secUsers.classList.add('block'); loadUsers(); });
+tabInvBtn.addEventListener('click', () => { resetTabs(); tabInvBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secInv.classList.remove('hidden'); secInv.classList.add('block'); });
+tabCompBtn.addEventListener('click', () => { resetTabs(); tabCompBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secComp.classList.remove('hidden'); secComp.classList.add('block'); });
+tabLeadsBtn.addEventListener('click', () => { resetTabs(); tabLeadsBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secLeads.classList.remove('hidden'); secLeads.classList.add('block'); loadLeads(); });
+tabUsersBtn.addEventListener('click', () => { resetTabs(); tabUsersBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secUsers.classList.remove('hidden'); secUsers.classList.add('block'); loadUsers(); });
 
 // CARGAR DATOS
 async function loadCompanies() {
@@ -194,6 +192,70 @@ async function loadUsers() {
   } catch (error) { console.error("Error users:", error); }
 }
 
+// ==========================================
+// SUBIR EVIDENCIA (APLICA PARA TODAS)
+// ==========================================
+async function subirEvidencia(event, qId) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const btn = document.getElementById(`btn_${qId}`);
+  const status = document.getElementById(`status_${qId}`);
+  const select = document.getElementById(qId);
+  const companyId = document.getElementById('diagCompany').value;
+
+  if (!companyId) {
+    alert("Por favor selecciona una filial primero.");
+    event.target.value = "";
+    return;
+  }
+
+  btn.textContent = "⏳ Analizando...";
+  btn.disabled = true;
+  status.textContent = "";
+  
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("companyId", companyId);
+  formData.append("questionId", qId);
+
+  try {
+    const res = await fetch(`${API_URL}/gov/upload-evidence`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.validation.valido) {
+      btn.textContent = "✅ Validado";
+      btn.classList.replace('bg-slate-700', 'bg-teal-900');
+      btn.classList.replace('hover:bg-slate-600', 'hover:bg-teal-800');
+      status.textContent = "Aprobado";
+      status.className = "text-[10px] mt-1 text-teal-400 font-bold text-right w-36 truncate";
+      select.value = "5"; 
+      select.dataset.hasEvidence = "true"; // Bandera de evidencia válida
+    } else {
+      btn.textContent = "❌ Rechazado";
+      btn.classList.replace('bg-slate-700', 'bg-rose-900');
+      status.textContent = data.validation?.razon || "No válido";
+      status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate";
+      select.value = "0";
+      select.dataset.hasEvidence = "false";
+    }
+  } catch (err) {
+    console.error(err);
+    btn.textContent = "📎 Subir Evidencia";
+    status.textContent = "Error de red";
+    status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate";
+    select.dataset.hasEvidence = "false";
+  } finally {
+    btn.disabled = false;
+    event.target.value = ""; // Permite volver a subir si falla
+  }
+}
+
 // MODALES
 const modalModel = document.getElementById('newModelModal');
 const formModel = document.getElementById('newModelForm');
@@ -225,18 +287,15 @@ formCompany.addEventListener('submit', async (e) => {
   } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Filial'; btn.disabled = false; }
 });
 
-// MODAL USUARIOS (AQUÍ ESTÁ LA CORRECCIÓN)
 const modalUser = document.getElementById('newUserModal');
 const formUser = document.getElementById('newUserForm');
 
 document.getElementById('openUserModalBtn').addEventListener('click', async () => {
   const userOrgSelect = document.getElementById('userOrg');
-  // Nos aseguramos de tener las orgs cargadas
   if (orgsCache.length === 0) {
     const res = await fetch(`${API_URL}/gov/orgs`, { headers });
     orgsCache = await res.json();
   }
-  // Llenamos el dropdown justo antes de mostrar el modal
   userOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
   modalUser.classList.remove('hidden');
 });
@@ -246,26 +305,16 @@ document.getElementById('closeUserModalBtn').addEventListener('click', () => mod
 formUser.addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = formUser.querySelector('button[type="submit"]'); btn.textContent = 'Creando...'; btn.disabled = true;
-  const payload = {
-    name: document.getElementById('userName').value,
-    email: document.getElementById('userEmailInput').value,
-    password: document.getElementById('userPassword').value,
-    role: document.getElementById('userRole').value,
-    orgId: document.getElementById('userOrg').value
-  };
+  const payload = { name: document.getElementById('userName').value, email: document.getElementById('userEmailInput').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value, orgId: document.getElementById('userOrg').value };
   try {
     const res = await fetch(`${API_URL}/gov/users`, { method: 'POST', headers, body: JSON.stringify(payload) });
-    if (res.ok) { 
-      modalUser.classList.add('hidden'); formUser.reset(); loadUsers(); 
-      alert("Usuario creado exitosamente. Comparte la contraseña con el cliente.");
-    } else {
-      const err = await res.json();
-      alert('Error: ' + err.error);
-    }
-  } catch (err) { alert('Error de conexión'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
+    let data = {}; try { data = await res.json(); } catch (e) {}
+    if (res.ok) { modalUser.classList.add('hidden'); formUser.reset(); loadUsers(); alert("Usuario creado exitosamente."); } 
+    else { alert('Error del Servidor: ' + (data.error || 'Revisa la terminal')); }
+  } catch (err) { alert('Error de red.'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
 });
 
-// DIAGNÓSTICO CON IA (Sin cambios)
+// DIAGNÓSTICO
 const modalDiag = document.getElementById('diagnosticModal');
 const formDiag = document.getElementById('diagnosticForm');
 const diagFormCont = document.getElementById('diagnosticFormContainer');
@@ -274,6 +323,19 @@ const diagResultCont = document.getElementById('diagnosticResultContainer');
 document.getElementById('openDiagnosticBtn').addEventListener('click', () => {
   diagFormCont.classList.remove('hidden'); diagResultCont.classList.add('hidden'); modalDiag.classList.remove('hidden'); modalDiag.classList.add('flex');
   const btnAI = document.getElementById('btnGenerateAIReport'); btnAI.classList.add('hidden'); btnAI.textContent = '🧠 Generando Reporte...';
+  
+  // Resetear todas las evidencias al abrir
+  for(let i=1; i<=12; i++) {
+    const qId = `q${i}`;
+    document.getElementById(`status_${qId}`).textContent = "";
+    const btnUpload = document.getElementById(`btn_${qId}`);
+    if(btnUpload) {
+      btnUpload.textContent = "📎 Subir Evidencia";
+      btnUpload.className = "text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition w-36";
+    }
+    const sel = document.getElementById(qId);
+    if(sel) sel.dataset.hasEvidence = "false";
+  }
 });
 document.getElementById('closeDiagBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
 document.getElementById('closeResultBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
@@ -283,13 +345,16 @@ formDiag.addEventListener('submit', async (e) => {
   const btn = formDiag.querySelector('button[type="submit"]'); btn.textContent = 'Calculando...'; btn.disabled = true;
   const companySelect = document.getElementById('diagCompany'); const companyId = companySelect.value; const companyName = companySelect.options[companySelect.selectedIndex].text;
   
-  const qSelects = document.querySelectorAll('.diag-q'); const evCheckboxes = document.querySelectorAll('.diag-ev');
+  const qSelects = document.querySelectorAll('.diag-q');
   let totalScore = 0; const answers = {}; let phase1 = [], phase2 = [], phase3 = [];
   const recs = [ {p1:"Política IA.",p2:"Capacitar.",p3:"Auditar."}, {p1:"Oficial IA.",p2:"Comité.",p3:"Revisión."}, {p1:"Presupuesto.",p2:"Plan anual.",p3:"ROI."}, {p1:"Checklist AIA.",p2:"Automatizar.",p3:"Auditoría."}, {p1:"Modelos críticos.",p2:"Equidad.",p3:"Monitoreo."}, {p1:"Kill Switch.",p2:"Simulacros.",p3:"BCP."}, {p1:"Linaje.",p2:"Catálogo.",p3:"DPIA."}, {p1:"Métricas.",p2:"MLOps.",p3:"Reentrenar."}, {p1:"Backup prompts.",p2:"Git.",p3:"Trazabilidad."}, {p1:"Aviso IA.",p2:"Explicar.",p3:"XAI."}, {p1:"Caja negra.",p2:"Reportes.",p3:"Razones."}, {p1:"Buzón quejas.",p2:"Human-in-loop.",p3:"Métricas."} ];
 
   qSelects.forEach((sel, index) => {
-    let val = parseInt(sel.value); const hasEvidence = evCheckboxes[index].checked;
+    let val = parseInt(sel.value);
+    const hasEvidence = sel.dataset.hasEvidence === "true"; // Leer bandera de cada pregunta
+    
     if (val >= 4 && !hasEvidence) val = 2; 
+    
     totalScore += val; answers[`q${index+1}`] = { score: val, evidence: hasEvidence };
     const rec = recs[index];
     if (val <= 2) { phase1.push(rec.p1); phase2.push(rec.p2); phase3.push(rec.p3); }

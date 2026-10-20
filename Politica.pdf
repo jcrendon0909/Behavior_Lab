@@ -1,0 +1,82 @@
+================================================================================
+                    GRUPO INDUSTRIAL ALFA, S.A. DE C.V.
+                      DIRECCIÓN DE TECNOLOGÍA Y GRC
+================================================================================
+
+CÓDIGO DE DOCUMENTO: POL-GRC-AI-001
+VERSIÓN: 1.0 (OFICIAL)
+FECHA DE APROBACIÓN: 20 de Octubre de 2026
+AMBITO DE APLICACIÓN: Transversal (Todas las filiales y unidades de negocio)
+ALINEACIÓN NORMATIVA: ISO/IEC 42001, NIST AI RMF, LFPDPPP, FEUM Suplemento 5.0
+
+--------------------------------------------------------------------------------
+POLÍTICA CORPORATIVA DE USO ACEPTABLE Y GOBERNANZA DE INTELIGENCIA ARTIFICIAL
+--------------------------------------------------------------------------------
+
+1. OBJETIVO
+Establecer el marco institucional de control, supervisión técnica y uso ético 
+de soluciones de Inteligencia Artificial (Predictiva, Generativa y de Visión) 
+en Grupo Industrial Alfa, con el fin de maximizar la eficiencia operativa sin 
+comprometer la propiedad intelectual, los datos personales de colaboradores y 
+clientes, ni el cumplimiento de las regulaciones sanitarias e industriales.
+
+2. ALCANCE
+Esta política es de observancia obligatoria para todo el personal de nómina, 
+directivos, consultores externos, proveedores de tecnología y practicantes en 
+todas las empresas del Grupo.
+
+3. HERRAMIENTAS AUTORIZADAS VS. "IA EN LA SOMBRA" (SHADOW AI)
+   3.1. Herramientas Autorizadas: Solo se permite el uso de algoritmos y 
+        plataformas de IA que cuenten con contrato formal Enterprise firmado por 
+        la Oficina de Gobernanza de IA, garantizando privacidad de datos y no 
+        entrenamiento de modelos públicos con información de Alfa.
+   3.2. Prohibición de IA en la Sombra: Queda estrictamente prohibido el uso de 
+        cuentas personales (gratuitas o de pago) en servicios públicos (ej. 
+        ChatGPT, Claude, Gemini público, Midjourney, etc.) para procesar o 
+        consultar información propia del Grupo.
+
+4. MATRIZ DE CLASIFICACIÓN Y MANEJO DE DATOS EN IA
+
++-------------------------+-----------------------+----------------------------+
+| Clasificación del Dato  | Herramientas Públicas | Plataforma Alfa Enterprise |
++-------------------------+-----------------------+----------------------------+
+| Información Pública     | Permitido             | Permitido                  |
+| Uso Interno Operativo   | PROHIBIDO             | Permitido                  |
+| Datos Personales/Sensib.| PROHIBIDO             | Sujeto a Evaluación DPIA   |
+| Secretos Industriales / | ESTRICTAMENTE         | Sujeto a aprobación del    |
+| Fórmulas / Recetas      | PROHIBIDO             | Comité de Gobernanza de IA |
++-------------------------+-----------------------+----------------------------+
+
+5. PRINCIPIOS DE USO RESPONSABLE Y SUPERVISIÓN HUMANA (HUMAN-IN-THE-LOOP)
+   5.1. Responsabilidad Final: Las herramientas de IA son únicamente asistentes 
+        de productividad. El usuario que emita o aplique un entregable generado 
+        por IA es 100% responsable de su veracidad, precisión y calidad.
+   5.2. Validación de Sesgo y Alucinaciones: Todo modelo predictivo o 
+        generativo utilizado para la toma de decisiones estratégicas, 
+        formulación de productos o decisiones de personal debe contar con 
+        auditoría técnica y validación humana documentada.
+   5.3. Declaración de Uso: Cualquier reporte corporativo o código entregado a 
+        clientes o reguladores que haya sido producido sustancialmente mediante 
+        IA deberá declarar explícitamente su nivel de asistencia algorítmica.
+
+6. ESTRUCTURA DE GOBERNANZA (HABILITACIÓN HUB & SPOKE)
+   6.1. Comité de Gobernanza de IA (Hub): Sesionará de forma mensual para 
+        aprobar nuevos proyectos de IA, evaluar casos de alto riesgo y 
+        gestionar la actualización normativas (COFEPRIS/SaMD, ISO 42001).
+   6.2. AI Champions (Spokes): Cada filial designará un punto focal capacitado 
+        para canalizar iniciativas de IA, supervisar el cumplimiento local y 
+        reportar incidentes de seguridad de datos.
+
+7. GESTIÓN DE INCIDENTES Y SANCIONES
+   El incumplimiento de esta política, incluyendo la filtración de secretos 
+   comerciales o fórmulas a través de herramientas de IA no autorizadas, será 
+   considerado una falta grave a la confidencialidad corporativa y estará sujeto 
+   a las sanciones estipuladas en el Reglamento Interior de Trabajo y la 
+   legislación aplicable.
+
+--------------------------------------------------------------------------------
+APROBADO POR:
+
+___________________________           ___________________________
+Comité de Gobernanza de IA            Dirección Jurídica y Compliance
+Grupo Industrial Alfa                 Grupo Industrial Alfa

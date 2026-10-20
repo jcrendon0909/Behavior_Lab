@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Behavior Lab | Gobernanza de IA y Ciberseguridad</title>
-  <meta name="description" content="Gobernanza de Inteligencia Artificial y MLOps para empresas reguladas. Cumplimiento con ISO 42001, NIST AI RMF, COFEPRIS y LFPDPPP.">
+  <title>Behavior Lab | Agentes de IA y Gobernanza</title>
+  <meta name="description" content="Diseñamos agentes de IA personalizados y aseguramos su gobernanza (ISO 42001, NIST AI RMF) para empresas reguladas.">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            brand: { teal: '#26aaa3', green: '#67a934', dark: '#0b2028', light: '#f3f8f6' }
-          },
+          colors: { brand: { teal: '#26aaa3', green: '#67a934', dark: '#0b2028', light: '#f3f8f6' } },
           fontFamily: { sans: ['Inter', 'sans-serif'] }
         }
       }
@@ -27,11 +25,10 @@
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <span class="text-2xl font-black tracking-tight text-slate-900">BEHAVIOR <span class="text-brand-teal">LAB</span></span>
-        <span class="hidden sm:inline-block text-xs bg-teal-50 text-brand-teal border border-teal-200 px-2 py-1 rounded-full font-bold uppercase tracking-wider ml-2">AI Governance</span>
       </div>
       <nav class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-        <a href="#servicios" class="hover:text-brand-teal transition">Servicios</a>
-        <a href="#marcos" class="hover:text-brand-teal transition">Marcos</a>
+        <a href="#agentes" class="hover:text-brand-teal transition">Agentes de IA</a>
+        <a href="#gobernanza" class="hover:text-brand-teal transition">Gobernanza (GRC)</a>
         <a href="#calculadora" class="hover:text-brand-teal transition">Diagnóstico</a>
         <a href="app/index.html" id="navLoginBtn" class="bg-brand-teal hover:bg-teal-600 text-white px-6 py-2.5 rounded-full transition shadow-md shadow-teal-500/20">Iniciar Sesión</a>
       </nav>
@@ -39,15 +36,16 @@
     </div>
   </header>
 
-  <!-- Hero Section -->
+  <!-- Hero Section (Unificado) -->
   <section class="relative overflow-hidden pt-24 pb-32 bg-gradient-to-b from-white to-brand-light">
     <div class="max-w-7xl mx-auto px-6 relative z-10 text-center">
+      <span class="inline-block py-1 px-3 rounded-full bg-teal-100 text-teal-800 text-xs font-bold tracking-wider uppercase mb-6">Agentes Inteligentes + Gobernanza</span>
       <h1 class="text-5xl md:text-6xl font-black text-slate-900 leading-tight tracking-tight mb-6">
-        Gobernanza de IA para<br>
-        <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-teal to-brand-green">Empresas Reguladas.</span>
+        No solo creamos Agentes de IA.<br>
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-teal to-brand-green">Los hacemos seguros y auditables.</span>
       </h1>
       <p class="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto mb-10">
-        Protegemos tu operación con marcos internacionales (ISO 42001, NIST AI RMF) y cumplimiento regulatorio local (LFPDPPP, COFEPRIS / SaMD). No es solo software, son agentes inteligentes gobernados y seguros.
+        Diseñamos e implementamos agentes de IA a medida para potenciar tu negocio, y los protegemos con los marcos de gobernanza más estrictos del mundo (ISO 42001, NIST AI RMF).
       </p>
       <div class="flex flex-col sm:flex-row justify-center gap-4">
         <a href="app/index.html" class="bg-brand-teal hover:bg-teal-600 text-white px-8 py-4 rounded-full font-bold text-lg transition shadow-lg shadow-teal-500/30">Acceder al Portal</a>
@@ -56,212 +54,107 @@
     </div>
   </section>
 
-  <!-- Servicios (4 Pilares) -->
-  <section id="servicios" class="py-24 bg-white">
+  <!-- Sección 1: Agentes y Metodología (Lo original) -->
+  <section id="agentes" class="py-24 bg-white">
     <div class="max-w-7xl mx-auto px-6">
       <div class="text-center mb-16">
-        <h2 class="text-3xl md:text-4xl font-black text-slate-900 mb-4">Nuestras Capacidades</h2>
-        <p class="text-slate-600 max-w-2xl mx-auto">Alineamos la estrategia de IA con las políticas corporativas, la ciberseguridad y el marco legal aplicable.</p>
+        <h2 class="text-3xl md:text-4xl font-black text-slate-900 mb-4">Agentes de IA a tu medida</h2>
+        <p class="text-slate-600 max-w-2xl mx-auto">Automatizamos procesos, inteligencia comercial y soporte a decisiones con nuestra metodología probada de 5 pasos.</p>
       </div>
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <div class="p-8 bg-brand-light rounded-3xl border border-teal-100 hover:shadow-xl transition">
-          <div class="text-4xl mb-4">⚖️</div>
-          <h3 class="text-xl font-bold mb-3 text-slate-900">Diagnóstico y Triaje</h3>
-          <p class="text-slate-600 text-sm leading-relaxed">Evaluación de madurez, inventario de modelos (incluyendo Shadow AI) y clasificación de riesgo regulatorio.</p>
-        </div>
-        <div class="p-8 bg-brand-light rounded-3xl border border-teal-100 hover:shadow-xl transition">
-          <div class="text-4xl mb-4">🏢</div>
-          <h3 class="text-xl font-bold mb-3 text-slate-900">Modelo Hub & Spoke</h3>
-          <p class="text-slate-600 text-sm leading-relaxed">Diseño de estructuras de gobierno corporativo para grupos multiempresa y holdings.</p>
-        </div>
-        <div class="p-8 bg-brand-light rounded-3xl border border-teal-100 hover:shadow-xl transition">
-          <div class="text-4xl mb-4">🛡️</div>
-          <h3 class="text-xl font-bold mb-3 text-slate-900">Cumplimiento (GRC)</h3>
-          <p class="text-slate-600 text-sm leading-relaxed">Preparación para auditorías ISO 42001, NIST AI RMF, validación SaMD (COFEPRIS) y protección de datos.</p>
-        </div>
-        <div class="p-8 bg-brand-light rounded-3xl border border-teal-100 hover:shadow-xl transition">
-          <div class="text-4xl mb-4">📊</div>
-          <h3 class="text-xl font-bold mb-3 text-slate-900">Monitoreo MLOps</h3>
-          <p class="text-slate-600 text-sm leading-relaxed">Evaluación continua de agentes de IA: control de alucinaciones, sesgos, drift y trazabilidad de decisiones.</p>
-        </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-4 text-center">
+        <div class="p-6 bg-slate-50 rounded-2xl border border-gray-100"><div class="text-3xl mb-3">🔍</div><h3 class="font-bold text-slate-900 mb-1">1. Diagnóstico</h3><p class="text-xs text-slate-500">Entendemos tu proceso y datos.</p></div>
+        <div class="p-6 bg-slate-50 rounded-2xl border border-gray-100"><div class="text-3xl mb-3">✏️</div><h3 class="font-bold text-slate-900 mb-1">2. Diseño</h3><p class="text-xs text-slate-500">Arquitectura del agente y prompts.</p></div>
+        <div class="p-6 bg-slate-50 rounded-2xl border border-gray-100"><div class="text-3xl mb-3">🧠</div><h3 class="font-bold text-slate-900 mb-1">3. Entrenamiento</h3><p class="text-xs text-slate-500">Conexión a tu base de conocimiento.</p></div>
+        <div class="p-6 bg-slate-50 rounded-2xl border border-gray-100"><div class="text-3xl mb-3">🔗</div><h3 class="font-bold text-slate-900 mb-1">4. Integración</h3><p class="text-xs text-slate-500">APIs, CRM y flujos de trabajo.</p></div>
+        <div class="p-6 bg-slate-50 rounded-2xl border border-gray-100"><div class="text-3xl mb-3">🚀</div><h3 class="font-bold text-slate-900 mb-1">5. Despliegue</h3><p class="text-xs text-slate-500">Puesta en marcha y monitoreo.</p></div>
       </div>
     </div>
   </section>
 
-  <!-- Calculadora de Riesgo Interactiva -->
-  <section id="calculadora" class="py-24 bg-slate-900 text-white">
+  <!-- Sección 2: Gobernanza (GRC) -->
+  <section id="gobernanza" class="py-24 bg-slate-900 text-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-black mb-4">Gobernanza de IA y Ciberseguridad</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">Protegemos tu operación con marcos internacionales (ISO 42001, NIST AI RMF) y cumplimiento regulatorio local (LFPDPPP, COFEPRIS / SaMD).</p>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="p-8 bg-slate-800 rounded-3xl border border-slate-700 hover:border-teal-500 transition"><div class="text-4xl mb-4">⚖️</div><h3 class="text-xl font-bold mb-3 text-white">Diagnóstico y Triaje</h3><p class="text-slate-400 text-sm">Evaluación de madurez, inventario de modelos y clasificación de riesgo regulatorio.</p></div>
+        <div class="p-8 bg-slate-800 rounded-3xl border border-slate-700 hover:border-teal-500 transition"><div class="text-4xl mb-4">🏢</div><h3 class="text-xl font-bold mb-3 text-white">Modelo Hub & Spoke</h3><p class="text-slate-400 text-sm">Diseño de estructuras de gobierno corporativo para grupos multiempresa y holdings.</p></div>
+        <div class="p-8 bg-slate-800 rounded-3xl border border-slate-700 hover:border-teal-500 transition"><div class="text-4xl mb-4">🛡️</div><h3 class="text-xl font-bold mb-3 text-white">Cumplimiento (GRC)</h3><p class="text-slate-400 text-sm">Preparación para auditorías ISO 42001, NIST AI RMF, validación SaMD (COFEPRIS).</p></div>
+        <div class="p-8 bg-slate-800 rounded-3xl border border-slate-700 hover:border-teal-500 transition"><div class="text-4xl mb-4">📊</div><h3 class="text-xl font-bold mb-3 text-white">Monitoreo MLOps</h3><p class="text-slate-400 text-sm">Evaluación continua de agentes de IA: control de alucinaciones, sesgos y trazabilidad.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección 3: Calculadora de Riesgo -->
+  <section id="calculadora" class="py-24 bg-brand-light">
     <div class="max-w-4xl mx-auto px-6">
       <div class="text-center mb-10">
         <span class="text-brand-teal font-bold tracking-wider uppercase text-sm">Evaluación Preliminar</span>
-        <h2 class="text-3xl md:text-4xl font-black mt-2 mb-4">Calculadora de Riesgo de IA</h2>
-        <p class="text-slate-400">Descubre el nivel de exposición de tu empresa en 3 simples pasos.</p>
+        <h2 class="text-3xl md:text-4xl font-black mt-2 mb-4 text-slate-900">Calculadora de Riesgo de IA</h2>
+        <p class="text-slate-600">Descubre el nivel de exposición de tu empresa en 3 simples pasos.</p>
       </div>
-
-      <div class="bg-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-700">
+      <div class="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-gray-200">
         <form id="riskForm" class="space-y-8">
-          <!-- Sector -->
-          <div>
-            <label class="block text-sm font-bold text-slate-300 mb-3">1. Sector Operativo de tu Empresa</label>
-            <select id="sector" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-brand-teal">
-              <option value="servicios">Servicios / Retail / Logística</option>
-              <option value="alimentos">Alimentos y Consumo Masivo</option>
-              <option value="salud">Cuidado Personal / Salud / Biotecnología</option>
-            </select>
-          </div>
-
-          <!-- Shadow AI -->
-          <div>
-            <label class="block text-sm font-bold text-slate-300 mb-3">2. ¿Los colaboradores usan IA Generativa (ChatGPT, Claude, etc.)?</label>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <label class="cursor-pointer">
-                <input type="radio" name="shadow_ai" value="alto" class="peer sr-only" checked>
-                <div class="p-4 rounded-xl border border-slate-600 text-center peer-checked:bg-brand-teal/10 peer-checked:border-brand-teal peer-checked:text-brand-teal transition">
-                  <span class="block text-sm font-bold">Sí, libremente</span>
-                  <span class="text-xs opacity-70">(Sin política definida)</span>
-                </div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="shadow_ai" value="medio" class="peer sr-only">
-                <div class="p-4 rounded-xl border border-slate-600 text-center peer-checked:bg-brand-teal/10 peer-checked:border-brand-teal peer-checked:text-brand-teal transition">
-                  <span class="block text-sm font-bold">Sí, con guías</span>
-                  <span class="text-xs opacity-70">(Informales)</span>
-                </div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="shadow_ai" value="bajo" class="peer sr-only">
-                <div class="p-4 rounded-xl border border-slate-600 text-center peer-checked:bg-brand-teal/10 peer-checked:border-brand-teal peer-checked:text-brand-teal transition">
-                  <span class="block text-sm font-bold">Sí, regulado</span>
-                  <span class="text-xs opacity-70">(Política oficial)</span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <!-- SaMD -->
-          <div>
-            <label class="block text-sm font-bold text-slate-300 mb-3">3. ¿Usan software para diagnósticos, recomendaciones o salud?</label>
-            <div class="flex gap-6">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="samd" value="si" class="w-4 h-4 text-brand-teal focus:ring-brand-teal bg-slate-900 border-slate-600">
-                <span class="text-sm">Sí (Aplica COFEPRIS/SaMD)</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="samd" value="no" class="w-4 h-4 text-brand-teal focus:ring-brand-teal bg-slate-900 border-slate-600" checked>
-                <span class="text-sm">No</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Datos de Contacto -->
-          <div class="pt-4 border-t border-slate-700">
-            <label class="block text-sm font-bold text-slate-300 mb-3">4. ¿A dónde enviamos tu reporte?</label>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <input type="text" id="leadName" placeholder="Tu Nombre" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-brand-teal outline-none">
-              <input type="text" id="leadCompany" placeholder="Nombre de tu Empresa" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-brand-teal outline-none">
-            </div>
-            <input type="email" id="leadEmail" placeholder="tu@empresa.com" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-brand-teal outline-none">
-          </div>
-
-          <button type="button" id="btnCalcular" onclick="calcularRiesgo(event)" class="w-full bg-brand-teal hover:bg-teal-500 text-white font-bold py-4 rounded-xl transition shadow-lg mt-4">
-            Ver mi Diagnóstico Preliminar
-          </button>
+          <div><label class="block text-sm font-bold text-slate-700 mb-3">1. Sector Operativo de tu Empresa</label><select id="sector" class="w-full bg-slate-50 border border-gray-300 rounded-xl px-4 py-4 text-slate-800 focus:outline-none focus:border-brand-teal"><option value="servicios">Servicios / Retail / Logística</option><option value="alimentos">Alimentos y Consumo Masivo</option><option value="salud">Cuidado Personal / Salud / Biotecnología</option></select></div>
+          <div><label class="block text-sm font-bold text-slate-700 mb-3">2. ¿Los colaboradores usan IA Generativa (ChatGPT, Claude, etc.)?</label><div class="grid grid-cols-1 md:grid-cols-3 gap-3"><label class="cursor-pointer"><input type="radio" name="shadow_ai" value="alto" class="peer sr-only" checked><div class="p-4 rounded-xl border border-gray-300 text-center peer-checked:bg-teal-50 peer-checked:border-brand-teal peer-checked:text-brand-teal transition"><span class="block text-sm font-bold">Sí, libremente</span><span class="text-xs text-slate-500">(Sin política)</span></div></label><label class="cursor-pointer"><input type="radio" name="shadow_ai" value="medio" class="peer sr-only"><div class="p-4 rounded-xl border border-gray-300 text-center peer-checked:bg-teal-50 peer-checked:border-brand-teal peer-checked:text-brand-teal transition"><span class="block text-sm font-bold">Sí, con guías</span><span class="text-xs text-slate-500">(Informales)</span></div></label><label class="cursor-pointer"><input type="radio" name="shadow_ai" value="bajo" class="peer sr-only"><div class="p-4 rounded-xl border border-gray-300 text-center peer-checked:bg-teal-50 peer-checked:border-brand-teal peer-checked:text-brand-teal transition"><span class="block text-sm font-bold">Sí, regulado</span><span class="text-xs text-slate-500">(Política oficial)</span></div></label></div></div>
+          <div><label class="block text-sm font-bold text-slate-700 mb-3">3. ¿Usan software para diagnósticos, recomendaciones o salud?</label><div class="flex gap-6"><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="samd" value="si" class="w-4 h-4 text-brand-teal bg-slate-100 border-gray-300"><span class="text-sm text-slate-700">Sí (Aplica SaMD)</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="samd" value="no" class="w-4 h-4 text-brand-teal bg-slate-100 border-gray-300" checked><span class="text-sm text-slate-700">No</span></label></div></div>
+          <div class="pt-4 border-t border-gray-200"><label class="block text-sm font-bold text-slate-700 mb-3">4. ¿A dónde enviamos tu reporte?</label><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><input type="text" id="leadName" placeholder="Tu Nombre" required class="w-full bg-slate-50 border border-gray-300 rounded-xl px-4 py-3 text-slate-800 focus:border-brand-teal outline-none"><input type="text" id="leadCompany" placeholder="Nombre de tu Empresa" required class="w-full bg-slate-50 border border-gray-300 rounded-xl px-4 py-3 text-slate-800 focus:border-brand-teal outline-none"></div><input type="email" id="leadEmail" placeholder="tu@empresa.com" required class="w-full bg-slate-50 border border-gray-300 rounded-xl px-4 py-3 text-slate-800 focus:border-brand-teal outline-none"></div>
+          <button type="button" id="btnCalcular" onclick="calcularRiesgo(event)" class="w-full bg-brand-teal hover:bg-teal-500 text-white font-bold py-4 rounded-xl transition shadow-lg mt-4">Ver mi Diagnóstico Preliminar</button>
         </form>
-
-        <!-- Result Box -->
-        <div id="resultBox" class="hidden mt-8 p-6 bg-slate-900 border border-brand-teal rounded-xl">
-          <h3 class="text-xl font-bold text-white mb-4">Tu Nivel de Exposición Preliminar:</h3>
-          <div id="resultBadges" class="flex flex-wrap gap-2 mb-4"></div>
-          <p id="resultSummary" class="text-sm text-slate-400 leading-relaxed mb-6"></p>
-          <div class="text-center border-t border-slate-700 pt-6">
-            <p class="text-white font-bold mb-3">¿Quieres saber cómo mitigar estos riesgos?</p>
-            <a href="app/index.html" class="inline-block bg-white text-slate-900 px-6 py-2 rounded-lg font-bold hover:bg-gray-100 transition">Crear cuenta o Iniciar Sesión</a>
-          </div>
+        <div id="resultBox" class="hidden mt-8 p-6 bg-slate-50 border border-brand-teal rounded-xl">
+          <h3 class="text-xl font-bold text-slate-900 mb-4">Tu Nivel de Exposición Preliminar:</h3>
+          <div id="resultBadges" class="flex flex-wrap gap-2 mb-4"></div><p id="resultSummary" class="text-sm text-slate-700 leading-relaxed mb-6"></p>
+          <div class="text-center border-t border-gray-200 pt-6"><p class="text-slate-900 font-bold mb-3">¿Quieres saber cómo mitigar estos riesgos?</p><a href="app/index.html" class="inline-block bg-slate-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-slate-800 transition">Crear cuenta o Iniciar Sesión</a></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
   <footer class="bg-white border-t border-gray-200 py-12 text-center">
     <div class="max-w-7xl mx-auto px-6">
       <span class="text-xl font-black text-slate-900">BEHAVIOR <span class="text-brand-teal">LAB</span></span>
       <p class="text-slate-500 text-sm mt-4">© 2026 Behavior Lab. Todos los derechos reservados. Powered by GōkuLab.</p>
-      <div class="mt-4 space-x-4 text-sm font-semibold text-slate-400">
-        <a href="app/index.html" class="hover:text-brand-teal">Acceso a Clientes</a>
-        <a href="#" class="hover:text-brand-teal">Aviso de Privacidad</a>
-      </div>
+      <div class="mt-4 space-x-4 text-sm font-semibold text-slate-400"><a href="app/index.html" class="hover:text-brand-teal">Acceso a Clientes</a><a href="#" class="hover:text-brand-teal">Aviso de Privacidad</a></div>
     </div>
   </footer>
 
   <script>
-    // Si ya hay sesión, cambiar el botón del header
     if (localStorage.getItem('gov_token')) {
       const btn = document.getElementById('navLoginBtn');
       if (btn) btn.textContent = 'Ir a mi Panel';
     }
-
     async function calcularRiesgo(event) {
       const sector = document.getElementById('sector').value;
       const samd = document.querySelector('input[name="samd"]:checked').value === 'si';
       const shadowAi = document.querySelector('input[name="shadow_ai"]:checked').value;
-      
       const leadName = document.getElementById('leadName').value;
       const leadCompany = document.getElementById('leadCompany').value;
       const leadEmail = document.getElementById('leadEmail').value;
 
-      if(!leadEmail || !leadName) {
-        alert("Por favor llena tus datos de contacto para ver el resultado.");
-        return;
-      }
-
-      const btn = document.getElementById('btnCalcular');
-      btn.textContent = "Generando reporte...";
-      btn.disabled = true;
-      btn.classList.add('opacity-50');
+      if(!leadEmail || !leadName) { alert("Por favor llena tus datos de contacto."); return; }
+      const btn = document.getElementById('btnCalcular'); btn.textContent = "Generando reporte..."; btn.disabled = true; btn.classList.add('opacity-50');
 
       let riskLevel = "bajo";
       if (samd || sector === 'salud' || shadowAi === 'alto') riskLevel = "alto";
       else if (shadowAi === 'medio') riskLevel = "medio";
 
-      // 1. Guardar el prospecto en el Backend (PRODUCCIÓN)
       try {
-        await fetch('https://behavior-lab.onrender.com/leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        await fetch('http://localhost:3000/leads', { // Cambia a Render en producción
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: leadName, email: leadEmail, company: leadCompany, sector, shadow_ai: shadowAi, samd, risk_level: riskLevel })
         });
-      } catch (e) {
-        console.error("Error guardando lead", e);
-      }
+      } catch (e) { console.error("Error guardando lead", e); }
 
-      // 2. Mostrar el resultado visual
-      const resultBox = document.getElementById('resultBox');
-      const resultSummary = document.getElementById('resultSummary');
-      const resultBadges = document.getElementById('resultBadges');
-
-      let resumen = `Hola <strong>${leadName}</strong>, basado en las respuestas de <strong>${leadCompany}</strong>, hemos identificado:<br><br>`;
-      let badges = '';
-
-      if (samd || sector === 'salud') {
-        resumen += `• <strong class="text-amber-400">Alerta SaMD:</strong> Requieren validación regulatoria estricta.<br>`;
-        badges += `<span class="bg-amber-950 text-amber-400 border border-amber-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo Regulatorio Alto</span>`;
-      }
-      if (shadowAi === 'alto') {
-        resumen += `• <strong class="text-rose-400">Shadow AI:</strong> Alto riesgo de fuga de información. Requieren política inmediata.<br>`;
-        badges += `<span class="bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo Ciberseguridad</span>`;
-      }
-
-      resumen += `<br>Hemos enviado una copia de este diagnóstico a <strong>${leadEmail}</strong> (simulado).`;
-      
-      resultSummary.innerHTML = resumen;
-      resultBadges.innerHTML = badges || `<span class="bg-teal-950 text-brand-teal border border-teal-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo Moderado</span>`;
-      
-      resultBox.classList.remove('hidden');
-      resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      btn.textContent = "Ver mi Diagnóstico Preliminar";
-      btn.disabled = false;
-      btn.classList.remove('opacity-50');
+      const resultBox = document.getElementById('resultBox'); const resultSummary = document.getElementById('resultSummary'); const resultBadges = document.getElementById('resultBadges');
+      let resumen = `Hola <strong>${leadName}</strong>, basado en las respuestas de <strong>${leadCompany}</strong>, hemos identificado:<br><br>`; let badges = '';
+      if (samd || sector === 'salud') { resumen += `• <strong class="text-amber-600">Alerta SaMD:</strong> Requieren validación regulatoria estricta.<br>`; badges += `<span class="bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo Regulatorio Alto</span>`; }
+      if (shadowAi === 'alto') { resumen += `• <strong class="text-rose-600">Shadow AI:</strong> Alto riesgo de fuga de información.<br>`; badges += `<span class="bg-rose-100 text-rose-800 border border-rose-300 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo Ciberseguridad</span>`; }
+      resumen += `<br>Hemos enviado una copia a <strong>${leadEmail}</strong> (simulado).`;
+      resultSummary.innerHTML = resumen; resultBadges.innerHTML = badges || `<span class="bg-teal-100 text-brand-teal border border-teal-300 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo Moderado</span>`;
+      resultBox.classList.remove('hidden'); resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      btn.textContent = "Ver mi Diagnóstico Preliminar"; btn.disabled = false; btn.classList.remove('opacity-50');
     }
   </script>
 </body>
