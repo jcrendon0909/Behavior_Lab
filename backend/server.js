@@ -13,7 +13,6 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 console.log("¿EXISTE .env?:", fs.existsSync(".env"));
 dotenv.config();
 
-// Evitar que errores no capturados tumben el servidor
 process.on('uncaughtException', (err) => {
   console.error('🔥 ERROR FATAL NO CAPTURADO:', err);
 });
@@ -22,6 +21,10 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const app = express();
+
+// 🚨 CRUCIAL PARA RENDER: Confiar en el proxy para que el rate-limit no tumbe el server
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: "100kb" }));
 
 // ---------- CORS ----------
@@ -40,8 +43,9 @@ app.use(cors({
 
 // ---------- RATE LIMITING ----------
 const chatLimiter = rateLimit({
-  windowMs: 60 * 1000, max: 20,
-  message: { reply: "Demasiadas peticiones. Intenta de nuevo en un minuto." }
+  windowMs: 60 * 1000, max: 30, // Subimos a 30 para pruebas
+  message: { reply: "Demasiadas peticiones. Intenta de nuevo en un minuto." },
+  validate: { xForwardedForHeader: false } // Prevenir caídas en Render
 });
 
 // ---------- MULTER & R2 ----------
@@ -141,7 +145,6 @@ Tu conocimiento abarca:
 2. Gobernanza de IA: ISO/IEC 42001, NIST AI RMF, y cumplimiento regulatorio local (LFPDPPP, COFEPRIS/SaMD).
 3. Gestión de riesgos de IA (auditoría de sesgos, evaluaciones de impacto, privacidad por diseño).
 4. Nuestra plataforma BehaviorLab: Inventario de IA, Diagnóstico de Madurez, Generación de Políticas y Monitoreo.
-
 **Reglas de respuesta:**
 - Responde en máximo 3 o 4 oraciones. Sé directo, profesional y ejecutivo.
 - Si te preguntan sobre normativas, explica brevemente cómo ayudamos a cumplirlas.
@@ -197,7 +200,10 @@ app.post("/chat", chatLimiter, async (req, res) => {
     await addToConversationHistory(userId, "user", message);
     await addToConversationHistory(userId, "assistant", reply);
     res.json({ reply });
-  } catch (error) { res.json({ reply: "❌ Error en el servidor" }); }
+  } catch (error) { 
+    console.error("❌ Error en chat:", error);
+    res.json({ reply: "❌ Error en el servidor. Intenta de nuevo." }); 
+  }
 });
 
 app.post("/leads", async (req, res) => {
@@ -256,11 +262,14 @@ Analiza si este documento realmente sirve como evidencia válida de gobernanza d
 Responde SOLO con un JSON válido con esta estructura:
 {"valido": true/false, "razon": "Explicación breve de por qué es válido o no"}
 `;
-    const aiResult = await callGroq([{ role: "user", content: prompt }], 150);
+    // Aumentamos a 400 tokens para que no se corte la respuesta
+    const aiResult = await callGroq([{ role: "user", content: prompt }], 400);
     
     let validation = { valido: true, razon: "Documento válido aceptado." };
     try {
-      const parsed = JSON.parse(aiResult.replace(/```json/g, '').replace(/```/g, '').trim());
+      // Parseo más seguro (extrae solo lo que está entre llaves)
+      const jsonStr = aiResult.substring(aiResult.indexOf('{'), aiResult.lastIndexOf('}') + 1);
+      const parsed = JSON.parse(jsonStr);
       validation = parsed;
     } catch (e) {
       console.error("Error parseando JSON de Groq:", aiResult);
@@ -296,7 +305,6 @@ app.use('/gov', (req, res, next) => {
   req.db = db; next();
 }, createGovRouter());
 
-// Manejo de errores de Multer (archivos muy grandes, etc.)
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: "Error de archivo: " + err.message });

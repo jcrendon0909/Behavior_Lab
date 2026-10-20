@@ -1,5 +1,5 @@
-// const API_URL = 'http://localhost:3000'; 
 const API_URL = 'https://behavior-lab.onrender.com'; 
+// const API_URL = 'http://localhost:3000'; 
 
 const token = localStorage.getItem('gov_token');
 if (!token) window.location.href = 'index.html';
@@ -14,46 +14,14 @@ let currentOrgId = null;
 let companiesCache = []; 
 let orgsCache = [];
 
+// ==========================================
+// 1. EVENTOS BÁSICOS (Se configuran primero para que no fallen)
+// ==========================================
 document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('gov_token');
   localStorage.removeItem('gov_user');
   window.location.href = 'index.html';
 });
-
-async function init() {
-  currentUser = JSON.parse(localStorage.getItem('gov_user'));
-  if (!currentUser) return window.location.href = 'index.html';
-  
-  document.getElementById('userEmail').textContent = currentUser.email;
-  currentOrgId = currentUser.orgId;
-
-  if (currentUser.role === 'superadmin') {
-    const container = document.getElementById('orgSelectorContainer');
-    container.classList.remove('hidden');
-    container.classList.add('flex');
-    
-    const res = await fetch(`${API_URL}/gov/orgs`, { headers });
-    orgsCache = await res.json();
-    
-    const selector = document.getElementById('orgSelector');
-    selector.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
-    
-    selector.addEventListener('change', (e) => {
-      currentOrgId = e.target.value;
-      loadDashboardData();
-    });
-  } else {
-    document.getElementById('tabLeadsBtn').classList.add('hidden');
-    document.getElementById('tabUsersBtn').classList.add('hidden');
-  }
-
-  loadDashboardData();
-}
-
-async function loadDashboardData() {
-  await loadCompanies();
-  await loadInventory();
-}
 
 // TABS
 const tabInvBtn = document.getElementById('tabInventoryBtn');
@@ -75,7 +43,96 @@ tabCompBtn.addEventListener('click', () => { resetTabs(); tabCompBtn.className =
 tabLeadsBtn.addEventListener('click', () => { resetTabs(); tabLeadsBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secLeads.classList.remove('hidden'); secLeads.classList.add('block'); loadLeads(); });
 tabUsersBtn.addEventListener('click', () => { resetTabs(); tabUsersBtn.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; secUsers.classList.remove('hidden'); secUsers.classList.add('block'); loadUsers(); });
 
-// CARGAR DATOS
+// MODALES
+const modalModel = document.getElementById('newModelModal');
+document.getElementById('openModalBtn').addEventListener('click', () => modalModel.classList.remove('hidden'));
+document.getElementById('closeModalBtn').addEventListener('click', () => modalModel.classList.add('hidden'));
+
+const modalCompany = document.getElementById('newCompanyModal');
+document.getElementById('openCompanyModalBtn').addEventListener('click', () => modalCompany.classList.remove('hidden'));
+document.getElementById('closeCompanyModalBtn').addEventListener('click', () => modalCompany.classList.add('hidden'));
+
+const modalUser = document.getElementById('newUserModal');
+document.getElementById('openUserModalBtn').addEventListener('click', async () => {
+  const userOrgSelect = document.getElementById('userOrg');
+  if (orgsCache.length === 0) {
+    try {
+      const res = await fetch(`${API_URL}/gov/orgs`, { headers });
+      if (res.ok) orgsCache = await res.json();
+    } catch(e) {}
+  }
+  userOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
+  modalUser.classList.remove('hidden');
+});
+document.getElementById('closeUserModalBtn').addEventListener('click', () => modalUser.classList.add('hidden'));
+
+const modalDiag = document.getElementById('diagnosticModal');
+const diagFormCont = document.getElementById('diagnosticFormContainer');
+const diagResultCont = document.getElementById('diagnosticResultContainer');
+document.getElementById('openDiagnosticBtn').addEventListener('click', () => {
+  diagFormCont.classList.remove('hidden'); 
+  diagResultCont.classList.add('hidden'); 
+  modalDiag.classList.remove('hidden'); 
+  modalDiag.classList.add('flex');
+  const btnAI = document.getElementById('btnGenerateAIReport'); 
+  btnAI.classList.add('hidden'); 
+  btnAI.textContent = '🧠 Generando Reporte...';
+  for(let i=1; i<=12; i++) {
+    const qId = `q${i}`;
+    const st = document.getElementById(`status_${qId}`);
+    if(st) st.textContent = "";
+    const btnUp = document.getElementById(`btn_${qId}`);
+    if(btnUp) {
+      btnUp.textContent = "📎 Subir Evidencia";
+      btnUp.className = "text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition w-36";
+    }
+    const sel = document.getElementById(qId);
+    if(sel) sel.dataset.hasEvidence = "false";
+  }
+});
+document.getElementById('closeDiagBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
+document.getElementById('closeResultBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
+
+// ==========================================
+// 2. CARGAR DATOS
+// ==========================================
+async function init() {
+  currentUser = JSON.parse(localStorage.getItem('gov_user'));
+  if (!currentUser) return window.location.href = 'index.html';
+  
+  document.getElementById('userEmail').textContent = currentUser.email;
+  currentOrgId = currentUser.orgId;
+
+  if (currentUser.role === 'superadmin') {
+    const container = document.getElementById('orgSelectorContainer');
+    container.classList.remove('hidden');
+    container.classList.add('flex');
+    
+    try {
+      const res = await fetch(`${API_URL}/gov/orgs`, { headers });
+      if (res.ok) {
+        orgsCache = await res.json();
+        const selector = document.getElementById('orgSelector');
+        selector.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
+        selector.addEventListener('change', (e) => {
+          currentOrgId = e.target.value;
+          loadDashboardData();
+        });
+      }
+    } catch (e) { console.error("Error cargando orgs:", e); }
+  } else {
+    document.getElementById('tabLeadsBtn').classList.add('hidden');
+    document.getElementById('tabUsersBtn').classList.add('hidden');
+  }
+
+  loadDashboardData();
+}
+
+async function loadDashboardData() {
+  await loadCompanies();
+  await loadInventory();
+}
+
 async function loadCompanies() {
   try {
     const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers });
@@ -104,13 +161,13 @@ async function loadCompanies() {
     const selectDiag = document.getElementById('diagCompany');
     selectDiag.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
 
-  } catch (error) {}
+  } catch (error) { console.error("Error companies:", error); }
 }
 
 async function loadInventory() {
   try {
     const res = await fetch(`${API_URL}/gov/ai-inventory`, { headers });
-    if (res.status === 401) return window.location.href = 'index.html';
+    if (!res.ok) throw new Error('Error');
     
     let inventory = await res.json();
     inventory = inventory.filter(item => item.orgId === currentOrgId);
@@ -143,7 +200,7 @@ async function loadInventory() {
         </tr>
       `;
     }).join('');
-  } catch (error) {}
+  } catch (error) { console.error("Error inventario:", error); }
 }
 
 async function loadLeads() {
@@ -193,7 +250,7 @@ async function loadUsers() {
 }
 
 // ==========================================
-// SUBIR EVIDENCIA (APLICA PARA TODAS)
+// 3. SUBIR EVIDENCIA
 // ==========================================
 async function subirEvidencia(event, qId) {
   const file = event.target.files[0];
@@ -228,18 +285,19 @@ async function subirEvidencia(event, qId) {
 
     const data = await res.json();
 
-    if (res.ok && data.validation.valido) {
+    if (res.ok && data.validation && data.validation.valido) {
       btn.textContent = "✅ Validado";
       btn.classList.replace('bg-slate-700', 'bg-teal-900');
       btn.classList.replace('hover:bg-slate-600', 'hover:bg-teal-800');
       status.textContent = "Aprobado";
       status.className = "text-[10px] mt-1 text-teal-400 font-bold text-right w-36 truncate";
       select.value = "5"; 
-      select.dataset.hasEvidence = "true"; // Bandera de evidencia válida
+      select.dataset.hasEvidence = "true";
     } else {
       btn.textContent = "❌ Rechazado";
       btn.classList.replace('bg-slate-700', 'bg-rose-900');
-      status.textContent = data.validation?.razon || "No válido";
+      const errorMsg = data.error || (data.validation ? data.validation.razon : "No válido");
+      status.textContent = errorMsg;
       status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate";
       select.value = "0";
       select.dataset.hasEvidence = "false";
@@ -247,102 +305,58 @@ async function subirEvidencia(event, qId) {
   } catch (err) {
     console.error(err);
     btn.textContent = "📎 Subir Evidencia";
-    status.textContent = "Error de red";
+    status.textContent = "Error de conexión";
     status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate";
     select.dataset.hasEvidence = "false";
   } finally {
     btn.disabled = false;
-    event.target.value = ""; // Permite volver a subir si falla
+    event.target.value = "";
   }
 }
 
-// MODALES
-const modalModel = document.getElementById('newModelModal');
-const formModel = document.getElementById('newModelForm');
-document.getElementById('openModalBtn').addEventListener('click', () => modalModel.classList.remove('hidden'));
-document.getElementById('closeModalBtn').addEventListener('click', () => modalModel.classList.add('hidden'));
-
-formModel.addEventListener('submit', async (e) => {
+// ==========================================
+// 4. FORMULARIOS (MODELOS, FILIALES, USUARIOS)
+// ==========================================
+document.getElementById('newModelForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = formModel.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
+  const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
   const payload = { companyId: document.getElementById('modelCompany').value, model_name: document.getElementById('modelName').value, category: document.getElementById('modelCategory').value, risk_level: document.getElementById('modelRisk').value, vendor: 'Desconocido', status: 'en_uso' };
   try {
     const res = await fetch(`${API_URL}/gov/ai-inventory`, { method: 'POST', headers, body: JSON.stringify(payload) });
-    if (res.ok) { modalModel.classList.add('hidden'); formModel.reset(); loadInventory(); } else alert('Error al guardar');
+    if (res.ok) { document.getElementById('newModelModal').classList.add('hidden'); e.target.reset(); loadInventory(); } 
+    else alert('Error al guardar');
   } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Modelo'; btn.disabled = false; }
 });
 
-const modalCompany = document.getElementById('newCompanyModal');
-const formCompany = document.getElementById('newCompanyForm');
-document.getElementById('openCompanyModalBtn').addEventListener('click', () => modalCompany.classList.remove('hidden'));
-document.getElementById('closeCompanyModalBtn').addEventListener('click', () => modalCompany.classList.add('hidden'));
-
-formCompany.addEventListener('submit', async (e) => {
+document.getElementById('newCompanyForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = formCompany.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
+  const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
   const payload = { name: document.getElementById('companyNameInput').value, riskProfile: document.getElementById('companyProfileInput').value };
   try {
     const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { method: 'POST', headers, body: JSON.stringify(payload) });
-    if (res.ok) { modalCompany.classList.add('hidden'); formCompany.reset(); loadCompanies(); } else alert('Error al guardar');
+    if (res.ok) { document.getElementById('newCompanyModal').classList.add('hidden'); e.target.reset(); loadCompanies(); } 
+    else alert('Error al guardar');
   } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Filial'; btn.disabled = false; }
 });
 
-const modalUser = document.getElementById('newUserModal');
-const formUser = document.getElementById('newUserForm');
-
-document.getElementById('openUserModalBtn').addEventListener('click', async () => {
-  const userOrgSelect = document.getElementById('userOrg');
-  if (orgsCache.length === 0) {
-    const res = await fetch(`${API_URL}/gov/orgs`, { headers });
-    orgsCache = await res.json();
-  }
-  userOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
-  modalUser.classList.remove('hidden');
-});
-
-document.getElementById('closeUserModalBtn').addEventListener('click', () => modalUser.classList.add('hidden'));
-
-formUser.addEventListener('submit', async (e) => {
+document.getElementById('newUserForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = formUser.querySelector('button[type="submit"]'); btn.textContent = 'Creando...'; btn.disabled = true;
+  const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Creando...'; btn.disabled = true;
   const payload = { name: document.getElementById('userName').value, email: document.getElementById('userEmailInput').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value, orgId: document.getElementById('userOrg').value };
   try {
     const res = await fetch(`${API_URL}/gov/users`, { method: 'POST', headers, body: JSON.stringify(payload) });
     let data = {}; try { data = await res.json(); } catch (e) {}
-    if (res.ok) { modalUser.classList.add('hidden'); formUser.reset(); loadUsers(); alert("Usuario creado exitosamente."); } 
+    if (res.ok) { document.getElementById('newUserModal').classList.add('hidden'); e.target.reset(); loadUsers(); alert("Usuario creado exitosamente."); } 
     else { alert('Error del Servidor: ' + (data.error || 'Revisa la terminal')); }
   } catch (err) { alert('Error de red.'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
 });
 
-// DIAGNÓSTICO
-const modalDiag = document.getElementById('diagnosticModal');
-const formDiag = document.getElementById('diagnosticForm');
-const diagFormCont = document.getElementById('diagnosticFormContainer');
-const diagResultCont = document.getElementById('diagnosticResultContainer');
-
-document.getElementById('openDiagnosticBtn').addEventListener('click', () => {
-  diagFormCont.classList.remove('hidden'); diagResultCont.classList.add('hidden'); modalDiag.classList.remove('hidden'); modalDiag.classList.add('flex');
-  const btnAI = document.getElementById('btnGenerateAIReport'); btnAI.classList.add('hidden'); btnAI.textContent = '🧠 Generando Reporte...';
-  
-  // Resetear todas las evidencias al abrir
-  for(let i=1; i<=12; i++) {
-    const qId = `q${i}`;
-    document.getElementById(`status_${qId}`).textContent = "";
-    const btnUpload = document.getElementById(`btn_${qId}`);
-    if(btnUpload) {
-      btnUpload.textContent = "📎 Subir Evidencia";
-      btnUpload.className = "text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition w-36";
-    }
-    const sel = document.getElementById(qId);
-    if(sel) sel.dataset.hasEvidence = "false";
-  }
-});
-document.getElementById('closeDiagBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
-document.getElementById('closeResultBtn').addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
-
-formDiag.addEventListener('submit', async (e) => {
+// ==========================================
+// 5. DIAGNÓSTICO (EVALUACIÓN)
+// ==========================================
+document.getElementById('diagnosticForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = formDiag.querySelector('button[type="submit"]'); btn.textContent = 'Calculando...'; btn.disabled = true;
+  const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Calculando...'; btn.disabled = true;
   const companySelect = document.getElementById('diagCompany'); const companyId = companySelect.value; const companyName = companySelect.options[companySelect.selectedIndex].text;
   
   const qSelects = document.querySelectorAll('.diag-q');
@@ -351,8 +365,7 @@ formDiag.addEventListener('submit', async (e) => {
 
   qSelects.forEach((sel, index) => {
     let val = parseInt(sel.value);
-    const hasEvidence = sel.dataset.hasEvidence === "true"; // Leer bandera de cada pregunta
-    
+    const hasEvidence = sel.dataset.hasEvidence === "true";
     if (val >= 4 && !hasEvidence) val = 2; 
     
     totalScore += val; answers[`q${index+1}`] = { score: val, evidence: hasEvidence };
@@ -408,4 +421,5 @@ document.getElementById('btnGeneratePolicy').addEventListener('click', () => {
   policyWindow.document.close();
 });
 
+// Arrancar
 init();
