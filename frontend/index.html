@@ -33,9 +33,8 @@
         <a href="#servicios" class="hover:text-brand-teal transition">Servicios</a>
         <a href="#marcos" class="hover:text-brand-teal transition">Marcos</a>
         <a href="#calculadora" class="hover:text-brand-teal transition">Diagnóstico</a>
-        <a href="app/index.html" class="bg-brand-teal hover:bg-teal-600 text-white px-6 py-2.5 rounded-full transition shadow-md shadow-teal-500/20">Iniciar Sesión</a>
+        <a href="app/index.html" id="navLoginBtn" class="bg-brand-teal hover:bg-teal-600 text-white px-6 py-2.5 rounded-full transition shadow-md shadow-teal-500/20">Iniciar Sesión</a>
       </nav>
-      <!-- Mobile menu button (simplificado) -->
       <a href="app/index.html" class="md:hidden bg-brand-teal text-white px-4 py-2 rounded-full text-sm font-bold">Entrar</a>
     </div>
   </header>
@@ -65,25 +64,21 @@
         <p class="text-slate-600 max-w-2xl mx-auto">Alineamos la estrategia de IA con las políticas corporativas, la ciberseguridad y el marco legal aplicable.</p>
       </div>
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <!-- Card 1 -->
         <div class="p-8 bg-brand-light rounded-3xl border border-teal-100 hover:shadow-xl transition">
           <div class="text-4xl mb-4">⚖️</div>
           <h3 class="text-xl font-bold mb-3 text-slate-900">Diagnóstico y Triaje</h3>
           <p class="text-slate-600 text-sm leading-relaxed">Evaluación de madurez, inventario de modelos (incluyendo Shadow AI) y clasificación de riesgo regulatorio.</p>
         </div>
-        <!-- Card 2 -->
         <div class="p-8 bg-brand-light rounded-3xl border border-teal-100 hover:shadow-xl transition">
           <div class="text-4xl mb-4">🏢</div>
           <h3 class="text-xl font-bold mb-3 text-slate-900">Modelo Hub & Spoke</h3>
           <p class="text-slate-600 text-sm leading-relaxed">Diseño de estructuras de gobierno corporativo para grupos multiempresa y holdings.</p>
         </div>
-        <!-- Card 3 -->
         <div class="p-8 bg-brand-light rounded-3xl border border-teal-100 hover:shadow-xl transition">
           <div class="text-4xl mb-4">🛡️</div>
           <h3 class="text-xl font-bold mb-3 text-slate-900">Cumplimiento (GRC)</h3>
           <p class="text-slate-600 text-sm leading-relaxed">Preparación para auditorías ISO 42001, NIST AI RMF, validación SaMD (COFEPRIS) y protección de datos.</p>
         </div>
-        <!-- Card 4 -->
         <div class="p-8 bg-brand-light rounded-3xl border border-teal-100 hover:shadow-xl transition">
           <div class="text-4xl mb-4">📊</div>
           <h3 class="text-xl font-bold mb-3 text-slate-900">Monitoreo MLOps</h3>
@@ -157,8 +152,18 @@
             </div>
           </div>
 
-          <button type="button" onclick="calcularRiesgo()" class="w-full bg-brand-teal hover:bg-teal-500 text-white font-bold py-4 rounded-xl transition shadow-lg mt-4">
-            Generar Diagnóstico Preliminar
+          <!-- Datos de Contacto -->
+          <div class="pt-4 border-t border-slate-700">
+            <label class="block text-sm font-bold text-slate-300 mb-3">4. ¿A dónde enviamos tu reporte?</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <input type="text" id="leadName" placeholder="Tu Nombre" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-brand-teal outline-none">
+              <input type="text" id="leadCompany" placeholder="Nombre de tu Empresa" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-brand-teal outline-none">
+            </div>
+            <input type="email" id="leadEmail" placeholder="tu@empresa.com" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-brand-teal outline-none">
+          </div>
+
+          <button type="button" id="btnCalcular" onclick="calcularRiesgo(event)" class="w-full bg-brand-teal hover:bg-teal-500 text-white font-bold py-4 rounded-xl transition shadow-lg mt-4">
+            Ver mi Diagnóstico Preliminar
           </button>
         </form>
 
@@ -189,46 +194,74 @@
   </footer>
 
   <script>
-    function calcularRiesgo() {
+    // Si ya hay sesión, cambiar el botón del header
+    if (localStorage.getItem('gov_token')) {
+      const btn = document.getElementById('navLoginBtn');
+      if (btn) btn.textContent = 'Ir a mi Panel';
+    }
+
+    async function calcularRiesgo(event) {
       const sector = document.getElementById('sector').value;
       const samd = document.querySelector('input[name="samd"]:checked').value === 'si';
       const shadowAi = document.querySelector('input[name="shadow_ai"]:checked').value;
+      
+      const leadName = document.getElementById('leadName').value;
+      const leadCompany = document.getElementById('leadCompany').value;
+      const leadEmail = document.getElementById('leadEmail').value;
 
+      if(!leadEmail || !leadName) {
+        alert("Por favor llena tus datos de contacto para ver el resultado.");
+        return;
+      }
+
+      const btn = document.getElementById('btnCalcular');
+      btn.textContent = "Generando reporte...";
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      let riskLevel = "bajo";
+      if (samd || sector === 'salud' || shadowAi === 'alto') riskLevel = "alto";
+      else if (shadowAi === 'medio') riskLevel = "medio";
+
+      // 1. Guardar el prospecto en el Backend (PRODUCCIÓN)
+      try {
+        await fetch('https://behavior-lab.onrender.com/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: leadName, email: leadEmail, company: leadCompany, sector, shadow_ai: shadowAi, samd, risk_level: riskLevel })
+        });
+      } catch (e) {
+        console.error("Error guardando lead", e);
+      }
+
+      // 2. Mostrar el resultado visual
       const resultBox = document.getElementById('resultBox');
       const resultSummary = document.getElementById('resultSummary');
       const resultBadges = document.getElementById('resultBadges');
 
-      let resumen = `Basado en tus respuestas, hemos identificado las siguientes prioridades de gobernanza:<br><br>`;
+      let resumen = `Hola <strong>${leadName}</strong>, basado en las respuestas de <strong>${leadCompany}</strong>, hemos identificado:<br><br>`;
       let badges = '';
 
       if (samd || sector === 'salud') {
-        resumen += `• <strong class="text-amber-400">Alerta SaMD / COFEPRIS:</strong> Tu empresa opera en un sector de salud. Si tu IA brinda diagnósticos o recomendaciones personalizadas, califica como Software como Dispositivo Médico (SaMD), requiriendo validación regulatoria estricta.<br>`;
+        resumen += `• <strong class="text-amber-400">Alerta SaMD:</strong> Requieren validación regulatoria estricta.<br>`;
         badges += `<span class="bg-amber-950 text-amber-400 border border-amber-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo Regulatorio Alto</span>`;
       }
-
       if (shadowAi === 'alto') {
-        resumen += `• <strong class="text-rose-400">Alerta de Shadow AI:</strong> Detectamos un alto riesgo de fuga de propiedad intelectual. Tus colaboradores usan IA sin políticas de uso aceptable. Se requiere intervención inmediata (ISO 42001 / LFPDPPP).<br>`;
-        badges += `<span class="bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo de Ciberseguridad</span>`;
+        resumen += `• <strong class="text-rose-400">Shadow AI:</strong> Alto riesgo de fuga de información. Requieren política inmediata.<br>`;
+        badges += `<span class="bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo Ciberseguridad</span>`;
       }
 
-      if (shadowAi === 'medio') {
-        resumen += `• <strong class="text-amber-400">Uso No Regulado:</strong> Existen guías informales. Se recomienda formalizar una Política Corporativa de IA para evitar sanciones y estandarizar el uso.<br>`;
-        badges += `<span class="bg-amber-950 text-amber-400 border border-amber-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Madurez Baja</span>`;
-      }
-
-      if (badges === '') {
-        badges += `<span class="bg-teal-950 text-brand-teal border border-teal-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Buen Nivel de Madurez</span>`;
-        resumen += `• ¡Felicidades! Tienes bases sólidas. El siguiente paso es automatizar el monitoreo (MLOps) y prepararse para auditorías formales de ISO 42001.`;
-      } else {
-        resumen += `<br>Recomendación general: Implementar un modelo de gobernanza Hub & Spoke (GōkuLab / BehAvIorLab) para centralizar políticas sin frenar la innovación.`;
-      }
-
-      resultSummary.innerHTML = resumen;
-      resultBadges.innerHTML = badges;
-      resultBox.classList.remove('hidden');
+      resumen += `<br>Hemos enviado una copia de este diagnóstico a <strong>${leadEmail}</strong> (simulado).`;
       
-      // Scroll suave al resultado
+      resultSummary.innerHTML = resumen;
+      resultBadges.innerHTML = badges || `<span class="bg-teal-950 text-brand-teal border border-teal-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Riesgo Moderado</span>`;
+      
+      resultBox.classList.remove('hidden');
       resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      btn.textContent = "Ver mi Diagnóstico Preliminar";
+      btn.disabled = false;
+      btn.classList.remove('opacity-50');
     }
   </script>
 </body>

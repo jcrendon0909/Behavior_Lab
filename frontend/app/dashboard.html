@@ -13,11 +13,11 @@
     <div class="flex items-center space-x-6">
       <span class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">BEHAVIOR LAB</span>
       
-      <!-- SELECTOR DE ORGANIZACIÓN (Solo Superadmin) -->
+      <!-- SELECTOR DE ORGANIZACIÓN -->
       <div id="orgSelectorContainer" class="hidden items-center space-x-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1">
         <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Viendo a:</span>
         <select id="orgSelector" class="bg-transparent text-sm font-semibold text-teal-400 outline-none cursor-pointer">
-          <!-- Se llena dinámicamente con JS -->
+          <option value="">Cargando...</option>
         </select>
       </div>
     </div>
@@ -41,8 +41,9 @@
 
     <!-- Pestañas de Navegación -->
     <div class="flex space-x-4 mb-6 border-b border-slate-800 pb-2">
-      <button id="tabInventoryBtn" class="text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition">Inventario de IA</button>
-      <button id="tabCompaniesBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition">Empresas / Filiales</button>
+      <button type="button" id="tabInventoryBtn" class="text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition">Inventario de IA</button>
+      <button type="button" id="tabCompaniesBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition">Empresas / Filiales</button>
+      <button type="button" id="tabLeadsBtn" class="text-slate-500 hover:text-slate-300 pb-2 transition">Prospectos (Leads)</button>
     </div>
 
     <!-- ================= SECCIÓN 1: INVENTARIO DE IA ================= -->
@@ -115,19 +116,44 @@
         </div>
       </div>
     </div>
+
+    <!-- ================= SECCIÓN 3: PROSPECTOS (LEADS) ================= -->
+    <div id="leadsSection" class="hidden">
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
+        <div class="mb-4">
+          <h2 class="text-lg font-bold">Prospectos Capturados</h2>
+          <p class="text-sm text-slate-400">Personas que usaron la calculadora pública.</p>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-700 text-sm text-slate-400">
+                <th class="py-3 px-4">Fecha</th>
+                <th class="py-3 px-4">Nombre</th>
+                <th class="py-3 px-4">Email</th>
+                <th class="py-3 px-4">Empresa</th>
+                <th class="py-3 px-4">Riesgo Detectado</th>
+              </tr>
+            </thead>
+            <tbody id="leadsTableBody" class="text-sm">
+              <tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando prospectos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- Modal Nuevo Modelo -->
   <div id="newModelModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Modelo de IA</h2>
-      
       <form id="newModelForm" class="space-y-4">
         <div>
           <label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Modelo</label>
           <input type="text" id="modelName" required placeholder="Ej. Gemini Pro" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none">
         </div>
-        
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label>
@@ -146,14 +172,10 @@
             </select>
           </div>
         </div>
-
         <div>
           <label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label>
-          <select id="modelCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
-            <option value="">Cargando empresas...</option>
-          </select>
+          <select id="modelCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select>
         </div>
-
         <div class="flex justify-end gap-3 mt-6">
           <button type="button" id="closeModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button>
           <button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Modelo</button>
@@ -166,13 +188,11 @@
   <div id="newCompanyModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nueva Filial</h2>
-      
       <form id="newCompanyForm" class="space-y-4">
         <div>
           <label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Empresa / Filial</label>
           <input type="text" id="companyNameInput" required placeholder="Ej. Oleopalma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none">
         </div>
-        
         <div>
           <label class="block text-sm font-semibold text-slate-300 mb-1">Perfil de Operación</label>
           <select id="companyProfileInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
@@ -182,7 +202,6 @@
             <option value="salud">Salud / Cuidado Personal (SaMD)</option>
           </select>
         </div>
-
         <div class="flex justify-end gap-3 mt-6">
           <button type="button" id="closeCompanyModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button>
           <button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Filial</button>

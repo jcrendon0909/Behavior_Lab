@@ -329,6 +329,42 @@ app.post("/chat", chatLimiter, async (req, res) => {
   }
 });
 
+// ---------- ENDPOINTS DE PROSPECTOS (LEADS) ----------
+app.post("/leads", async (req, res) => {
+  const { name, email, company, sector, shadow_ai, samd, risk_level } = req.body;
+  if (!email) return res.status(400).json({ error: "Email requerido" });
+  
+  try {
+    if (!db) return res.status(500).json({ error: "DB no conectada" });
+    
+    await db.collection("leads").insertOne({
+      ts: new Date(),
+      name: name || "No especificado",
+      email,
+      company: company || "No especificada",
+      sector,
+      shadow_ai,
+      samd,
+      risk_level
+    });
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/leads", async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: "DB no conectada" });
+    // En producción, esto debería estar protegido por JWT
+    const leads = await db.collection("leads").find({}).sort({ ts: -1 }).toArray();
+    res.json(leads);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ---------- HEALTH ----------
 app.get('/', (req, res) => {
   res.send('Behavior Lab API running 🚀');
