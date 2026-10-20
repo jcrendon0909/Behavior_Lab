@@ -53,7 +53,7 @@
       <div class="md:col-span-3 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-bold">Inventario de IA</h2>
-          <button class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nuevo Modelo</button>
+          <button id="openModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nuevo Modelo</button>
         </div>
         
         <div class="overflow-x-auto">
@@ -78,6 +78,51 @@
 
     </div>
   </main>
+
+  <!-- Modal Nuevo Modelo -->
+  <div id="newModelModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Modelo de IA</h2>
+      
+      <form id="newModelForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Modelo</label>
+          <input type="text" id="modelName" required placeholder="Ej. Gemini Pro" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:border-teal-400 outline-none">
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label>
+            <select id="modelCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+              <option value="generativo">Generativo</option>
+              <option value="predictivo">Predictivo</option>
+              <option value="vision">Visión Artificial</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Nivel de Riesgo</label>
+            <select id="modelRisk" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+              <option value="bajo">Bajo</option>
+              <option value="medio">Medio</option>
+              <option value="alto">Alto</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label>
+          <select id="modelCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+            <option value="">Cargando empresas...</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" id="closeModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button>
+          <button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Modelo</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="dashboard.js"></script>
 </body>

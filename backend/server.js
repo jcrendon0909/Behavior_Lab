@@ -24,7 +24,6 @@ app.use(cors({
     'http://localhost:5500',     // <-- Agrega esta
     'http://127.0.0.1:5500'      // <-- Y esta
   ],
-  methods: ['GET', 'POST'],
   credentials: true
 }));
 

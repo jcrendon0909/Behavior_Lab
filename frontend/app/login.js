@@ -1,5 +1,6 @@
-// const API_URL = 'http://localhost:3000'; En producción será https://behavior-lab.onrender.com
-const API_URL = 'https://behavior-lab.onrender.com';
+const API_URL = 'http://localhost:3000'; 
+// const API_URL = 'https://behavior-lab.onrender.com'; // En producción
+
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -31,7 +32,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     localStorage.setItem('gov_token', data.token);
     localStorage.setItem('gov_user', JSON.stringify(data.user));
 
-    // Redirigir al dashboard (lo crearemos después)
+    // Redirigir al dashboard
     window.location.href = 'dashboard.html';
 
   } catch (error) {
