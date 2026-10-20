@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Behavior Lab Governance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex items-center justify-center">
+
+  <div class="w-full max-w-md p-8 bg-slate-800/60 border border-slate-700/80 rounded-2xl shadow-2xl backdrop-blur-sm">
+    
+    <div class="text-center mb-8">
+      <h1 class="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">
+        BEHAVIOR LAB
+      </h1>
+      <p class="text-xs bg-teal-950 text-teal-400 border border-teal-800 px-2 py-0.5 rounded-full uppercase tracking-widest font-semibold inline-block mt-2">
+        AI Governance Hub
+      </p>
+    </div>
+
+    <form id="loginForm" class="space-y-5">
+      <div>
+        <label class="block text-sm font-semibold text-slate-300 mb-2">Correo Electrónico</label>
+        <input type="email" id="email" required placeholder="jcrendon@gokulab.mx"
+          class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-teal-400 transition">
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-300 mb-2">Contraseña</label>
+        <input type="password" id="password" required placeholder="••••••••"
+          class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-teal-400 transition">
+      </div>
+
+      <div id="errorMsg" class="hidden text-rose-400 text-sm bg-rose-950/50 border border-rose-800 p-3 rounded-lg"></div>
+
+      <button type="submit" id="submitBtn"
+        class="w-full bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg transition transform active:scale-95 flex justify-center items-center">
+        <span id="btnText">Iniciar Sesión</span>
+      </button>
+    </form>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>

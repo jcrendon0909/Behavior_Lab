@@ -5,6 +5,7 @@ import fetch from "node-fetch";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { MongoClient } from "mongodb";
+import { createGovRouter } from "./gov.js";
 
 console.log("¿EXISTE .env?:", fs.existsSync(".env"));
 dotenv.config();
@@ -19,7 +20,9 @@ app.use(cors({
     'https://api.gokulab.mx',
     'https://gokulab.mx',
     'https://behavior-lab.onrender.com',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://localhost:5500',     // <-- Agrega esta
+    'http://127.0.0.1:5500'      // <-- Y esta
   ],
   methods: ['GET', 'POST'],
   credentials: true
@@ -341,6 +344,16 @@ app.get('/health', (req, res) => {
     ts: new Date().toISOString()
   });
 });
+
+// ---------- GOVERNANCE ----------
+app.use('/gov',
+  (req, res, next) => {
+    if (!db) return res.status(503).json({ error: "DB no conectada aún" });
+    req.db = db;
+    next();
+  },
+  createGovRouter()
+);
 
 // ---------- INICIAR ----------
 const PORT = process.env.PORT || 3000;
