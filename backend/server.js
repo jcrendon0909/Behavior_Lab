@@ -13,6 +13,14 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 console.log("¿EXISTE .env?:", fs.existsSync(".env"));
 dotenv.config();
 
+// Evitar que errores no capturados tumben el servidor
+process.on('uncaughtException', (err) => {
+  console.error('🔥 ERROR FATAL NO CAPTURADO:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🔥 PROMESA RECHAZADA NO CAPTURADA:', reason);
+});
+
 const app = express();
 app.use(express.json({ limit: "100kb" }));
 
@@ -223,11 +231,11 @@ app.post("/gov/upload-evidence", upload.single("file"), async (req, res) => {
       pdfText = text.substring(0, 3000); 
     } catch (e) {
       console.error("Error parseando PDF:", e);
-      return res.status(400).json({ error: "El archivo no es un PDF válido." });
+      return res.status(400).json({ error: "El archivo PDF está dañado o corrupto." });
     }
 
-    if (pdfText.trim().length < 50) {
-      return res.status(400).json({ error: "El PDF parece estar vacío (se requiere texto)." });
+    if (!pdfText || pdfText.trim().length < 50) {
+      return res.status(400).json({ error: "El PDF no contiene texto legible o está vacío." });
     }
 
     const fileName = `company_${companyId}/q_${questionId}_${Date.now()}.pdf`;
@@ -287,6 +295,14 @@ app.use('/gov', (req, res, next) => {
   if (!db) return res.status(503).json({ error: "DB no conectada aún" });
   req.db = db; next();
 }, createGovRouter());
+
+// Manejo de errores de Multer (archivos muy grandes, etc.)
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ error: "Error de archivo: " + err.message });
+  }
+  next(err);
+});
 
 app.get('/health', (req, res) => res.json({ ok: true, mongo: !!db, keys_loaded: GROQ_KEYS.length, uptime_s: Math.floor(process.uptime()), ts: new Date().toISOString() }));
 
