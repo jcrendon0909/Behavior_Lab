@@ -77,15 +77,13 @@ export function createGovRouter() {
   });
 
   router.post("/ai-inventory", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
-    try {
-      const { companyId, model_name, category, vendor, data_sensitivity = [], risk_level = "medio", status = "evaluacion", description } = req.body;
-      const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
-      if (!company) return res.status(404).json({ error: "Company no encontrada" });
-      if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
-      const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), model_name, category, vendor: vendor || null, data_sensitivity, risk_level, status, description, createdAt: new Date(), updatedAt: new Date(), createdBy: req.user.userId };
-      const result = await db(req).collection("ai_inventory").insertOne(doc);
-      res.json({ _id: result.insertedId, ...doc });
-    } catch(e) { res.status(500).json({ error: e.message }); }
+    const { companyId, model_name, category, vendor, data_sensitivity = [], risk_level = "medio", status = "evaluacion", description } = req.body;
+    const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
+    if (!company) return res.status(404).json({ error: "Company no encontrada" });
+    if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
+    const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), model_name, category, vendor: vendor || null, data_sensitivity, risk_level, status, description, createdAt: new Date(), updatedAt: new Date(), createdBy: req.user.userId };
+    const result = await db(req).collection("ai_inventory").insertOne(doc);
+    res.json({ _id: result.insertedId, ...doc });
   });
 
   router.get("/ai-inventory", auth(), async (req, res) => {
@@ -94,15 +92,13 @@ export function createGovRouter() {
   });
 
   router.post("/evaluations", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
-    try {
-      const { companyId, framework, answers, score, risk_level, recommendations } = req.body;
-      const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
-      if (!company) return res.status(404).json({ error: "Company no encontrada" });
-      if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
-      const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), framework, answers, score, risk_level, recommendations, createdAt: new Date(), createdBy: req.user.userId };
-      const result = await db(req).collection("risk_evaluations").insertOne(doc);
-      res.json({ _id: result.insertedId, ...doc });
-    } catch(e) { res.status(500).json({ error: e.message }); }
+    const { companyId, framework, answers, score, risk_level, recommendations } = req.body;
+    const company = await db(req).collection("companies").findOne({ _id: new ObjectId(companyId) });
+    if (!company) return res.status(404).json({ error: "Company no encontrada" });
+    if (req.user.role !== "superadmin" && company.orgId.toString() !== req.user.orgId) return res.status(403).json({ error: "Sin permisos" });
+    const doc = { orgId: company.orgId, companyId: new ObjectId(companyId), framework, answers, score, risk_level, recommendations, createdAt: new Date(), createdBy: req.user.userId };
+    const result = await db(req).collection("risk_evaluations").insertOne(doc);
+    res.json({ _id: result.insertedId, ...doc });
   });
 
   router.get("/evaluations", auth(), async (req, res) => {
@@ -184,6 +180,31 @@ export function createGovRouter() {
   router.delete("/risks/:id", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
     await db(req).collection("risks").deleteOne({ _id: new ObjectId(req.params.id) });
     res.json({ ok: true });
+  });
+
+  // 🚨 NUEVO: EVALUACIÓN DE PROCESOS (OPORTUNIDADES DE IA)
+  router.get("/process-evals", auth(), async (req, res) => {
+    const filter = req.user.role === "superadmin" ? {} : { orgId: new ObjectId(req.user.orgId) };
+    res.json(await db(req).collection("process_evaluations").find(filter).sort({ createdAt: -1 }).toArray());
+  });
+
+  router.post("/process-evals", auth(["superadmin", "admin", "auditor"]), async (req, res) => {
+    try {
+      const { orgId, companyId, processName, volume, complexity, dataType, hoursSpent, score, agentType, recommendation } = req.body;
+      if (!orgId || !processName) return res.status(400).json({ error: "Falta orgId o processName" });
+      if (req.user.role !== "superadmin" && req.user.orgId !== orgId) return res.status(403).json({ error: "Sin permisos" });
+      
+      const doc = { 
+        orgId: new ObjectId(orgId), 
+        companyId: companyId ? new ObjectId(companyId) : null,
+        processName, volume, complexity, dataType, hoursSpent,
+        score, agentType, recommendation,
+        createdAt: new Date(),
+        createdBy: req.user.userId
+      };
+      const result = await db(req).collection("process_evaluations").insertOne(doc);
+      res.json({ ok: true, _id: result.insertedId, ...doc });
+    } catch (error) { res.status(500).json({ error: error.message }); }
   });
 
   return router;

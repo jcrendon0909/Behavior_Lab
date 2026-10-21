@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard | Behavior Lab Governance</title>
+  <title>Dashboard | Behavior Lab</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
@@ -50,6 +50,10 @@
       </div>
       <div class="h-5 w-px bg-slate-700"></div>
       <div class="flex items-center space-x-2">
+        <button type="button" id="tabProcessesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">💡 Oportunidades de IA</button>
+      </div>
+      <div class="h-5 w-px bg-slate-700"></div>
+      <div class="flex items-center space-x-2">
         <button type="button" id="tabUsersBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Usuarios</button>
         <button type="button" id="tabLeadsBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Prospectos</button>
       </div>
@@ -57,8 +61,6 @@
 
     <!-- 1. DASHBOARD EJECUTIVO -->
     <div id="dashboardSection" class="block">
-      
-      <!-- Botón de Reporte Estratégico -->
       <div class="flex justify-end mb-4">
         <button id="btnStrategicReport" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold py-2.5 px-6 rounded-xl transition shadow-lg shadow-indigo-500/30 flex items-center gap-2">
           <span>📄</span> Generar Reporte Estratégico (PDF)
@@ -181,7 +183,26 @@
       </div>
     </div>
 
-    <!-- 7. PROSPECTOS -->
+    <!-- 7. OPORTUNIDADES DE IA (PROCESOS) -->
+    <div id="processesSection" class="hidden">
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h2 class="text-lg font-bold">Evaluación de Procesos para Automatización</h2>
+            <p class="text-sm text-slate-400">Descubre qué agentes de IA pueden ahorrarte más tiempo y dinero.</p>
+          </div>
+          <button id="openProcessModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition shadow-lg shadow-teal-500/20">+ Evaluar Proceso</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Proceso</th><th class="py-3 px-4">Volumen</th><th class="py-3 px-4">Complejidad</th><th class="py-3 px-4">Horas/Mes</th><th class="py-3 px-4">Índice Auto.</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
+            <tbody id="processesTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. PROSPECTOS -->
     <div id="leadsSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="mb-4"><h2 class="text-lg font-bold">Prospectos Capturados</h2></div>
@@ -189,7 +210,7 @@
       </div>
     </div>
 
-    <!-- 8. USUARIOS -->
+    <!-- 9. USUARIOS -->
     <div id="usersSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Gestión de Usuarios</h2></div><button id="openUserModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Invitar Usuario</button></div>
@@ -197,7 +218,7 @@
       </div>
     </div>
 
-    <!-- 9. EVIDENCIA -->
+    <!-- 10. EVIDENCIA -->
     <div id="evidenceSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="mb-6"><h2 class="text-lg font-bold">Expediente Digital de Evidencias</h2><p class="text-sm text-slate-400">Documentos validados por la IA y almacenados en R2.</p></div>
@@ -211,7 +232,7 @@
     </div>
   </main>
 
-  <!-- MODALES BÁSICOS -->
+  <!-- MODALES -->
   <div id="newModelModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Modelo de IA</h2>
@@ -295,7 +316,58 @@
       </form>
     </div>
   </div>
-  
+
+  <!-- NUEVO MODAL: EVALUAR PROCESO -->
+  <div id="newProcessModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Evaluar Proceso para Automatizar</h2>
+      <form id="newProcessForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Proceso</label><input type="text" id="procName" required placeholder="Ej. Facturación de proveedores" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Volumen de Tareas</label>
+            <select id="procVolume" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+              <option value="bajo">Bajo (Pocas al día)</option>
+              <option value="medio">Medio (Decenas al día)</option>
+              <option value="alto">Alto (Cientos/Miles al día)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Complejidad de Decisión</label>
+            <select id="procComplexity" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+              <option value="baja">Baja (Reglas simples)</option>
+              <option value="media">Media (Requiere análisis)</option>
+              <option value="alta">Alta (Criterio humano profundo)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Tipo de Datos</label>
+            <select id="procDataType" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+              <option value="estructurado">Estructurado (Formularios, CRM)</option>
+              <option value="semi">Semiestructurado (Emails, PDFs)</option>
+              <option value="no_estructurado">No Estructurado (Imágenes, Audio)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Horas Hombre / Mes</label>
+            <input type="number" id="procHours" required placeholder="Ej. 120" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+          </div>
+        </div>
+
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label><select id="procCompany" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">Global</option></select></div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" id="closeProcessModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button>
+          <button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition flex items-center gap-2"><span>🧠</span> Evaluar con IA</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- DIAGNÓSTICO -->
   <div id="diagnosticModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 w-full max-w-4xl shadow-2xl my-8">

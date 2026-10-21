@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('gov_token'); localStorage.removeItem('gov_user'); window.location.href = 'index.html';
   });
 
-  const tabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabLeadsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
-  const sections = ['dashboardSection', 'inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'leadsSection', 'usersSection', 'evidenceSection'];
+  const tabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabProcessesBtn', 'tabLeadsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
+  const sections = ['dashboardSection', 'inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'processesSection', 'leadsSection', 'usersSection', 'evidenceSection'];
 
   function resetTabs() {
     tabs.forEach(id => { 
@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabRis = document.getElementById('tabRisksBtn'); if(tabRis) tabRis.addEventListener('click', () => setTab('tabRisksBtn', 'risksSection', loadRisks));
   const tabDel = document.getElementById('tabDeliverablesBtn'); if(tabDel) tabDel.addEventListener('click', () => setTab('tabDeliverablesBtn', 'deliverablesSection', loadDeliverables));
   const tabCom = document.getElementById('tabCompaniesBtn'); if(tabCom) tabCom.addEventListener('click', () => setTab('tabCompaniesBtn', 'companiesSection'));
+  const tabPro = document.getElementById('tabProcessesBtn'); if(tabPro) tabPro.addEventListener('click', () => setTab('tabProcessesBtn', 'processesSection', loadProcesses));
   const tabLea = document.getElementById('tabLeadsBtn'); if(tabLea) tabLea.addEventListener('click', () => setTab('tabLeadsBtn', 'leadsSection', loadLeads));
   const tabUse = document.getElementById('tabUsersBtn'); if(tabUse) tabUse.addEventListener('click', () => setTab('tabUsersBtn', 'usersSection', loadUsers));
   const tabEvi = document.getElementById('tabEvidenceBtn'); if(tabEvi) tabEvi.addEventListener('click', () => setTab('tabEvidenceBtn', 'evidenceSection', loadEvidence));
@@ -90,6 +91,14 @@ document.addEventListener('DOMContentLoaded', () => {
     modalRisk.classList.remove('hidden');
   });
   const closeRiskModalBtn = document.getElementById('closeRiskModalBtn'); if(closeRiskModalBtn) closeRiskModalBtn.addEventListener('click', () => modalRisk.classList.add('hidden'));
+
+  const modalProcess = document.getElementById('newProcessModal');
+  const openProcessModalBtn = document.getElementById('openProcessModalBtn'); if(openProcessModalBtn) openProcessModalBtn.addEventListener('click', () => {
+    const selectProcComp = document.getElementById('procCompany');
+    selectProcComp.innerHTML = `<option value="">Global (Toda la org)</option>` + companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+    modalProcess.classList.remove('hidden');
+  });
+  const closeProcessModalBtn = document.getElementById('closeProcessModalBtn'); if(closeProcessModalBtn) closeProcessModalBtn.addEventListener('click', () => modalProcess.classList.add('hidden'));
 
   const modalDiag = document.getElementById('diagnosticModal');
   const diagFormCont = document.getElementById('diagnosticFormContainer');
@@ -249,6 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!document.getElementById('matrixSection').classList.contains('hidden')) loadMatrix();
             if(!document.getElementById('risksSection').classList.contains('hidden')) loadRisks();
             if(!document.getElementById('deliverablesSection').classList.contains('hidden')) loadDeliverables();
+            if(!document.getElementById('processesSection').classList.contains('hidden')) loadProcesses();
             if(!document.getElementById('evidenceSection').classList.contains('hidden')) loadEvidence();
           });
         }
@@ -449,6 +459,78 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
   });
 
+  // 5. OPORTUNIDADES DE IA (PROCESOS)
+  async function loadProcesses() {
+    try {
+      const res = await fetch(`${API_URL}/gov/process-evals`, { headers });
+      let processes = await res.json(); processes = processes.filter(p => p.orgId === currentOrgId);
+      const tbody = document.getElementById('processesTableBody');
+      if (processes.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay procesos evaluados.</td></tr>`; return; }
+      tbody.innerHTML = processes.map(p => {
+        let scoreColor = 'text-teal-400';
+        if (p.score < 50) scoreColor = 'text-rose-400';
+        else if (p.score < 75) scoreColor = 'text-amber-400';
+        
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+          <td class="py-3 px-4 font-semibold text-slate-200">${p.processName}<br><span class="text-xs font-normal text-teal-400">${p.agentType}</span></td>
+          <td class="py-3 px-4 text-slate-400 capitalize">${p.volume}</td>
+          <td class="py-3 px-4 text-slate-400 capitalize">${p.complexity}</td>
+          <td class="py-3 px-4 text-slate-400 text-center">${p.hoursSpent} hrs</td>
+          <td class="py-3 px-4 text-center font-bold ${scoreColor}">${p.score}%</td>
+          <td class="py-3 px-4 text-center"><button onclick="deleteProcess('${p._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Proceso">🗑️</button></td>
+        </tr>`;
+      }).join('');
+    } catch (error) { console.error("Error cargando procesos:", error); }
+  }
+
+  window.deleteProcess = async function(id) {
+    if(!confirm("¿Estás seguro de eliminar esta evaluación de proceso?")) return;
+    try {
+      const res = await fetch(`${API_URL}/gov/process-evals/${id}`, { method: 'DELETE', headers });
+      if (res.ok) loadProcesses();
+    } catch (error) { alert("Error al eliminar proceso"); }
+  }
+
+  const newProcessForm = document.getElementById('newProcessForm'); if(newProcessForm) newProcessForm.addEventListener('submit', async (e) => {
+    e.preventDefault(); 
+    const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Evaluando con IA...'; btn.disabled = true;
+    
+    const payload = { 
+      orgId: currentOrgId, 
+      companyId: document.getElementById('procCompany').value, 
+      processName: document.getElementById('procName').value, 
+      volume: document.getElementById('procVolume').value, 
+      complexity: document.getElementById('procComplexity').value, 
+      dataType: document.getElementById('procDataType').value, 
+      hoursSpent: parseInt(document.getElementById('procHours').value) 
+    };
+
+    try { 
+      // 1. Llamar a Groq para evaluar el proceso
+      const aiRes = await fetch(`${API_URL}/gov/analyze-process`, {
+        method: 'POST', headers, body: JSON.stringify(payload)
+      });
+      
+      if (!aiRes.ok) throw new Error("Error al evaluar con IA");
+      const aiData = await aiRes.json();
+
+      // 2. Guardar en la base de datos
+      payload.score = aiData.score;
+      payload.agentType = aiData.agentType;
+      payload.recommendation = aiData.recommendation;
+
+      const res = await fetch(`${API_URL}/gov/process-evals`, { method: 'POST', headers, body: JSON.stringify(payload) });
+      if (res.ok) { 
+        document.getElementById('newProcessModal').classList.add('hidden'); 
+        e.target.reset(); 
+        loadProcesses(); 
+        alert(`✅ Proceso evaluado. Índice de Automatización: ${aiData.score}%.\nAgente sugerido: ${aiData.agentType}`);
+      } 
+      else { alert('Error al guardar la evaluación'); }
+    } catch (err) { alert('Error: ' + err.message); } finally { btn.textContent = 'Evaluar con IA'; btn.disabled = false; }
+  });
+
+  // 6. RESTO DE FUNCIONES (Leads, Users, Evidence, Diagnosis)
   async function loadLeads() {
     try {
       const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
