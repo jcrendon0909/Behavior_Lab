@@ -213,14 +213,92 @@
     </div>
   </main>
 
-  <!-- MODALES (Sin cambios en estructura, solo copiados completos) -->
-  <div id="newModelModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"><div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl"><h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Modelo de IA</h2><form id="newModelForm" class="space-y-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Modelo</label><input type="text" id="modelName" required placeholder="Ej. Gemini Pro" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label><select id="modelCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="generativo">Generativo</option><option value="predictivo">Predictivo</option><option value="vision">Visión Artificial</option></select></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Riesgo</label><select id="modelRisk" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="bajo">Bajo</option><option value="medio">Medio</option><option value="alto">Alto</option></select></div></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label><select id="modelCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="closeModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar</button></div></form></div></div>
-  <div id="newCompanyModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"><div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl"><h2 class="text-2xl font-bold mb-6 text-white">Registrar Nueva Filial</h2><form id="newCompanyForm" class="space-y-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Empresa</label><input type="text" id="companyNameInput" required placeholder="Ej. Oleopalma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Perfil</label><select id="companyProfileInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="operacional_agro">Agroindustria</option><option value="servicios">Servicios</option><option value="retail">Retail</option><option value="salud">Salud (SaMD)</option></select></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="closeCompanyModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar</button></div></form></div></div>
-  <div id="newUserModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"><div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl"><h2 class="text-2xl font-bold mb-6 text-white">Invitar Nuevo Usuario</h2><form id="newUserForm" class="space-y-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre Completo</label><input type="text" id="userName" required placeholder="Ej. Ana Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Correo</label><input type="email" id="userEmailInput" required placeholder="ana@oleomex.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Contraseña</label><input type="text" id="userPassword" required value="GokuLab2026!" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Rol</label><select id="userRole" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="admin">Admin (Cliente)</option><option value="auditor">Auditor</option><option value="superadmin">Superadmin</option></select></div></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Organización</label><select id="userOrg" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="closeUserModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Crear Usuario</button></div></form></div></div>
-  <div id="newDeliverableModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"><div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-white">Agregar Tarea</h2><button type="button" onclick="suggestTaskWithAI()" id="btnAI_Task" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-1 px-3 rounded-lg transition shadow-lg shadow-purple-500/20">✨ Autocompletar con IA</button></div><form id="newDeliverableForm" class="space-y-4"><div><label class="block text-sm font-semibold text-teal-400 mb-1">✨ Sugerencias rápidas</label><select id="commonTaskSelect" onchange="fillCommonTask()" class="w-full bg-slate-900 border border-teal-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">-- Seleccionar sugerencia --</option><option value="politica">Redactar Política de Uso Aceptable</option><option value="comite">Designar Oficial de IA / Comité</option><option value="inventario">Completar Inventario de IA</option><option value="capacitacion">Capacitar al personal en riesgos</option><option value="mlops">Implementar Monitoreo MLOps</option></select></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Tarea</label><input type="text" id="taskName" required placeholder="Ej. Redactar Política de IA" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Fase</label><select id="taskPhase" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Fase 1: Diagnóstico">Fase 1: Diagnóstico</option><option value="Fase 2: Diseño">Fase 2: Diseño</option><option value="Fase 3: Implementación">Fase 3: Implementación</option><option value="Fase 4: Auditoría">Fase 4: Auditoría</option></select></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Responsable</label><select id="taskAssignee" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Equipo BehAvIorLab">Equipo BehAvIorLab</option><option value="Cliente">Cliente</option><option value="Ambos">Ambos</option></select></div></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Fecha de Entrega</label><input type="date" id="taskDate" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="closeDeliverableModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Tarea</button></div></form></div></div>
-  <div id="newRiskModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"><div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-white">Registrar Riesgo</h2><button type="button" onclick="suggestRiskWithAI()" id="btnAI_Risk" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-1 px-3 rounded-lg transition shadow-lg shadow-purple-500/20">✨ Autocompletar con IA</button></div><form id="newRiskForm" class="space-y-4"><div><label class="block text-sm font-semibold text-teal-400 mb-1">✨ Sugerencias rápidas</label><select id="commonRiskSelect" onchange="fillCommonRisk()" class="w-full bg-slate-900 border border-teal-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">-- Seleccionar sugerencia --</option><option value="fuga">Fuga de datos en IA Generativa</option><option value="alucinacion">Alucinaciones del modelo</option><option value="sesgo">Sesgo algorítmico</option><option value="trazabilidad">Falta de trazabilidad</option><option value="shadow">Shadow AI</option></select></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Riesgo</label><input type="text" id="riskName" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label><select id="riskCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Privacidad">Privacidad</option><option value="Sesgo">Sesgo</option><option value="Seguridad">Seguridad</option><option value="Operacional">Operacional</option><option value="Regulatorio">Regulatorio</option></select></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial</label><select id="riskCompany" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">Global</option></select></div></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Probabilidad (1-5)</label><select id="riskProb" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Impacto (1-5)</label><select id="riskImpact" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Plan de Mitigación</label><textarea id="riskMitigation" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></textarea></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="closeRiskModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Riesgo</button></div></form></div></div>
+  <!-- MODALES BÁSICOS -->
+  <div id="newModelModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Modelo de IA</h2>
+      <form id="newModelForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Modelo</label><input type="text" id="modelName" required placeholder="Ej. Gemini Pro" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label><select id="modelCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="generativo">Generativo</option><option value="predictivo">Predictivo</option><option value="vision">Visión Artificial</option></select></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Riesgo</label><select id="modelRisk" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="bajo">Bajo</option><option value="medio">Medio</option><option value="alto">Alto</option></select></div>
+        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label><select id="modelCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="newCompanyModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nueva Filial</h2>
+      <form id="newCompanyForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Empresa</label><input type="text" id="companyNameInput" required placeholder="Ej. Oleopalma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Perfil</label><select id="companyProfileInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="operacional_agro">Agroindustria</option><option value="servicios">Servicios</option><option value="retail">Retail</option><option value="salud">Salud (SaMD)</option></select></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeCompanyModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="newUserModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Invitar Nuevo Usuario</h2>
+      <form id="newUserForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre Completo</label><input type="text" id="userName" required placeholder="Ej. Ana Gómez" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Correo</label><input type="email" id="userEmailInput" required placeholder="ana@oleomex.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Contraseña</label><input type="text" id="userPassword" required value="GokuLab2026!" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Rol</label><select id="userRole" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="admin">Admin (Cliente)</option><option value="auditor">Auditor</option><option value="superadmin">Superadmin</option></select></div>
+        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Organización</label><select id="userOrg" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeUserModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Crear Usuario</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="newDeliverableModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-white">Agregar Tarea</h2>
+        <button type="button" onclick="suggestTaskWithAI()" id="btnAI_Task" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-1 px-3 rounded-lg transition shadow-lg shadow-purple-500/20">✨ Autocompletar con IA</button>
+      </div>
+      <form id="newDeliverableForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-teal-400 mb-1">✨ Sugerencias rápidas</label><select id="commonTaskSelect" onchange="fillCommonTask()" class="w-full bg-slate-900 border border-teal-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">-- Seleccionar sugerencia --</option><option value="politica">Redactar Política de Uso Aceptable</option><option value="comite">Designar Oficial de IA / Comité</option><option value="inventario">Completar Inventario de IA</option><option value="capacitacion">Capacitar al personal en riesgos</option><option value="mlops">Implementar Monitoreo MLOps</option></select></div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Tarea</label><input type="text" id="taskName" required placeholder="Ej. Redactar Política de IA" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Fase</label><select id="taskPhase" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Fase 1: Diagnóstico">Fase 1: Diagnóstico</option><option value="Fase 2: Diseño">Fase 2: Diseño</option><option value="Fase 3: Implementación">Fase 3: Implementación</option><option value="Fase 4: Auditoría">Fase 4: Auditoría</option></select></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Responsable</label><select id="taskAssignee" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Equipo BehAvIorLab">Equipo BehAvIorLab</option><option value="Cliente">Cliente</option><option value="Ambos">Ambos</option></select></div>
+        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Fecha de Entrega</label><input type="date" id="taskDate" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeDeliverableModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Tarea</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="newRiskModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-white">Registrar Riesgo</h2>
+        <button type="button" onclick="suggestRiskWithAI()" id="btnAI_Risk" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-1 px-3 rounded-lg transition shadow-lg shadow-purple-500/20">✨ Autocompletar con IA</button>
+      </div>
+      <form id="newRiskForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-teal-400 mb-1">✨ Sugerencias rápidas</label><select id="commonRiskSelect" onchange="fillCommonRisk()" class="w-full bg-slate-900 border border-teal-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">-- Seleccionar sugerencia --</option><option value="fuga">Fuga de datos en IA Generativa</option><option value="alucinacion">Alucinaciones del modelo</option><option value="sesgo">Sesgo algorítmico</option><option value="trazabilidad">Falta de trazabilidad</option><option value="shadow">Shadow AI</option></select></div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Riesgo</label><input type="text" id="riskName" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Categoría</label><select id="riskCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="Privacidad">Privacidad</option><option value="Sesgo">Sesgo</option><option value="Seguridad">Seguridad</option><option value="Operacional">Operacional</option><option value="Regulatorio">Regulatorio</option></select></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial</label><select id="riskCompany" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">Global</option></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Probabilidad (1-5)</label><select id="riskProb" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Impacto (1-5)</label><select id="riskImpact" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        </div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Plan de Mitigación</label><textarea id="riskMitigation" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></textarea></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeRiskModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar Riesgo</button></div>
+      </form>
+    </div>
+  </div>
   
-  <!-- DIAGNÓSTICO (Igual) -->
+  <!-- DIAGNÓSTICO (Con Desglose por Pilares) -->
   <div id="diagnosticModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 w-full max-w-4xl shadow-2xl my-8">
       <div id="diagnosticFormContainer">
@@ -271,11 +349,54 @@
         </form>
       </div>
 
+      <!-- RESULTADOS CON DESGLOSE POR PILARES -->
       <div id="diagnosticResultContainer" class="hidden py-4">
-        <div class="text-center mb-6"><div class="text-5xl mb-2">🎯</div><h2 class="text-2xl font-bold text-white mb-1">Diagnóstico Completado</h2><p class="text-slate-400" id="resultFrameworkName">Marco: ISO 42001</p></div>
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm mx-auto mb-6 text-center"><h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Score de Madurez</h3><div id="finalScore" class="text-5xl font-black text-amber-400 mb-1">0%</div><div id="finalRiskLabel" class="text-sm font-bold text-slate-300">Evaluando...</div></div>
-        <div class="text-center mb-8"><button type="button" id="btnGenerateAIReport" class="hidden bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition w-full max-w-md mx-auto shadow-lg">🧠 Generando Reporte...</button><div id="aiReportText" class="hidden"></div></div>
-        <div class="bg-slate-800 border border-slate-600 rounded-2xl p-6 mb-8 text-left"><h3 class="text-lg font-bold text-white mb-4">🗺️ Tu Roadmap de Implementación</h3><div class="space-y-4 text-sm"><div class="border-l-4 border-amber-500 pl-4"><p class="font-bold text-amber-400">Fase 1 (0-60 días)</p><p id="roadmapPhase1" class="text-slate-300 mt-1"></p></div><div class="border-l-4 border-blue-500 pl-4"><p class="font-bold text-blue-400">Fase 2 (6 meses)</p><p id="roadmapPhase2" class="text-slate-300 mt-1"></p></div><div class="border-l-4 border-teal-500 pl-4"><p class="font-bold text-teal-400">Fase 3 (12 meses)</p><p id="roadmapPhase3" class="text-slate-300 mt-1"></p></div></div></div>
+        <div class="text-center mb-6">
+          <div class="text-5xl mb-2">🎯</div>
+          <h2 class="text-2xl font-bold text-white mb-1">Diagnóstico Completado</h2>
+          <p class="text-slate-400" id="resultFrameworkName">Marco: ISO 42001</p>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md mx-auto mb-6 text-center">
+          <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Score Global de Madurez</h3>
+          <div id="finalScore" class="text-6xl font-black text-amber-400 mb-1">0%</div>
+          <div id="finalRiskLabel" class="text-sm font-bold text-slate-300">Evaluando...</div>
+        </div>
+
+        <!-- Desglose por Pilares -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-8 max-w-2xl mx-auto">
+          <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider text-center">Desglose por Pilar de Gobernanza</h3>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-xs text-slate-300 mb-1"><span>Gobernanza y Políticas</span><span id="scorePillar1">0%</span></div>
+              <div class="w-full bg-slate-900 rounded-full h-2"><div id="barPillar1" class="bg-teal-500 h-2 rounded-full" style="width: 0%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs text-slate-300 mb-1"><span>Gestión de Riesgos</span><span id="scorePillar2">0%</span></div>
+              <div class="w-full bg-slate-900 rounded-full h-2"><div id="barPillar2" class="bg-amber-500 h-2 rounded-full" style="width: 0%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs text-slate-300 mb-1"><span>Ciclo de Vida del Modelo</span><span id="scorePillar3">0%</span></div>
+              <div class="w-full bg-slate-900 rounded-full h-2"><div id="barPillar3" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs text-slate-300 mb-1"><span>Transparencia y Ética</span><span id="scorePillar4">0%</span></div>
+              <div class="w-full bg-slate-900 rounded-full h-2"><div id="barPillar4" class="bg-purple-500 h-2 rounded-full" style="width: 0%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mb-8"><button type="button" id="btnGenerateAIReport" class="hidden bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition w-full max-w-md mx-auto shadow-lg">🧠 Generando Reporte Ejecutivo con IA...</button><div id="aiReportText" class="hidden"></div></div>
+        
+        <div class="bg-slate-800 border border-slate-600 rounded-2xl p-6 mb-8 text-left">
+          <h3 class="text-lg font-bold text-white mb-4">🗺️ Tu Roadmap de Implementación</h3>
+          <div class="space-y-4 text-sm">
+            <div class="border-l-4 border-amber-500 pl-4"><p class="font-bold text-amber-400">Fase 1 (0-60 días)</p><p id="roadmapPhase1" class="text-slate-300 mt-1"></p></div>
+            <div class="border-l-4 border-blue-500 pl-4"><p class="font-bold text-blue-400">Fase 2 (6 meses)</p><p id="roadmapPhase2" class="text-slate-300 mt-1"></p></div>
+            <div class="border-l-4 border-teal-500 pl-4"><p class="font-bold text-teal-400">Fase 3 (12 meses)</p><p id="roadmapPhase3" class="text-slate-300 mt-1"></p></div>
+          </div>
+        </div>
+        
         <div class="text-center"><button type="button" id="closeResultBtn" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-8 rounded-xl transition">Cerrar</button></div>
       </div>
     </div>

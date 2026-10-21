@@ -119,18 +119,39 @@
       </div>
     </section>
 
-    <!-- GOBERNANZA -->
+    <!-- GOBERNANZA (Con Tarjetas Interactivas) -->
     <section class="services" id="gobernanza" style="background: rgba(0,0,0,0.2);">
       <div class="container">
         <div class="services-header">
           <span class="services-badge" style="background: rgba(0, 242, 254, 0.2); color: #00f2fe;">⚖️ Gobernanza y Cumplimiento</span>
           <h2 class="section-title">No solo creamos Agentes, los hacemos auditables</h2>
+          <p class="services-intro">Protegemos tu operación con marcos internacionales (ISO 42001, NIST AI RMF) y cumplimiento regulatorio local (LFPDPPP, COFEPRIS / SaMD).</p>
         </div>
         <div class="services-grid">
-          <div class="service-card glass reveal"><div class="service-icon" style="font-size: 2rem;">⚖️</div><h3>Diagnóstico y Triaje</h3><p>Evaluación de madurez, inventario de modelos y clasificación de riesgo.</p></div>
-          <div class="service-card glass reveal"><div class="service-icon" style="font-size: 2rem;">🏢</div><h3>Modelo Hub & Spoke</h3><p>Diseño de estructuras de gobierno corporativo para grupos multiempresa.</p></div>
-          <div class="service-card glass reveal"><div class="service-icon" style="font-size: 2rem;">🛡️</div><h3>Cumplimiento (GRC)</h3><p>Preparación para auditorías ISO 42001, NIST AI RMF y COFEPRIS.</p></div>
-          <div class="service-card glass reveal"><div class="service-icon" style="font-size: 2rem;">📊</div><h3>Monitoreo MLOps</h3><p>Evaluación continua de agentes: sesgos, drift y trazabilidad.</p></div>
+          <div class="service-card glass arch-item reveal" data-modal="modal-gob-diagnostico">
+            <div class="service-icon" style="font-size: 2rem;">⚖️</div>
+            <h3>Diagnóstico y Triaje</h3>
+            <p>Evaluación de madurez, inventario de modelos y clasificación de riesgo.</p>
+            <div class="arch-hover-info">🔍 Ver más</div>
+          </div>
+          <div class="service-card glass arch-item reveal" data-modal="modal-gob-hub">
+            <div class="service-icon" style="font-size: 2rem;">🏢</div>
+            <h3>Modelo Hub & Spoke</h3>
+            <p>Diseño de estructuras de gobierno corporativo para grupos multiempresa.</p>
+            <div class="arch-hover-info">🔍 Ver más</div>
+          </div>
+          <div class="service-card glass arch-item reveal" data-modal="modal-gob-compliance">
+            <div class="service-icon" style="font-size: 2rem;">🛡️</div>
+            <h3>Cumplimiento (GRC)</h3>
+            <p>Preparación para auditorías ISO 42001, NIST AI RMF y COFEPRIS.</p>
+            <div class="arch-hover-info">🔍 Ver más</div>
+          </div>
+          <div class="service-card glass arch-item reveal" data-modal="modal-gob-mlops">
+            <div class="service-icon" style="font-size: 2rem;">📊</div>
+            <h3>Monitoreo MLOps</h3>
+            <p>Evaluación continua de agentes: sesgos, drift y trazabilidad.</p>
+            <div class="arch-hover-info">🔍 Ver más</div>
+          </div>
         </div>
       </div>
     </section>
@@ -246,6 +267,63 @@
 
   </div> <!-- fin de #app -->
 
+  <!-- ========== MODALES DE GOBERNANZA (NUEVOS) ========== -->
+  <div class="arch-modal" id="modal-gob-diagnostico">
+    <div class="arch-modal-content glass">
+      <span class="arch-modal-close">&times;</span>
+      <h3>⚖️ Diagnóstico y Triaje de IA</h3>
+      <p>Evaluamos el nivel de madurez de tu organización y clasificamos el riesgo de todos tus sistemas de IA (incluyendo Shadow AI).</p>
+      <ul>
+        <li><strong>Inventario de Modelos:</strong> Registramos cada algoritmo, herramienta o API de IA que usas.</li>
+        <li><strong>Semáforo de Riesgo:</strong> Clasificamos los modelos en Bajo, Medio, Alto o Inaceptable (según EU AI Act).</li>
+        <li><strong>Evaluación de Madurez:</strong> Medimos tus capacidades actuales frente a los controles de ISO 42001.</li>
+      </ul>
+      <p><small>Entregable: Un Dashboard Ejecutivo con el Score Global de Cumplimiento.</small></p>
+    </div>
+  </div>
+
+  <div class="arch-modal" id="modal-gob-hub">
+    <div class="arch-modal-content glass">
+      <span class="arch-modal-close">&times;</span>
+      <h3>🏢 Modelo Hub & Spoke</h3>
+      <p>Diseñamos la estructura de gobernanza organizacional para grupos multiempresa. Evitamos la parálisis operativa mientras cumplimos con las normativas.</p>
+      <ul>
+        <li><strong>El Hub (Centro):</strong> Define las políticas corporativas, el apetito de riesgo y el marco ético (Comité Central).</li>
+        <li><strong>Los Spokes (Filiales):</strong> Cada unidad de negocio (Oleofinos, Solave, etc.) implementa las políticas según su contexto operativo.</li>
+        <li><strong>Roles y Responsabilidades:</strong> Definimos quién es el Oficial de IA, quién audita y quién aprueba.</li>
+      </ul>
+      <p><small>Entregable: Manual de Organización y Gobernanza Corporativa de IA.</small></p>
+    </div>
+  </div>
+
+  <div class="arch-modal" id="modal-gob-compliance">
+    <div class="arch-modal-content glass">
+      <span class="arch-modal-close">&times;</span>
+      <h3>🛡️ Cumplimiento (GRC)</h3>
+      <p>Preparamos a tu empresa para pasar auditorías regulatorias sin miedo, alineando la operación a los estándares locales e internacionales.</p>
+      <ul>
+        <li><strong>ISO/IEC 42001:</strong> Implementación del Sistema de Gestión de Inteligencia Artificial (AIMS).</li>
+        <li><strong>COFEPRIS / SaMD:</strong> Validación de software como dispositivo médico para el sector salud.</li>
+        <li><strong>LFPDPPP:</strong> Cumplimiento estricto de protección de datos personales en modelos generativos.</li>
+      </ul>
+      <p><small>Entregable: Expediente Digital de Evidencias y Políticas listas para auditoría.</small></p>
+    </div>
+  </div>
+
+  <div class="arch-modal" id="modal-gob-mlops">
+    <div class="arch-modal-content glass">
+      <span class="arch-modal-close">&times;</span>
+      <h3>📊 Monitoreo y MLOps</h3>
+      <p>La gobernanza no termina en el despliegue. Monitoreamos que tus agentes sigan siendo seguros y precisos con el tiempo.</p>
+      <ul>
+        <li><strong>Detección de Data Drift:</strong> Alertamos si los datos del mundo real cambian y el modelo empieza a fallar.</li>
+        <li><strong>Auditoría de Sesgos:</strong> Evaluamos periódicamente que las decisiones de la IA sean justas y equitativas.</li>
+        <li><strong>Trazabilidad:</strong> Guardamos logs inmutables (Audit Logs) para saber exactamente qué respondió la IA y por qué.</li>
+      </ul>
+      <p><small>Entregable: Reportes de Monitoreo Continuo y alertas de incidentes.</small></p>
+    </div>
+  </div>
+
   <!-- ========== MODALES DE ARQUITECTURA (CON TEXTO COMPLETO) ========== -->
   <div class="arch-modal" id="modal-canales">
     <div class="arch-modal-content glass">
@@ -320,7 +398,7 @@
     </div>
   </div>
 
-  <!-- ========== MODALES DE MÉTODO (CON TEXTO COMPLETO) ========== -->
+  <!-- ========== MODALES DE MÉTODO ========== -->
   <div class="arch-modal" id="modal-paso1">
     <div class="arch-modal-content glass">
       <span class="arch-modal-close">&times;</span>
