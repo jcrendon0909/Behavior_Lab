@@ -28,14 +28,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const sections = ['dashboardSection', 'inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'leadsSection', 'usersSection', 'evidenceSection'];
 
   function resetTabs() {
-    tabs.forEach(id => { const el = document.getElementById(id); if(el) el.className = 'text-slate-500 hover:text-slate-300 pb-2 transition whitespace-nowrap'; });
-    sections.forEach(id => { const el = document.getElementById(id); if(el) { el.classList.add('hidden'); el.classList.remove('block'); } });
+    tabs.forEach(id => { 
+      const el = document.getElementById(id); 
+      if(el) el.className = 'text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2'; 
+    });
+    sections.forEach(id => { 
+      const el = document.getElementById(id); 
+      if(el) { el.classList.add('hidden'); el.classList.remove('block'); } 
+    });
   }
 
   function setTab(tabId, secId, loadFn) {
     resetTabs(); 
-    const tab = document.getElementById(tabId); if(tab) tab.className = 'text-teal-400 font-semibold border-b-2 border-teal-400 pb-2 transition whitespace-nowrap'; 
-    const sec = document.getElementById(secId); if(sec) { sec.classList.remove('hidden'); sec.classList.add('block'); }
+    const tab = document.getElementById(tabId); 
+    if(tab) tab.className = 'text-teal-400 font-semibold pb-2 border-b-2 border-teal-400 transition whitespace-nowrap px-2'; 
+    const sec = document.getElementById(secId); 
+    if(sec) { sec.classList.remove('hidden'); sec.classList.add('block'); }
     if(loadFn) loadFn();
   }
 
@@ -237,7 +245,6 @@ document.addEventListener('DOMContentLoaded', () => {
           selector.addEventListener('change', (e) => {
             currentOrgId = e.target.value; 
             loadDashboardData();
-            // Recargar la pestaña activa si es diferente al dashboard
             if(!document.getElementById('dashboardSection').classList.contains('hidden')) loadExecutiveDashboard();
             if(!document.getElementById('matrixSection').classList.contains('hidden')) loadMatrix();
             if(!document.getElementById('risksSection').classList.contains('hidden')) loadRisks();
@@ -251,14 +258,12 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('tabUsersBtn').classList.add('hidden');
     }
     
-    // Al iniciar, forzamos la carga del Dashboard Ejecutivo
     setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard);
-    loadDashboardData(); // Para llenar companiesCache
+    loadDashboardData(); 
   }
 
   async function loadDashboardData() { await loadCompanies(); await loadInventory(); }
 
-  // NUEVO: DASHBOARD EJECUTIVO
   async function loadExecutiveDashboard() {
     try {
       const [risksRes, tasksRes, evalsRes, evidenceRes] = await Promise.all([
@@ -271,13 +276,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const risks = (await risksRes.json()).filter(r => r.orgId === currentOrgId);
       const tasks = (await tasksRes.json()).filter(d => d.orgId === currentOrgId);
       const evaluations = (await evalsRes.json()).filter(e => e.orgId === currentOrgId);
-      const evidence = (await evidenceRes.json()).filter(e => {
-        // Filtrar evidencia es un poco más complejo porque usa companyId, pero podemos mostrarla toda si somos superadmin
-        return true; 
-      });
+      const evidence = await evidenceRes.json(); 
 
-      // 1. KPI Cumplimiento
-      const latestEval = evaluations[0]; // Asumiendo que vienen ordenadas por fecha desc
+      const latestEval = evaluations[0]; 
       if (latestEval) {
         document.getElementById('kpiCompliance').textContent = `${latestEval.score}%`;
         document.getElementById('kpiCompliance').className = latestEval.score > 60 ? 'text-5xl font-black text-teal-400' : 'text-5xl font-black text-amber-400';
@@ -286,19 +287,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('kpiCompliance').className = 'text-5xl font-black text-slate-500';
       }
 
-      // 2. KPI Riesgos (Críticos + Altos)
       const criticalRisks = risks.filter(r => r.riskLevel === 'Crítico' || r.riskLevel === 'Alto').length;
       document.getElementById('kpiRisks').textContent = criticalRisks;
       document.getElementById('kpiRisks').className = criticalRisks > 0 ? 'text-5xl font-black text-rose-400' : 'text-5xl font-black text-teal-400';
 
-      // 3. KPI Tareas
       const totalTasks = tasks.length;
       const completedTasks = tasks.filter(t => t.status === 'Completado').length;
       const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
       document.getElementById('kpiTasks').textContent = `${progress}%`;
       document.getElementById('kpiTasksBar').style.width = `${progress}%`;
 
-      // 4. Riesgos Recientes
       const recentRisksDiv = document.getElementById('dashRecentRisks');
       if (risks.length === 0) {
         recentRisksDiv.innerHTML = `<p class="text-sm text-slate-500">No hay riesgos registrados.</p>`;
@@ -309,7 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
       }
 
-      // 5. Evidencias Recientes
       const recentEvidenceDiv = document.getElementById('dashRecentEvidence');
       if (evidence.length === 0) {
         recentEvidenceDiv.innerHTML = `<p class="text-sm text-slate-500">No hay evidencias subidas.</p>`;
@@ -320,9 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
       }
 
-    } catch (error) {
-      console.error("Error cargando Dashboard Ejecutivo:", error);
-    }
+    } catch (error) { console.error("Error cargando Dashboard Ejecutivo:", error); }
   }
 
   async function loadCompanies() {
@@ -358,7 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {}
   }
 
-  // 5. MATRIZ GLOBAL
   async function loadMatrix() {
     try {
       const res = await fetch(`${API_URL}/gov/evaluations`, { headers });
@@ -382,7 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.openDiagnosticFor = function(fw) { document.getElementById('tabInventoryBtn').click(); document.getElementById('openDiagnosticBtn').click(); document.getElementById('diagFramework').value = fw; }
 
-  // 6. PLAN DE TRABAJO
   async function loadDeliverables() {
     try {
       const res = await fetch(`${API_URL}/gov/deliverables`, { headers });
@@ -421,7 +414,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Tarea'; btn.disabled = false; }
   });
 
-  // 7. REGISTRO DE RIESGOS
   async function loadRisks() {
     try {
       const res = await fetch(`${API_URL}/gov/risks`, { headers });
@@ -457,7 +449,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
   });
 
-  // 8. LEADS, USUARIOS Y EVIDENCIA
   async function loadLeads() {
     try {
       const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
@@ -586,7 +577,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) { alert('Error de conexión'); } finally { btn.textContent = 'Calcular Madurez'; btn.disabled = false; }
   });
 
-  // GENERADOR DE POLÍTICA
   const btnGeneratePolicy = document.getElementById('btnGeneratePolicy'); if(btnGeneratePolicy) btnGeneratePolicy.addEventListener('click', () => {
     const orgName = document.getElementById('orgSelector')?.selectedOptions[0]?.text || "Organización";
     const currentDate = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
