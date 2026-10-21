@@ -541,6 +541,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const percentage = Math.round((totalScore / 60) * 100);
+    
+    // Calcular Puntajes por Pilar
+    const p1 = (answers['q1']?.score||0) + (answers['q2']?.score||0) + (answers['q3']?.score||0);
+    const p2 = (answers['q4']?.score||0) + (answers['q5']?.score||0) + (answers['q6']?.score||0);
+    const p3 = (answers['q7']?.score||0) + (answers['q8']?.score||0) + (answers['q9']?.score||0);
+    const p4 = (answers['q10']?.score||0) + (answers['q11']?.score||0) + (answers['q12']?.score||0);
+    
+    const p1Pct = Math.round((p1 / 15) * 100);
+    const p2Pct = Math.round((p2 / 15) * 100);
+    const p3Pct = Math.round((p3 / 15) * 100);
+    const p4Pct = Math.round((p4 / 15) * 100);
+
+    // Pintar Barras
+    document.getElementById('scorePillar1').textContent = `${p1Pct}%`;
+    document.getElementById('barPillar1').style.width = `${p1Pct}%`;
+    document.getElementById('scorePillar2').textContent = `${p2Pct}%`;
+    document.getElementById('barPillar2').style.width = `${p2Pct}%`;
+    document.getElementById('scorePillar3').textContent = `${p3Pct}%`;
+    document.getElementById('barPillar3').style.width = `${p3Pct}%`;
+    document.getElementById('scorePillar4').textContent = `${p4Pct}%`;
+    document.getElementById('barPillar4').style.width = `${p4Pct}%`;
+
     let riskLevel = 'alto', label = 'Crítico', color = 'text-rose-400';
     if (percentage > 30 && percentage <= 60) { riskLevel = 'medio'; label = 'En Desarrollo'; color = 'text-amber-400'; }
     else if (percentage > 60 && percentage <= 85) { riskLevel = 'bajo'; label = 'Maduro'; color = 'text-blue-400'; }
@@ -552,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${API_URL}/gov/evaluations`, { method: 'POST', headers, body: JSON.stringify(payload) });
       if (res.ok) {
         document.getElementById('statMaturity').textContent = `${percentage}%`; document.getElementById('statMaturity').className = `text-4xl font-bold ${color}`;
-        document.getElementById('finalScore').textContent = `${percentage}%`; document.getElementById('finalScore').className = `text-5xl font-black mb-1 ${color}`;
+        document.getElementById('finalScore').textContent = `${percentage}%`; document.getElementById('finalScore').className = `text-6xl font-black mb-1 ${color}`;
         document.getElementById('finalRiskLabel').textContent = label;
         document.getElementById('resultFrameworkName').textContent = `Marco: ${framework}`;
         document.getElementById('roadmapPhase1').textContent = phase1.join(" ") || "Nada pendiente.";
