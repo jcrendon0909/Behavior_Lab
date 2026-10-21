@@ -2,6 +2,9 @@
    BehaviorLab API — server.js
    Backend: Node.js + Express + MongoDB Atlas + Groq (openai/gpt-oss-120b)
    Deploy: Render  |  Frontend: Cloudflare Pages (behaviorlab.gokulab.mx)
+
+   v1.1.1 — Fix: arranque no bloqueante (app.listen primero, Mongo después)
+            para evitar "Port scan timeout" en Render.
    ============================================================================= */
 
 'use strict';
@@ -633,7 +636,7 @@ app.post('/leads', leadsLimiter, async (req, res) => {
    9. HEALTHCHECK Y MANEJO DE ERRORES
    ═══════════════════════════════════════════════════════════════════════════ */
 
-app.get('/', (_req, res) => res.json({ ok: true, service: 'BehaviorLab API', version: '1.1.0' }));
+app.get('/', (_req, res) => res.json({ ok: true, service: 'BehaviorLab API', version: '1.1.1' }));
 
 app.get('/health', (_req, res) => {
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
@@ -660,32 +663,36 @@ app.use((err, _req, res, _next) => {
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   10. ARRANQUE: MongoDB + Express
+   10. ARRANQUE — FIX Render "Port scan timeout"
+   ═══════════════════════════════════════════════════════════════════════════
+   Regla crítica: el servidor HTTP DEBE abrir el puerto ANTES de conectar a
+   Mongo, porque Render escanea el puerto en los primeros segundos. Si Mongo
+   tarda >90s (Atlas lento, IP no whitelisteada, DNS, etc.), el deploy falla
+   con "no open ports detected". Con este orden, Render ve el puerto al
+   instante y Mongo se conecta en paralelo sin bloquear el arranque.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-async function start() {
-  try {
-    await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 10000,
-      maxPoolSize: 10,
-      retryWrites: true,
-    });
-    console.log('[MONGO] Conectado a Atlas');
-  } catch (err) {
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[SERVER] BehaviorLab API escuchando en 0.0.0.0:${PORT}`);
+  console.log(`[SERVER] Groq keys cargadas: ${GROQ_KEYS.length} | modelo: ${GROQ_MODEL}`);
+});
+
+mongoose
+  .connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 10000,
+    maxPoolSize: 10,
+    retryWrites: true,
+  })
+  .then(() => console.log('[MONGO] Conectado a Atlas'))
+  .catch((err) => {
     console.error('[MONGO] Fallo de conexión inicial:', err.message);
-    // No matamos el proceso: Render reintentará y Mongoose sigue reconectando
-  }
-
-  app.listen(PORT, () => {
-    console.log(`[SERVER] BehaviorLab API escuchando en :${PORT}`);
-    console.log(`[SERVER] Groq keys cargadas: ${GROQ_KEYS.length} | modelo: ${GROQ_MODEL}`);
+    // No matamos el proceso: Mongoose reintenta y Render ya tiene el puerto abierto.
   });
-}
 
-start();
-
+// Cierre limpio ante SIGTERM (Render lo envía en cada redeploy)
 process.on('SIGTERM', async () => {
   console.log('[SERVER] SIGTERM recibido, cerrando...');
+  server.close(() => console.log('[SERVER] Servidor HTTP cerrado'));
   await mongoose.connection.close().catch(() => {});
   process.exit(0);
 });
