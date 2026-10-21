@@ -207,45 +207,52 @@ app.post("/gov/generate-report", async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// 🚨 ENDPOINTS DE SUGERENCIA CON IA 🚨
-app.post("/gov/suggest-risk", async (req, res) => {
+// 🚨 NUEVO ENDPOINT: GENERADOR DE REPORTE ESTRATÉGICO
+app.post("/gov/generate-strategic-report", async (req, res) => {
   try {
-    const { companyName } = req.body;
+    const { companyName, score, pillars, risks } = req.body;
+    
     const prompt = `
-Eres un auditor experto en ISO 42001 y NIST AI RMF.
-El cliente "${companyName}" está construyendo su matriz de riesgos de IA.
-Genera UN riesgo crítico, realista y común para el sector empresarial.
-Devuelve SOLO un objeto JSON válido con esta estructura exacta (sin markdown, solo JSON):
-{
-  "riskName": "Nombre del riesgo (max 10 palabras)",
-  "category": "Privacidad" | "Sesgo" | "Seguridad" | "Operacional" | "Regulatorio",
-  "probability": 1-5,
-  "impact": 1-5,
-  "mitigationPlan": "Plan de mitigación de 1 o 2 oraciones."
-}`;
-    const aiResult = await callGroq([{ role: "user", content: prompt }], 300);
-    const jsonStr = aiResult.substring(aiResult.indexOf('{'), aiResult.lastIndexOf('}') + 1);
-    res.json(JSON.parse(jsonStr));
-  } catch (error) { res.status(500).json({ error: "Error al generar riesgo con IA." }); }
-});
+Eres un Socio Director de Consultoría de IA de una firma Big Four.
+El cliente "${companyName}" ha completado su diagnóstico de gobernanza obteniendo un score global del ${score}%.
 
-app.post("/gov/suggest-task", async (req, res) => {
-  try {
-    const { companyName } = req.body;
-    const prompt = `
-Eres un consultor experto en implementación de ISO 42001.
-El cliente "${companyName}" necesita avanzar en su hoja de ruta de gobernanza.
-Genera UNA tarea de implementación accionable y realista.
-Devuelve SOLO un objeto JSON válido (sin markdown) con esta estructura exacta:
+Aquí está el desglose por pilares:
+- Gobernanza y Políticas: ${pillars.p1}%
+- Gestión de Riesgos: ${pillars.p2}%
+- Ciclo de Vida: ${pillars.p3}%
+- Transparencia: ${pillars.p4}%
+
+Aquí están sus 3 riesgos más críticos identificados:
+${risks.map((r, i) => `${i+1}. ${r.riskName} (Nivel: ${r.riskLevel})`).join('\n')}
+
+Genera el contenido para un "Reporte Ejecutivo de Gobernanza de IA". 
+Devuelve SOLO un JSON válido con esta estructura exacta (sin markdown, solo el JSON):
 {
-  "taskName": "Nombre de la tarea (max 12 palabras)",
-  "phase": "Fase 1: Diagnóstico" | "Fase 2: Diseño" | "Fase 3: Implementación" | "Fase 4: Auditoría",
-  "assignedTo": "Equipo BehAvIorLab" | "Cliente" | "Ambos"
+  "executiveSummary": "Un resumen ejecutivo de 2 párrafos interpretando el score y el impacto en el negocio.",
+  "gapAnalysis": "Un párrafo explicando cuál es el pilar más débil y por qué es peligroso para la empresa.",
+  "roadmap": {
+    "phase1": "Acciones inmediatas (Quick Wins) para los próximos 0-60 días.",
+    "phase2": "Acciones de consolidación y fundación para los próximos 6 meses.",
+    "phase3": "Acciones de escalamiento, auditoría y MLOps para los próximos 12 meses."
+  }
 }`;
-    const aiResult = await callGroq([{ role: "user", content: prompt }], 250);
-    const jsonStr = aiResult.substring(aiResult.indexOf('{'), aiResult.lastIndexOf('}') + 1);
-    res.json(JSON.parse(jsonStr));
-  } catch (error) { res.status(500).json({ error: "Error al generar tarea con IA." }); }
+
+    const aiResult = await callGroq([{ role: "user", content: prompt }], 1200);
+    
+    let reportData = {};
+    try {
+      const jsonStr = aiResult.substring(aiResult.indexOf('{'), aiResult.lastIndexOf('}') + 1);
+      reportData = JSON.parse(jsonStr);
+    } catch (e) {
+      console.error("Error parseando JSON del reporte estratégico:", aiResult);
+      return res.status(500).json({ error: "Error generando el reporte" });
+    }
+
+    res.json(reportData);
+  } catch (error) {
+    console.error("❌ Error en reporte estratégico:", error);
+    res.status(500).json({ error: "Error interno generando el reporte" });
+  }
 });
 
 app.use('/gov', (req, res, next) => {

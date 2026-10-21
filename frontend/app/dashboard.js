@@ -607,5 +607,195 @@ document.addEventListener('DOMContentLoaded', () => {
     policyWindow.document.close();
   });
 
+  // 5. GENERADOR DE REPORTE ESTRATÉGICO
+  const btnStrategicReport = document.getElementById('btnStrategicReport');
+  if (btnStrategicReport) {
+    btnStrategicReport.addEventListener('click', async () => {
+      const originalText = btnStrategicReport.innerHTML;
+      btnStrategicReport.innerHTML = "⏳ Redactando Reporte con IA...";
+      btnStrategicReport.disabled = true;
+
+      try {
+        const companyName = document.getElementById('orgSelector')?.selectedOptions[0]?.text || "Su Organización";
+        const scoreText = document.getElementById('kpiCompliance').textContent.replace('%', '');
+        
+        const [risksRes, evalsRes] = await Promise.all([
+          fetch(`${API_URL}/gov/risks`, { headers }),
+          fetch(`${API_URL}/gov/evaluations`, { headers })
+        ]);
+
+        const allRisks = await risksRes.json();
+        const risks = allRisks.filter(r => r.orgId === currentOrgId).slice(0, 3); 
+        const evaluations = (await evalsRes.json()).filter(e => e.orgId === currentOrgId);
+
+        let pillars = { p1: 0, p2: 0, p3: 0, p4: 0 };
+        if (evaluations.length > 0 && evaluations[0].answers) {
+          const a = evaluations[0].answers;
+          const p1 = (a['q1']?.score||0) + (a['q2']?.score||0) + (a['q3']?.score||0);
+          const p2 = (a['q4']?.score||0) + (a['q5']?.score||0) + (a['q6']?.score||0);
+          const p3 = (a['q7']?.score||0) + (a['q8']?.score||0) + (a['q9']?.score||0);
+          const p4 = (a['q10']?.score||0) + (a['q11']?.score||0) + (a['q12']?.score||0);
+          pillars = {
+            p1: Math.round((p1 / 15) * 100),
+            p2: Math.round((p2 / 15) * 100),
+            p3: Math.round((p3 / 15) * 100),
+            p4: Math.round((p4 / 15) * 100)
+          };
+        }
+
+        const res = await fetch(`${API_URL}/gov/generate-strategic-report`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ companyName, score: parseInt(scoreText) || 0, pillars, risks })
+        });
+
+        if (!res.ok) throw new Error("Error en el servidor");
+        const data = await res.json();
+
+        const currentDate = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+        const w = window.open('', '_blank');
+        
+        const risksHtml = risks.map(r => `
+          <tr class="border-b border-gray-200">
+            <td class="py-2 px-4 font-bold text-gray-800">${r.riskName}</td>
+            <td class="py-2 px-4 text-center"><span class="px-2 py-1 rounded text-xs font-bold ${r.riskLevel === 'Crítico' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}">${r.riskLevel}</span></td>
+            <td class="py-2 px-4 text-sm text-gray-600">${r.mitigationPlan}</td>
+          </tr>
+        `).join('');
+
+        w.document.write(`
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+            <meta charset="UTF-8">
+            <title>Reporte Ejecutivo - ${companyName}</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <style>
+              @media print {
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .no-print { display: none !important; }
+              }
+            </style>
+          </head>
+          <body class="bg-gray-50 font-sans text-gray-800 p-8">
+            
+            <div class="max-w-4xl mx-auto mb-4 no-print flex justify-end">
+              <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded shadow-lg transition">
+                🖨️ Guardar como PDF / Imprimir
+              </button>
+            </div>
+
+            <div class="max-w-4xl mx-auto bg-white p-12 shadow-2xl rounded-sm border-t-8 border-indigo-600">
+              
+              <div class="text-center mb-10 border-b pb-6">
+                <h1 class="text-3xl font-black text-gray-900 uppercase tracking-tight">Reporte Estratégico de Gobernanza de IA</h1>
+                <p class="text-xl font-semibold text-gray-700 mt-2">${companyName}</p>
+                <p class="text-sm text-gray-400 mt-1">Generado el ${currentDate} por BehaviorLab Consulting</p>
+              </div>
+
+              <div class="mb-10">
+                <h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">1. Resumen Ejecutivo</h2>
+                <div class="text-sm text-justify leading-relaxed text-gray-700 whitespace-pre-wrap">${data.executiveSummary}</div>
+              </div>
+
+              <div class="mb-10">
+                <h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">2. Análisis de Brechas (Gap Analysis)</h2>
+                <div class="flex items-center gap-6 mb-4">
+                  <div class="flex-1 bg-gray-100 p-4 rounded-lg text-center">
+                    <p class="text-sm text-gray-500 uppercase font-bold">Score Global</p>
+                    <p class="text-3xl font-black text-indigo-600">${scoreText}%</p>
+                  </div>
+                  <div class="flex-[2]">
+                    <p class="text-sm text-gray-700 leading-relaxed">${data.gapAnalysis}</p>
+                  </div>
+                </div>
+                <div class="grid grid-cols-4 gap-4 mt-4">
+                  <div class="text-center"><p class="text-xs text-gray-500">Gobernanza</p><p class="font-bold text-lg">${pillars.p1}%</p></div>
+                  <div class="text-center"><p class="text-xs text-gray-500">Riesgos</p><p class="font-bold text-lg">${pillars.p2}%</p></div>
+                  <div class="text-center"><p class="text-xs text-gray-500">Ciclo de Vida</p><p class="font-bold text-lg">${pillars.p3}%</p></div>
+                  <div class="text-center"><p class="text-xs text-gray-500">Transparencia</p><p class="font-bold text-lg">${pillars.p4}%</p></div>
+                </div>
+              </div>
+
+              <div class="mb-10">
+                <h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">3. Top 3 Riesgos Identificados</h2>
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wider">
+                      <th class="py-2 px-4 rounded-tl">Riesgo</th>
+                      <th class="py-2 px-4 text-center">Criticidad</th>
+                      <th class="py-2 px-4 rounded-tr">Plan de Mitigación</th>
+                    </tr>
+                  </thead>
+                  <tbody>${risksHtml}</tbody>
+                </table>
+              </div>
+
+              <div class="mb-10">
+                <h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">4. Roadmap Estratégico de Implementación</h2>
+                
+                <div class="space-y-6 mt-6">
+                  <div class="flex gap-4">
+                    <div class="w-16 flex flex-col items-center">
+                      <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">1</div>
+                      <div class="w-0.5 h-full bg-indigo-200 mt-2"></div>
+                    </div>
+                    <div class="pb-4">
+                      <h3 class="text-lg font-bold text-gray-800">Quick Wins (0-60 días)</h3>
+                      <p class="text-sm text-gray-600 mt-1">${data.roadmap.phase1}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex gap-4">
+                    <div class="w-16 flex flex-col items-center">
+                      <div class="w-8 h-8 rounded-full bg-indigo-400 text-white flex items-center justify-center font-bold">2</div>
+                      <div class="w-0.5 h-full bg-indigo-200 mt-2"></div>
+                    </div>
+                    <div class="pb-4">
+                      <h3 class="text-lg font-bold text-gray-800">Fundación (6 meses)</h3>
+                      <p class="text-sm text-gray-600 mt-1">${data.roadmap.phase2}</p>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-4">
+                    <div class="w-16 flex flex-col items-center">
+                      <div class="w-8 h-8 rounded-full bg-indigo-200 text-indigo-800 flex items-center justify-center font-bold">3</div>
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-bold text-gray-800">Escalamiento y Auditoría (12 meses)</h3>
+                      <p class="text-sm text-gray-600 mt-1">${data.roadmap.phase3}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-16 pt-8 border-t border-gray-200 text-center">
+                <p class="text-xs text-gray-400 mb-6">Documento confidencial generado por BehaviorLab AI.</p>
+                <div class="flex justify-between px-12">
+                  <div class="text-center">
+                    <div class="border-t border-gray-400 w-48 mt-8"></div>
+                    <p class="font-bold text-gray-800 text-sm mt-2">Dirección General</p>
+                  </div>
+                  <div class="text-center">
+                    <div class="border-t border-gray-400 w-48 mt-8"></div>
+                    <p class="font-bold text-gray-800 text-sm mt-2">Consultor de Gobernanza IA</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </body>
+          </html>
+        `);
+        w.document.close();
+      } catch (error) {
+        console.error(error);
+        alert("Ocurrió un error generando el reporte. Verifica que el diagnóstico esté completo.");
+      } finally {
+        btnStrategicReport.innerHTML = originalText;
+        btnStrategicReport.disabled = false;
+      }
+    });
+  }
+
   init();
 });
