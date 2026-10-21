@@ -207,7 +207,6 @@ app.post("/gov/generate-report", async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// 🚨 NUEVO ENDPOINT: GENERADOR DE REPORTE ESTRATÉGICO
 app.post("/gov/generate-strategic-report", async (req, res) => {
   try {
     const { companyName, score, pillars, risks } = req.body;
@@ -252,6 +251,45 @@ Devuelve SOLO un JSON válido con esta estructura exacta (sin markdown, solo el 
   } catch (error) {
     console.error("❌ Error en reporte estratégico:", error);
     res.status(500).json({ error: "Error interno generando el reporte" });
+  }
+});
+
+// 🚨 NUEVO ENDPOINT: ANALIZAR PROCESO PARA AUTOMATIZAR
+app.post("/gov/analyze-process", async (req, res) => {
+  try {
+    const { processName, volume, complexity, dataType, hoursSpent } = req.body;
+
+    const prompt = `
+Eres un experto consultor en automatización con Agentes de IA.
+El cliente quiere evaluar el proceso: "${processName}".
+Detalles del proceso:
+- Volumen de tareas: ${volume}
+- Complejidad de decisión: ${complexity}
+- Tipo de datos: ${dataType}
+- Horas hombre al mes: ${hoursSpent}
+
+Evalúa qué tan viable es automatizar este proceso con un Agente de IA.
+Devuelve SOLO un JSON válido con esta estructura exacta (sin markdown, solo el JSON):
+{
+  "score": (un número del 0 al 100 indicando el Índice de Automatización),
+  "agentType": "El nombre del tipo de agente recomendado (ej. 'Agente de Extracción de Documentos', 'Agente NLP de Atención al Cliente', 'Agente RPA')",
+  "recommendation": "Una recomendación de 2 o 3 oraciones explicando cómo el agente resolvería el proceso y el ROI estimado (ej. ahorro de horas)."
+}`;
+
+    const aiResult = await callGroq([{ role: "user", content: prompt }], 500);
+    
+    let analysis = { score: 50, agentType: "Agente General", recommendation: "Evaluación pendiente." };
+    try {
+      const jsonStr = aiResult.substring(aiResult.indexOf('{'), aiResult.lastIndexOf('}') + 1);
+      analysis = JSON.parse(jsonStr);
+    } catch (e) {
+      console.error("Error parseando JSON de análisis de proceso:", aiResult);
+    }
+
+    res.json(analysis);
+  } catch (error) {
+    console.error("❌ Error analizando proceso:", error);
+    res.status(500).json({ error: "Error interno analizando el proceso" });
   }
 });
 
