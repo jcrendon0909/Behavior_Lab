@@ -530,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) { alert('Error: ' + err.message); } finally { btn.textContent = 'Evaluar con IA'; btn.disabled = false; }
   });
 
-  // 6. RESTO DE FUNCIONES (Leads, Users, Evidence, Diagnosis)
+  // 6. RESTO DE FUNCIONES
   async function loadLeads() {
     try {
       const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
@@ -624,7 +624,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const percentage = Math.round((totalScore / 60) * 100);
     
-    // Calcular Puntajes por Pilar
     const p1 = (answers['q1']?.score||0) + (answers['q2']?.score||0) + (answers['q3']?.score||0);
     const p2 = (answers['q4']?.score||0) + (answers['q5']?.score||0) + (answers['q6']?.score||0);
     const p3 = (answers['q7']?.score||0) + (answers['q8']?.score||0) + (answers['q9']?.score||0);
@@ -635,7 +634,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const p3Pct = Math.round((p3 / 15) * 100);
     const p4Pct = Math.round((p4 / 15) * 100);
 
-    // Pintar Barras
     document.getElementById('scorePillar1').textContent = `${p1Pct}%`;
     document.getElementById('barPillar1').style.width = `${p1Pct}%`;
     document.getElementById('scorePillar2').textContent = `${p2Pct}%`;
@@ -689,7 +687,6 @@ document.addEventListener('DOMContentLoaded', () => {
     policyWindow.document.close();
   });
 
-  // 5. GENERADOR DE REPORTE ESTRATÉGICO
   const btnStrategicReport = document.getElementById('btnStrategicReport');
   if (btnStrategicReport) {
     btnStrategicReport.addEventListener('click', async () => {
