@@ -448,3 +448,58 @@ process.on('SIGTERM', async () => {
   await mongoose.connection.close().catch(() => {});
   process.exit(0);
 });
+/* ── ARRANQUE Y SEED FORZADO ── */
+const server = app.listen(PORT, '0.0.0.0', () => console.log(`[SERVER] Escuchando en :${PORT}`));
+
+if (MONGODB_URI) {
+  mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
+    .then(async () => {
+      console.log('[MONGO] Conectado a Atlas');
+      
+      // ⚠️ SEED FORZADO: Garantiza que tu usuario siempre tenga esta clave
+      try {
+        const superadminEmail = 'jcrendon@gokulab.mx';
+        const superadminPassword = 'CambiarEstaClave2026!'; // Tu contraseña original
+        const hashedPassword = await bcrypt.hash(superadminPassword, 10);
+        
+        // Buscar si ya existe
+        let superadmin = await User.findOne({ email: superadminEmail });
+        
+        if (!superadmin) {
+          // Si no existe, lo crea
+          await User.create({ 
+            name: 'Juan Carlos Rendón', 
+            email: superadminEmail, 
+            password: hashedPassword, 
+            role: 'superadmin', 
+            orgId: 'org_demo', 
+            modules: ['gobernanza', 'automatizacion'] 
+          });
+          console.log('[SEED] Superadmin CREADO exitosamente.');
+        } else {
+          // Si YA existe, le fuerza la contraseña nueva encriptada y los módulos
+          superadmin.password = hashedPassword;
+          superadmin.role = 'superadmin';
+          superadmin.modules = ['gobernanza', 'automatizacion'];
+          await superadmin.save();
+          console.log('[SEED] Superadmin ACTUALIZADO con la nueva contraseña.');
+        }
+
+        // También asegurarnos de que la Organización exista
+        let org = await Org.findById('org_demo');
+        if (!org) {
+          await Org.create({ _id: 'org_demo', name: 'GōkuLab', modules: ['gobernanza', 'automatizacion'] });
+        }
+        
+      } catch (seedError) {
+        console.error('[SEED ERROR]', seedError.message);
+      }
+    })
+    .catch((err) => console.error('[MONGO] Fallo de conexión:', err.message));
+}
+
+process.on('SIGTERM', async () => {
+  server.close(() => console.log('[SERVER] Cerrado'));
+  await mongoose.connection.close().catch(() => {});
+  process.exit(0);
+});
