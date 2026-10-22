@@ -372,6 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const evaluations = await evalsRes.json();
       const evidence = await evidenceRes.json(); 
 
+      console.log("Datos ejecutivos recibidos:", { risks, tasks, evaluations, evidence }); // 🔍 LOG DE DEPURACIÓN
+
       // CÁLCULO DE KPIs (Promedio si es ALL)
       if (isAllOrgs()) {
         document.getElementById('orgSummaryContainer').classList.remove('hidden');
@@ -446,11 +448,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadCompanies() {
     try {
-      const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers }); if (!res.ok) throw new Error('Error');
+      const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers }); 
+      if (!res.ok) throw new Error('Error en respuesta del servidor');
       companiesCache = await res.json();
+      
+      console.log("Empresas cargadas:", companiesCache); // 🔍 LOG DE DEPURACIÓN
+      
       document.getElementById('statCompanies').textContent = companiesCache.length;
       const tbody = document.getElementById('companiesTableBody');
-      if (companiesCache.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay filiales.</td></tr>`; } 
+      if (companiesCache.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay filiales registradas.</td></tr>`; } 
       else {
         tbody.innerHTML = companiesCache.map(c => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${c.name}</td><td class="py-3 px-4 text-slate-400 capitalize">${c.riskProfile.replace('_', ' ')}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(c.orgId)}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-teal-950 text-teal-400 border border-teal-800">Activa</span></td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${c._id}</td></tr>`).join('');
       }
@@ -458,7 +464,10 @@ document.addEventListener('DOMContentLoaded', () => {
       selectModel.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
       const selectDiag = document.getElementById('diagCompany');
       selectDiag.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
-    } catch (error) {}
+    } catch (error) { 
+      console.error("Error cargando empresas:", error); 
+      document.getElementById('companiesTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error al cargar empresas</td></tr>`;
+    }
   }
 
   async function loadInventory() {
@@ -466,6 +475,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const qs = `?orgId=${currentOrgId}`;
       const res = await fetch(`${API_URL}/gov/ai-inventory${qs}`, { headers }); if (!res.ok) throw new Error('Error');
       let inventory = await res.json(); 
+      
+      console.log("Inventario cargado:", inventory); // 🔍 LOG DE DEPURACIÓN
+      
       document.getElementById('statTotalModels').textContent = inventory.length;
       document.getElementById('statHighRisk').textContent = inventory.filter(i => i.risk_level === 'alto').length;
       const tbody = document.getElementById('inventoryTableBody');
@@ -475,7 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const company = companiesCache.find(c => c._id === item.companyId); const companyName = company ? company.name : 'Desconocida';
         return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(item.orgId)}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status.replace('_', ' ')}</td></tr>`;
       }).join('');
-    } catch (error) {}
+    } catch (error) { console.error("Error cargando inventario:", error); }
   }
 
   async function loadMatrix() {

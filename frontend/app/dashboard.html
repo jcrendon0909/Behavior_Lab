@@ -62,6 +62,13 @@
           <span>📄</span> Generar Reporte Estratégico (PDF)
         </button>
       </div>
+      
+      <!-- CONTENEDOR DE RESUMEN POR ORGANIZACIÓN (Solo visible cuando es 'ALL') -->
+      <div id="orgSummaryContainer" class="hidden mb-8 bg-slate-800/40 border border-slate-700 rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-white mb-4">Resumen por Organización</h3>
+        <div id="orgSummaryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden">
           <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl">🏆</div>
@@ -108,7 +115,7 @@
             <button id="openModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nuevo Modelo</button>
           </div>
         </div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Modelo</th><th class="py-3 px-4">Categoría</th><th class="py-3 px-4">Filial</th><th class="py-3 px-4">Riesgo</th><th class="py-3 px-4">Estado</th></tr></thead><tbody id="inventoryTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando datos...</td></tr></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Modelo</th><th class="py-3 px-4">Categoría</th><th id="thCompanyOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Filial</th><th class="py-3 px-4">Riesgo</th><th class="py-3 px-4">Estado</th></tr></thead><tbody id="inventoryTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando datos...</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -130,8 +137,8 @@
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Riesgo</th><th class="py-3 px-4">Categoría</th><th class="py-3 px-4">Prob.</th><th class="py-3 px-4">Imp.</th><th class="py-3 px-4">Nivel</th><th class="py-3 px-4">Mitigación</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
-            <tbody id="risksTableBody" class="text-sm"><tr><td colspan="7" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Riesgo</th><th class="py-3 px-4">Categoría</th><th id="thRiskOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Prob.</th><th class="py-3 px-4">Imp.</th><th class="py-3 px-4">Nivel</th><th class="py-3 px-4">Mitigación</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
+            <tbody id="risksTableBody" class="text-sm"><tr><td colspan="8" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -146,8 +153,8 @@
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Tarea</th><th class="py-3 px-4">Fase</th><th class="py-3 px-4">Responsable</th><th class="py-3 px-4">Estatus</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
-            <tbody id="deliverablesTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Tarea</th><th class="py-3 px-4">Fase</th><th id="thDelivOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Responsable</th><th class="py-3 px-4">Estatus</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
+            <tbody id="deliverablesTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -157,11 +164,11 @@
     <div id="companiesSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Directorio de Filiales</h2></div><button id="openCompanyModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nueva Filial</button></div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Perfil</th><th class="py-3 px-4">Estado</th><th class="py-3 px-4">ID</th></tr></thead><tbody id="companiesTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Perfil</th><th id="thCompOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Estado</th><th class="py-3 px-4">ID</th></tr></thead><tbody id="companiesTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
       </div>
     </div>
 
-    <!-- 7. OPORTUNIDADES DE IA (PROCESOS) - Original -->
+    <!-- 7. OPORTUNIDADES DE IA (PROCESOS) -->
     <div id="processesSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-6">
@@ -173,8 +180,8 @@
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Proceso</th><th class="py-3 px-4">Volumen</th><th class="py-3 px-4">Complejidad</th><th class="py-3 px-4">Horas/Mes</th><th class="py-3 px-4">Índice Auto.</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
-            <tbody id="processesTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Proceso</th><th class="py-3 px-4">Volumen</th><th class="py-3 px-4">Complejidad</th><th id="thProcOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Horas/Mes</th><th class="py-3 px-4">Índice Auto.</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
+            <tbody id="processesTableBody" class="text-sm"><tr><td colspan="7" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -202,8 +209,8 @@
         <div class="mb-6"><h2 class="text-lg font-bold">Expediente Digital de Evidencias</h2><p class="text-sm text-slate-400">Documentos validados por la IA y almacenados en R2.</p></div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Fecha</th><th class="py-3 px-4">Archivo</th><th class="py-3 px-4">Pregunta</th><th class="py-3 px-4">Estatus IA</th><th class="py-3 px-4">Acciones</th></tr></thead>
-            <tbody id="evidenceTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Fecha</th><th class="py-3 px-4">Archivo</th><th class="py-3 px-4">Pregunta</th><th id="thEvOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Estatus IA</th><th class="py-3 px-4">Acciones</th></tr></thead>
+            <tbody id="evidenceTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -238,7 +245,7 @@
 
   </main>
 
-  <!-- MODALES ORIGINALES -->
+  <!-- MODALES (Mismos que antes) -->
   <div id="newModelModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Modelo de IA</h2>
@@ -265,7 +272,6 @@
     </div>
   </div>
 
-  <!-- MODAL NUEVO USUARIO (CON MÓDULOS) -->
   <div id="newUserModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Invitar Nuevo Usuario</h2>
@@ -456,10 +462,8 @@
     </div>
   </div>
 
-  <!-- NUEVO MODAL: DETALLE DEL ASSESSMENT DE AUTOMATIZACIÓN -->
   <div id="detailAutomationModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-2xl shadow-2xl my-8">
-      
       <div class="flex justify-between items-start mb-6 border-b border-slate-700 pb-4">
         <div>
           <h2 class="text-2xl font-bold text-white">Reporte de Automatización</h2>
@@ -467,7 +471,6 @@
         </div>
         <button id="closeAutomationModalBtn" class="text-slate-400 hover:text-white text-2xl">&times;</button>
       </div>
-
       <div class="text-center mb-8">
         <div class="aa-gauge-container">
           <svg class="aa-gauge-svg" viewBox="0 0 160 160">
@@ -480,13 +483,11 @@
           </div>
         </div>
       </div>
-
       <div class="bg-slate-900 border border-slate-700 rounded-xl p-5 mb-6">
         <div class="text-xs text-teal-400 uppercase font-bold mb-1">Agente Recomendado</div>
         <h4 id="detAgentType" class="text-lg font-bold text-white mb-2"></h4>
         <p id="detAgentDesc" class="text-sm text-slate-400 leading-relaxed"></p>
       </div>
-
       <div class="grid grid-cols-3 gap-4 mb-6">
         <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-center">
           <div class="text-xs text-slate-400 uppercase">Ahorro</div>
@@ -504,12 +505,10 @@
           <div class="text-xs text-slate-500">meses</div>
         </div>
       </div>
-
       <div class="mb-6">
         <h4 class="text-sm font-bold text-white mb-3">Roadmap de Implementación</h4>
         <ul id="detPhases" class="space-y-2 text-sm text-slate-300"></ul>
       </div>
-
     </div>
   </div>
 

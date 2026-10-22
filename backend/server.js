@@ -1,5 +1,5 @@
 /* =============================================================================
-   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.4)
+   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.5)
    ============================================================================= */
 
 import 'dotenv/config';
@@ -154,6 +154,16 @@ function safeParseJSON(text) {
   try { return JSON.parse(t); } catch { const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { return JSON.parse(t.slice(s, e + 1)); } catch { return null; } } return null; }
 }
 
+/* ── ENDPOINTS DE DIAGNÓSTICO ── */
+app.get('/gov/debug/db', async (req, res) => {
+  try {
+    const orgs = await Org.find();
+    const companies = await Company.find();
+    const users = await User.find().select('-password');
+    res.json({ orgs, companies, users });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 /* ── ENDPOINTS DE AUTENTICACIÓN ── */
 app.post('/gov/auth/login', async (req, res) => {
   try {
@@ -194,7 +204,6 @@ app.get('/gov/orgs', authenticateToken, async (req, res) => {
 /* ── ENDPOINTS DE FILIALES ── */
 app.get('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   try { 
-    // 🔥 FIX: Si el parámetro es "ALL", devolvemos TODAS las empresas
     let query = {};
     if (req.params.orgId !== 'ALL') {
       query = { orgId: req.params.orgId };
@@ -460,7 +469,7 @@ app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 /* ── ARRANQUE Y SEED FORZADO ── */
 app.get('/health', (_req, res) => {
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
-  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.4' });
+  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.5' });
 });
 
 const server = app.listen(PORT, '0.0.0.0', () => console.log(`[SERVER] Escuchando en :${PORT}`));
