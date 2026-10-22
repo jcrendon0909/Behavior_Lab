@@ -114,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeDiagBtn = document.getElementById('closeDiagBtn'); if(closeDiagBtn) closeDiagBtn.addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
   const closeResultBtn = document.getElementById('closeResultBtn'); if(closeResultBtn) closeResultBtn.addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
 
-  // Modal de Detalle del Assessment de Automatización
   const modalDetailAuto = document.getElementById('detailAutomationModal');
   const closeAutomationModalBtn = document.getElementById('closeAutomationModalBtn');
   if(closeAutomationModalBtn) closeAutomationModalBtn.addEventListener('click', () => { modalDetailAuto.classList.add('hidden'); modalDetailAuto.classList.remove('flex'); });
@@ -217,6 +216,15 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) { alert("Error de conexión con la IA."); } finally { btn.textContent = originalText; btn.disabled = false; }
   }
 
+  // Helper para saber si estamos en vista global
+  const isAllOrgs = () => currentOrgId === 'ALL';
+
+  // Helper para obtener el nombre de la org por ID
+  const getOrgName = (id) => {
+    const org = orgsCache.find(o => o._id === id);
+    return org ? org.name : id;
+  };
+
   // 4. CARGA DE DATOS Y CONTROL DE ACCESOS (RBAC)
   async function init() {
     currentUser = JSON.parse(localStorage.getItem('gov_user'));
@@ -225,14 +233,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('userEmail').textContent = currentUser.email;
     currentOrgId = currentUser.orgId;
 
-    // Lógica de Módulos
     const userModules = currentUser.modules || ['gobernanza'];
     
     if (!userModules.includes('gobernanza')) {
       document.getElementById('navGobernanza').style.display = 'none';
       document.getElementById('tabDashboardBtn').style.display = 'none';
     }
-    
     if (!userModules.includes('automatizacion')) {
       document.getElementById('navAutomatizacion').style.display = 'none';
     }
@@ -245,16 +251,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
           orgsCache = await res.json();
           const selector = document.getElementById('orgSelector');
-          // Agregamos la opción "ALL" para que el Superadmin vea todo
           selector.innerHTML = `<option value="ALL">Todas las Organizaciones</option>` + orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
-          
-          // Si el superadmin tiene un orgId válido, lo seleccionamos por defecto
-          if (orgsCache.some(o => o._id === currentOrgId)) {
-            selector.value = currentOrgId;
-          }
+          if (orgsCache.some(o => o._id === currentOrgId)) selector.value = currentOrgId;
 
           selector.addEventListener('change', (e) => {
             currentOrgId = e.target.value; 
+            toggleOrgColumns(); // Mostrar/ocultar columnas de Org
             loadDashboardData();
             if(!document.getElementById('dashboardSection').classList.contains('hidden')) loadExecutiveDashboard();
             if(!document.getElementById('matrixSection').classList.contains('hidden')) loadMatrix();
@@ -270,14 +272,23 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('navAdmin').style.display = 'none'; 
     }
     
-    // Pestaña inicial por defecto
     if (userModules.includes('gobernanza')) {
       setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard);
     } else if (userModules.includes('automatizacion')) {
       setTab('tabAutomationBtn', 'automationSection', loadAutomation);
     }
     
+    toggleOrgColumns();
     loadDashboardData(); 
+  }
+
+  // Muestra u oculta las columnas de "Organización" en las tablas si estamos en "ALL"
+  function toggleOrgColumns() {
+    const display = isAllOrgs() ? '' : 'none';
+    ['thCompanyOrg', 'thRiskOrg', 'thDelivOrg', 'thCompOrg', 'thProcOrg', 'thEvOrg'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.toggle('hidden', !isAllOrgs());
+    });
   }
 
   async function loadDashboardData() { await loadCompanies(); await loadInventory(); }
@@ -347,30 +358,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 100);
   };
 
-  // 6. RESTO DE FUNCIONES (Load Executive, Risks, etc)
+  // 6. RESTO DE FUNCIONES
   async function loadExecutiveDashboard() {
     try {
-      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const qs = `?orgId=${currentOrgId}`;
       const [risksRes, tasksRes, evalsRes, evidenceRes] = await Promise.all([
         fetch(`${API_URL}/gov/risks${qs}`, { headers }), fetch(`${API_URL}/gov/deliverables${qs}`, { headers }),
         fetch(`${API_URL}/gov/evaluations${qs}`, { headers }), fetch(`${API_URL}/gov/evidence${qs}`, { headers })
       ]);
+
       const risks = await risksRes.json();
       const tasks = await tasksRes.json();
       const evaluations = await evalsRes.json();
       const evidence = await evidenceRes.json(); 
 
-      const latestEval = evaluations[0]; 
-      if (latestEval) {
-        document.getElementById('kpiCompliance').textContent = `${latestEval.score}%`;
-        document.getElementById('kpiCompliance').className = latestEval.score > 60 ? 'text-5xl font-black text-teal-400' : 'text-5xl font-black text-amber-400';
+      // CÁLCULO DE KPIs (Promedio si es ALL)
+      if (isAllOrgs()) {
+        document.getElementById('orgSummaryContainer').classList.remove('hidden');
+        const grid = document.getElementById('orgSummaryGrid');
+        
+        // Agrupar evaluaciones por orgId
+        const evalsByOrg = {};
+        evaluations.forEach(e => {
+            if (!evalsByOrg[e.orgId]) evalsByOrg[e.orgId] = [];
+            evalsByOrg[e.orgId].push(e.score);
+        });
+        
+        grid.innerHTML = Object.keys(evalsByOrg).map(orgId => {
+            const scores = evalsByOrg[orgId];
+            const avg = Math.round(scores.reduce((a,b)=>a+b, 0) / scores.length);
+            return `<div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+                <p class="text-xs text-slate-400 uppercase font-bold">${getOrgName(orgId)}</p>
+                <p class="text-2xl font-black text-teal-400">${avg}%</p>
+                <p class="text-xs text-slate-500">${scores.length} evaluaciones</p>
+            </div>`;
+        }).join('');
+
+        // KPI Global: Promedio de promedios
+        let totalScore = 0;
+        Object.keys(evalsByOrg).forEach(orgId => {
+            const scores = evalsByOrg[orgId];
+            totalScore += (scores.reduce((a,b)=>a+b, 0) / scores.length);
+        });
+        const globalAvg = Object.keys(evalsByOrg).length > 0 ? Math.round(totalScore / Object.keys(evalsByOrg).length) : 0;
+        
+        document.getElementById('kpiCompliance').textContent = `${globalAvg}%`;
+        document.getElementById('kpiCompliance').className = globalAvg > 60 ? 'text-5xl font-black text-teal-400' : 'text-5xl font-black text-amber-400';
       } else {
-        document.getElementById('kpiCompliance').textContent = `0%`;
-        document.getElementById('kpiCompliance').className = 'text-5xl font-black text-slate-500';
+        document.getElementById('orgSummaryContainer').classList.add('hidden');
+        const latestEval = evaluations[0]; 
+        if (latestEval) {
+            document.getElementById('kpiCompliance').textContent = `${latestEval.score}%`;
+            document.getElementById('kpiCompliance').className = latestEval.score > 60 ? 'text-5xl font-black text-teal-400' : 'text-5xl font-black text-amber-400';
+        } else {
+            document.getElementById('kpiCompliance').textContent = `0%`;
+            document.getElementById('kpiCompliance').className = 'text-5xl font-black text-slate-500';
+        }
       }
+
       const criticalRisks = risks.filter(r => r.riskLevel === 'Crítico' || r.riskLevel === 'Alto').length;
       document.getElementById('kpiRisks').textContent = criticalRisks;
       document.getElementById('kpiRisks').className = criticalRisks > 0 ? 'text-5xl font-black text-rose-400' : 'text-5xl font-black text-teal-400';
+
       const totalTasks = tasks.length; const completedTasks = tasks.filter(t => t.status === 'Completado').length;
       const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
       document.getElementById('kpiTasks').textContent = `${progress}%`;
@@ -381,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else {
         recentRisksDiv.innerHTML = risks.slice(0, 3).map(r => {
           let badgeColor = r.riskLevel === 'Crítico' ? 'text-rose-400' : (r.riskLevel === 'Alto' ? 'text-orange-400' : 'text-amber-400');
-          return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><p class="text-sm text-slate-300 truncate w-3/4">${r.riskName}</p><span class="text-xs font-bold ${badgeColor}">${r.riskLevel}</span></div>`;
+          return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><p class="text-sm text-slate-300 truncate w-3/4">${r.riskName} <span class="text-xs text-slate-500">(${getOrgName(r.orgId)})</span></p><span class="text-xs font-bold ${badgeColor}">${r.riskLevel}</span></div>`;
         }).join('');
       }
       const recentEvidenceDiv = document.getElementById('dashRecentEvidence');
@@ -401,9 +450,9 @@ document.addEventListener('DOMContentLoaded', () => {
       companiesCache = await res.json();
       document.getElementById('statCompanies').textContent = companiesCache.length;
       const tbody = document.getElementById('companiesTableBody');
-      if (companiesCache.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">No hay filiales.</td></tr>`; } 
+      if (companiesCache.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay filiales.</td></tr>`; } 
       else {
-        tbody.innerHTML = companiesCache.map(c => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${c.name}</td><td class="py-3 px-4 text-slate-400 capitalize">${c.riskProfile.replace('_', ' ')}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-teal-950 text-teal-400 border border-teal-800">Activa</span></td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${c._id}</td></tr>`).join('');
+        tbody.innerHTML = companiesCache.map(c => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${c.name}</td><td class="py-3 px-4 text-slate-400 capitalize">${c.riskProfile.replace('_', ' ')}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(c.orgId)}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-teal-950 text-teal-400 border border-teal-800">Activa</span></td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${c._id}</td></tr>`).join('');
       }
       const selectModel = document.getElementById('modelCompany');
       selectModel.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
@@ -414,36 +463,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadInventory() {
     try {
-      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const qs = `?orgId=${currentOrgId}`;
       const res = await fetch(`${API_URL}/gov/ai-inventory${qs}`, { headers }); if (!res.ok) throw new Error('Error');
       let inventory = await res.json(); 
       document.getElementById('statTotalModels').textContent = inventory.length;
       document.getElementById('statHighRisk').textContent = inventory.filter(i => i.risk_level === 'alto').length;
       const tbody = document.getElementById('inventoryTableBody');
-      if (inventory.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay modelos.</td></tr>`; return; }
+      if (inventory.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay modelos.</td></tr>`; return; }
       tbody.innerHTML = inventory.map(item => {
         let riskColor = 'bg-slate-700 text-slate-300'; if (item.risk_level === 'alto') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800'; if (item.risk_level === 'medio') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800'; if (item.risk_level === 'bajo') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
         const company = companiesCache.find(c => c._id === item.companyId); const companyName = company ? company.name : 'Desconocida';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status.replace('_', ' ')}</td></tr>`;
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(item.orgId)}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status.replace('_', ' ')}</td></tr>`;
       }).join('');
     } catch (error) {}
   }
 
   async function loadMatrix() {
     try {
-      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const qs = `?orgId=${currentOrgId}`;
       const res = await fetch(`${API_URL}/gov/evaluations${qs}`, { headers });
       const evaluations = await res.json();
       const matrixGrid = document.getElementById('matrixGrid');
       const frameworks = ["ISO 42001", "NIST AI RMF", "EU AI Act", "LFPDPPP"];
       matrixGrid.innerHTML = frameworks.map(fw => {
-        const evalForFw = evaluations.find(e => e.framework === fw);
+        const evalsForFw = evaluations.filter(e => e.framework === fw);
         let score = "--"; let statusText = "No Evaluado"; let color = "text-slate-500"; let border = "border-slate-700"; let bg = "bg-slate-800/30";
-        if (evalForFw) {
-          score = `${evalForFw.score}%`;
-          if (evalForFw.score > 85) { statusText = "Excelente"; color = "text-teal-400"; border = "border-teal-800"; bg = "bg-teal-950/20"; }
-          else if (evalForFw.score > 60) { statusText = "Maduro"; color = "text-blue-400"; border = "border-blue-800"; bg = "bg-blue-950/20"; }
-          else if (evalForFw.score > 30) { statusText = "En Desarrollo"; color = "text-amber-400"; border = "border-amber-800"; bg = "bg-amber-950/20"; }
+        
+        if (evalsForFw.length > 0) {
+          // Si es ALL, promediamos. Si es una org, tomamos la última.
+          const avg = isAllOrgs() ? Math.round(evalsForFw.reduce((a,b)=>a+b.score, 0) / evalsForFw.length) : evalsForFw[0].score;
+          score = `${avg}%`;
+          if (avg > 85) { statusText = "Excelente"; color = "text-teal-400"; border = "border-teal-800"; bg = "bg-teal-950/20"; }
+          else if (avg > 60) { statusText = "Maduro"; color = "text-blue-400"; border = "border-blue-800"; bg = "bg-blue-950/20"; }
+          else if (avg > 30) { statusText = "En Desarrollo"; color = "text-amber-400"; border = "border-amber-800"; bg = "bg-amber-950/20"; }
           else { statusText = "Crítico"; color = "text-rose-400"; border = "border-rose-800"; bg = "bg-rose-950/20"; }
         }
         return `<div class="p-6 rounded-2xl border ${border} ${bg}"><h3 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">${fw}</h3><div class="flex justify-between items-end"><div><p class="text-4xl font-black ${color} mb-1">${score}</p><p class="text-xs font-semibold ${color}">${statusText}</p></div><button onclick="openDiagnosticFor('${fw}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition">Evaluar</button></div></div>`;
@@ -455,17 +507,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadDeliverables() {
     try {
-      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const qs = `?orgId=${currentOrgId}`;
       const res = await fetch(`${API_URL}/gov/deliverables${qs}`, { headers });
       let deliverables = await res.json(); 
       const tbody = document.getElementById('deliverablesTableBody');
-      if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
+      if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
       tbody.innerHTML = deliverables.map(d => {
         let badgeColor = 'bg-slate-700 text-slate-300';
         if (d.status === 'Pendiente') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
         if (d.status === 'En Progreso') badgeColor = 'bg-amber-950 text-amber-400 border border-amber-800';
         if (d.status === 'Completado') badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${d.taskName}</td><td class="py-3 px-4 text-slate-400">${d.phase}</td><td class="py-3 px-4 text-slate-400">${d.assignedTo}</td><td class="py-3 px-4"><select onchange="updateDeliverableStatus('${d._id}', this.value)" class="px-3 py-1 rounded-lg text-xs font-semibold uppercase ${badgeColor} outline-none cursor-pointer appearance-none text-center"><option value="Pendiente" ${d.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option><option value="En Progreso" ${d.status === 'En Progreso' ? 'selected' : ''}>En Progreso</option><option value="Completado" ${d.status === 'Completado' ? 'selected' : ''}>Completado</option></select></td><td class="py-3 px-4 text-center"><button onclick="deleteDeliverable('${d._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Tarea">🗑️</button></td></tr>`;
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${d.taskName}</td><td class="py-3 px-4 text-slate-400">${d.phase}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(d.orgId)}</td><td class="py-3 px-4 text-slate-400">${d.assignedTo}</td><td class="py-3 px-4"><select onchange="updateDeliverableStatus('${d._id}', this.value)" class="px-3 py-1 rounded-lg text-xs font-semibold uppercase ${badgeColor} outline-none cursor-pointer appearance-none text-center"><option value="Pendiente" ${d.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option><option value="En Progreso" ${d.status === 'En Progreso' ? 'selected' : ''}>En Progreso</option><option value="Completado" ${d.status === 'Completado' ? 'selected' : ''}>Completado</option></select></td><td class="py-3 px-4 text-center"><button onclick="deleteDeliverable('${d._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Tarea">🗑️</button></td></tr>`;
       }).join('');
     } catch (error) { console.error("Error plan:", error); }
   }
@@ -487,18 +539,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadRisks() {
     try {
-      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const qs = `?orgId=${currentOrgId}`;
       const res = await fetch(`${API_URL}/gov/risks${qs}`, { headers });
       let risks = await res.json(); 
       const tbody = document.getElementById('risksTableBody');
-      if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
+      if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
       tbody.innerHTML = risks.map(r => {
         let badgeColor = 'bg-slate-700 text-slate-300';
         if (r.riskLevel === 'Crítico') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
         if (r.riskLevel === 'Alto') badgeColor = 'bg-orange-950 text-orange-400 border border-orange-800';
         if (r.riskLevel === 'Medio') badgeColor = 'bg-amber-950 text-amber-400 border border-amber-800';
         if (r.riskLevel === 'Bajo') badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${r.riskName}</td><td class="py-3 px-4 text-slate-400">${r.category}</td><td class="py-3 px-4 text-slate-400 text-center">${r.probability} / 5</td><td class="py-3 px-4 text-slate-400 text-center">${r.impact} / 5</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${r.riskLevel} (${r.riskScore})</span></td><td class="py-3 px-4 text-slate-400 text-xs max-w-xs truncate" title="${r.mitigationPlan}">${r.mitigationPlan}</td><td class="py-3 px-4 text-center"><button onclick="deleteRisk('${r._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Riesgo">🗑️</button></td></tr>`;
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${r.riskName}</td><td class="py-3 px-4 text-slate-400">${r.category}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(r.orgId)}</td><td class="py-3 px-4 text-slate-400 text-center">${r.probability} / 5</td><td class="py-3 px-4 text-slate-400 text-center">${r.impact} / 5</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${r.riskLevel} (${r.riskScore})</span></td><td class="py-3 px-4 text-slate-400 text-xs max-w-xs truncate" title="${r.mitigationPlan}">${r.mitigationPlan}</td><td class="py-3 px-4 text-center"><button onclick="deleteRisk('${r._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Riesgo">🗑️</button></td></tr>`;
       }).join('');
     } catch (error) { console.error("Error cargando riesgos:", error); }
   }
@@ -516,15 +568,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadProcesses() {
     try {
-      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const qs = `?orgId=${currentOrgId}`;
       const res = await fetch(`${API_URL}/gov/process-evals${qs}`, { headers });
       let processes = await res.json(); 
       const tbody = document.getElementById('processesTableBody');
-      if (processes.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay procesos evaluados.</td></tr>`; return; }
+      if (processes.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No hay procesos evaluados.</td></tr>`; return; }
       tbody.innerHTML = processes.map(p => {
         let scoreColor = 'text-teal-400';
         if (p.score < 50) scoreColor = 'text-rose-400'; else if (p.score < 75) scoreColor = 'text-amber-400';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${p.processName}<br><span class="text-xs font-normal text-teal-400">${p.agentType}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${p.volume}</td><td class="py-3 px-4 text-slate-400 capitalize">${p.complexity}</td><td class="py-3 px-4 text-slate-400 text-center">${p.hoursSpent} hrs</td><td class="py-3 px-4 text-center font-bold ${scoreColor}">${p.score}%</td><td class="py-3 px-4 text-center"><button onclick="deleteProcess('${p._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Proceso">🗑️</button></td></tr>`;
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${p.processName}<br><span class="text-xs font-normal text-teal-400">${p.agentType}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${p.volume}</td><td class="py-3 px-4 text-slate-400 capitalize">${p.complexity}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(p.orgId)}</td><td class="py-3 px-4 text-slate-400 text-center">${p.hoursSpent} hrs</td><td class="py-3 px-4 text-center font-bold ${scoreColor}">${p.score}%</td><td class="py-3 px-4 text-center"><button onclick="deleteProcess('${p._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Proceso">🗑️</button></td></tr>`;
       }).join('');
     } catch (error) { console.error("Error cargando procesos:", error); }
   }
@@ -570,17 +622,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadEvidence() {
     try {
-      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const qs = `?orgId=${currentOrgId}`;
       const res = await fetch(`${API_URL}/gov/evidence${qs}`, { headers }); if (!res.ok) throw new Error('Error');
       let evidence = await res.json(); const tbody = document.getElementById('evidenceTableBody');
-      if (evidence.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay evidencias subidas aún.</td></tr>`; return; }
+      if (evidence.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay evidencias subidas aún.</td></tr>`; return; }
       tbody.innerHTML = evidence.map(e => {
         const date = new Date(e.ts).toLocaleDateString('es-MX'); let statusColor = 'bg-teal-950 text-teal-400 border border-teal-800';
         if (!e.validation.valido) statusColor = 'bg-rose-950 text-rose-400 border border-rose-800';
         const downloadBtn = `<a href="${e.r2Url}" target="_blank" class="text-teal-400 hover:text-teal-300 underline text-xs font-bold">Descargar PDF</a>`;
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 text-slate-500">${date}</td><td class="py-3 px-4 text-slate-300 font-mono text-xs">${e.fileName.split('/').pop()}</td><td class="py-3 px-4 text-slate-200 font-semibold uppercase">${e.questionId.replace('_', ' ')}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${statusColor}">${e.validation.valido ? 'Válido' : 'Rechazado'}</span><div class="text-[10px] text-slate-500 mt-1 max-w-xs truncate" title="${e.validation.razon}">${e.validation.razon}</div></td><td class="py-3 px-4">${downloadBtn}</td></tr>`;
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 text-slate-500">${date}</td><td class="py-3 px-4 text-slate-300 font-mono text-xs">${e.fileName.split('/').pop()}</td><td class="py-3 px-4 text-slate-200 font-semibold uppercase">${e.questionId.replace('_', ' ')}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(e.orgId)}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${statusColor}">${e.validation.valido ? 'Válido' : 'Rechazado'}</span><div class="text-[10px] text-slate-500 mt-1 max-w-xs truncate" title="${e.validation.razon}">${e.validation.razon}</div></td><td class="py-3 px-4">${downloadBtn}</td></tr>`;
       }).join('');
-    } catch (error) { document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error al cargar el expediente.</td></tr>`; }
+    } catch (error) { document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="6" class="py-4 text-center text-rose-500">Error al cargar el expediente.</td></tr>`; }
   }
 
   window.subirEvidencia = async function(event, qId) {
@@ -714,7 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const companyName = document.getElementById('orgSelector')?.selectedOptions[0]?.text || "Su Organización";
         const scoreText = document.getElementById('kpiCompliance').textContent.replace('%', '');
         
-        const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+        const qs = `?orgId=${currentOrgId}`;
         const [risksRes, evalsRes] = await Promise.all([
           fetch(`${API_URL}/gov/risks${qs}`, { headers }), fetch(`${API_URL}/gov/evaluations${qs}`, { headers })
         ]);

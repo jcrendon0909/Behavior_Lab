@@ -1,5 +1,5 @@
 /* =============================================================================
-   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.2)
+   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.4)
    ============================================================================= */
 
 import 'dotenv/config';
@@ -87,7 +87,6 @@ const Evidence = mongoose.models.Evidence || mongoose.model('Evidence', Evidence
 const ProcessEvalSchema = new mongoose.Schema({ orgId: String, companyId: String, processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String });
 const ProcessEval = mongoose.models.ProcessEval || mongoose.model('ProcessEval', ProcessEvalSchema);
 
-
 /* ── UTILIDADES ── */
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 const isEmail = (v) => typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
@@ -114,6 +113,16 @@ const authenticateToken = (req, res, next) => {
     req.user = user;
     next();
   });
+};
+
+// Helper DEFINITIVO para determinar qué orgId filtrar
+const getOrgQuery = (req) => {
+  // Si es Superadmin y pide "ALL" (Todas), devolvemos vacío para traer todo
+  if (req.user.role === 'superadmin' && req.query.orgId === 'ALL') return {};
+  // Si es Superadmin y pide una org específica, filtramos por esa org
+  if (req.user.role === 'superadmin' && req.query.orgId) return { orgId: req.query.orgId };
+  // Si es un cliente normal, solo ve su propia org
+  return { orgId: req.user.orgId };
 };
 
 /* ── CLIENTE GROQ ── */
@@ -144,16 +153,6 @@ function safeParseJSON(text) {
   const t = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
   try { return JSON.parse(t); } catch { const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { return JSON.parse(t.slice(s, e + 1)); } catch { return null; } } return null; }
 }
-
-/* ── ENDPOINTS DE DIAGNÓSTICO ── */
-app.get('/gov/debug/db', async (req, res) => {
-  try {
-    const orgs = await Org.find();
-    const companies = await Company.find();
-    const users = await User.find().select('-password');
-    res.json({ orgs, companies, users });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
 
 /* ── ENDPOINTS DE AUTENTICACIÓN ── */
 app.post('/gov/auth/login', async (req, res) => {
@@ -192,13 +191,13 @@ app.get('/gov/orgs', authenticateToken, async (req, res) => {
   catch (error) { res.status(500).json({ error: 'Error al cargar orgs' }); }
 });
 
-/* ── ENDPOINTS DE FILIALES (CON SOPORTE SUPERADMIN "ALL") ── */
+/* ── ENDPOINTS DE FILIALES ── */
 app.get('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   try { 
-    let query = { orgId: req.params.orgId };
-    // Si es Superadmin y pide "ALL", le devolvemos TODAS las empresas de la BD
-    if (req.params.orgId === 'ALL' && req.user.role === 'superadmin') {
-      query = {}; 
+    // 🔥 FIX: Si el parámetro es "ALL", devolvemos TODAS las empresas
+    let query = {};
+    if (req.params.orgId !== 'ALL') {
+      query = { orgId: req.params.orgId };
     }
     const companies = await Company.find(query); 
     res.json(companies); 
@@ -217,7 +216,7 @@ app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
 /* ── ENDPOINTS DE INVENTARIO ── */
 app.get('/gov/ai-inventory', authenticateToken, async (req, res) => {
   try { 
-    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const query = getOrgQuery(req);
     const items = await Inventory.find(query); 
     res.json(items); 
   } 
@@ -234,7 +233,7 @@ app.post('/gov/ai-inventory', authenticateToken, async (req, res) => {
 /* ── ENDPOINTS DE RIESGOS ── */
 app.get('/gov/risks', authenticateToken, async (req, res) => {
   try { 
-    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const query = getOrgQuery(req);
     const risks = await Risk.find(query); 
     res.json(risks); 
   } 
@@ -260,7 +259,7 @@ app.delete('/gov/risks/:id', authenticateToken, async (req, res) => {
 /* ── ENDPOINTS DE PLAN DE TRABAJO ── */
 app.get('/gov/deliverables', authenticateToken, async (req, res) => {
   try { 
-    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const query = getOrgQuery(req);
     const deliverables = await Deliverable.find(query); 
     res.json(deliverables); 
   } 
@@ -287,7 +286,7 @@ app.delete('/gov/deliverables/:id', authenticateToken, async (req, res) => {
 /* ── ENDPOINTS DE EVALUACIONES ── */
 app.get('/gov/evaluations', authenticateToken, async (req, res) => {
   try { 
-    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const query = getOrgQuery(req);
     const evals = await Evaluation.find(query).sort({ createdAt: -1 }); 
     res.json(evals); 
   } 
@@ -304,7 +303,7 @@ app.post('/gov/evaluations', authenticateToken, async (req, res) => {
 /* ── ENDPOINTS DE EVIDENCIAS ── */
 app.get('/gov/evidence', authenticateToken, async (req, res) => {
   try { 
-    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const query = getOrgQuery(req);
     const ev = await Evidence.find(query).sort({ ts: -1 }); 
     res.json(ev); 
   } 
@@ -329,7 +328,7 @@ app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async
 /* ── ENDPOINTS DE PROCESOS ── */
 app.get('/gov/process-evals', authenticateToken, async (req, res) => {
   try { 
-    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const query = getOrgQuery(req);
     const procs = await ProcessEval.find(query); 
     res.json(procs); 
   } 
@@ -461,7 +460,7 @@ app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 /* ── ARRANQUE Y SEED FORZADO ── */
 app.get('/health', (_req, res) => {
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
-  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.2' });
+  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.4' });
 });
 
 const server = app.listen(PORT, '0.0.0.0', () => console.log(`[SERVER] Escuchando en :${PORT}`));
@@ -470,40 +469,24 @@ if (MONGODB_URI) {
   mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
     .then(async () => {
       console.log('[MONGO] Conectado a Atlas');
-      
       try {
         const superadminEmail = 'jcrendon@gokulab.mx';
         const superadminPassword = 'CambiarEstaClave2026!'; 
         const hashedPassword = await bcrypt.hash(superadminPassword, 10);
-        
         let superadmin = await User.findOne({ email: superadminEmail });
-        
         if (!superadmin) {
-          await User.create({ 
-            name: 'Juan Carlos Rendón', 
-            email: superadminEmail, 
-            password: hashedPassword, 
-            role: 'superadmin', 
-            orgId: 'org_demo', 
-            modules: ['gobernanza', 'automatizacion'] 
-          });
-          console.log('✅ [SEED] Superadmin CREADO con contraseña: CambiarEstaClave2026!');
+          await User.create({ name: 'Juan Carlos Rendón', email: superadminEmail, password: hashedPassword, role: 'superadmin', orgId: 'org_demo', modules: ['gobernanza', 'automatizacion'] });
         } else {
           superadmin.password = hashedPassword;
           superadmin.role = 'superadmin';
           superadmin.modules = ['gobernanza', 'automatizacion'];
-          // ⚠️ IMPORTANTE: NO sobreescribir su orgId si ya tiene uno
           await superadmin.save();
-          console.log('✅ [SEED] Superadmin ACTUALIZADO (orgId preservado).');
         }
-
         let org = await Org.findById('org_demo');
         if (!org) {
           await Org.create({ _id: 'org_demo', name: 'GōkuLab', modules: ['gobernanza', 'automatizacion'] });
         }
-      } catch (seedError) {
-        console.error('❌ [SEED ERROR]', seedError.message);
-      }
+      } catch (seedError) { console.error('❌ [SEED ERROR]', seedError.message); }
     })
     .catch((err) => console.error('[MONGO] Fallo de conexión:', err.message));
 }
