@@ -245,7 +245,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
           orgsCache = await res.json();
           const selector = document.getElementById('orgSelector');
-          selector.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
+          // Agregamos la opción "ALL" para que el Superadmin vea todo
+          selector.innerHTML = `<option value="ALL">Todas las Organizaciones</option>` + orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
+          
+          // Si el superadmin tiene un orgId válido, lo seleccionamos por defecto
+          if (orgsCache.some(o => o._id === currentOrgId)) {
+            selector.value = currentOrgId;
+          }
+
           selector.addEventListener('change', (e) => {
             currentOrgId = e.target.value; 
             loadDashboardData();
@@ -343,13 +350,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // 6. RESTO DE FUNCIONES (Load Executive, Risks, etc)
   async function loadExecutiveDashboard() {
     try {
+      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
       const [risksRes, tasksRes, evalsRes, evidenceRes] = await Promise.all([
-        fetch(`${API_URL}/gov/risks`, { headers }), fetch(`${API_URL}/gov/deliverables`, { headers }),
-        fetch(`${API_URL}/gov/evaluations`, { headers }), fetch(`${API_URL}/gov/evidence`, { headers })
+        fetch(`${API_URL}/gov/risks${qs}`, { headers }), fetch(`${API_URL}/gov/deliverables${qs}`, { headers }),
+        fetch(`${API_URL}/gov/evaluations${qs}`, { headers }), fetch(`${API_URL}/gov/evidence${qs}`, { headers })
       ]);
-      const risks = (await risksRes.json()).filter(r => r.orgId === currentOrgId);
-      const tasks = (await tasksRes.json()).filter(d => d.orgId === currentOrgId);
-      const evaluations = (await evalsRes.json()).filter(e => e.orgId === currentOrgId);
+      const risks = await risksRes.json();
+      const tasks = await tasksRes.json();
+      const evaluations = await evalsRes.json();
       const evidence = await evidenceRes.json(); 
 
       const latestEval = evaluations[0]; 
@@ -406,8 +414,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadInventory() {
     try {
-      const res = await fetch(`${API_URL}/gov/ai-inventory`, { headers }); if (!res.ok) throw new Error('Error');
-      let inventory = await res.json(); inventory = inventory.filter(item => item.orgId === currentOrgId);
+      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const res = await fetch(`${API_URL}/gov/ai-inventory${qs}`, { headers }); if (!res.ok) throw new Error('Error');
+      let inventory = await res.json(); 
       document.getElementById('statTotalModels').textContent = inventory.length;
       document.getElementById('statHighRisk').textContent = inventory.filter(i => i.risk_level === 'alto').length;
       const tbody = document.getElementById('inventoryTableBody');
@@ -422,12 +431,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadMatrix() {
     try {
-      const res = await fetch(`${API_URL}/gov/evaluations`, { headers });
+      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const res = await fetch(`${API_URL}/gov/evaluations${qs}`, { headers });
       const evaluations = await res.json();
       const matrixGrid = document.getElementById('matrixGrid');
       const frameworks = ["ISO 42001", "NIST AI RMF", "EU AI Act", "LFPDPPP"];
       matrixGrid.innerHTML = frameworks.map(fw => {
-        const evalForFw = evaluations.find(e => e.framework === fw && e.orgId === currentOrgId);
+        const evalForFw = evaluations.find(e => e.framework === fw);
         let score = "--"; let statusText = "No Evaluado"; let color = "text-slate-500"; let border = "border-slate-700"; let bg = "bg-slate-800/30";
         if (evalForFw) {
           score = `${evalForFw.score}%`;
@@ -445,8 +455,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadDeliverables() {
     try {
-      const res = await fetch(`${API_URL}/gov/deliverables`, { headers });
-      let deliverables = await res.json(); deliverables = deliverables.filter(d => d.orgId === currentOrgId);
+      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const res = await fetch(`${API_URL}/gov/deliverables${qs}`, { headers });
+      let deliverables = await res.json(); 
       const tbody = document.getElementById('deliverablesTableBody');
       if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
       tbody.innerHTML = deliverables.map(d => {
@@ -470,14 +481,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const newDeliverableForm = document.getElementById('newDeliverableForm'); if(newDeliverableForm) newDeliverableForm.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
-    const payload = { orgId: currentOrgId, taskName: document.getElementById('taskName').value, phase: document.getElementById('taskPhase').value, assignedTo: document.getElementById('taskAssignee').value, dueDate: document.getElementById('taskDate').value || null };
+    const payload = { orgId: currentOrgId === 'ALL' ? currentUser.orgId : currentOrgId, taskName: document.getElementById('taskName').value, phase: document.getElementById('taskPhase').value, assignedTo: document.getElementById('taskAssignee').value, dueDate: document.getElementById('taskDate').value || null };
     try { const res = await fetch(`${API_URL}/gov/deliverables`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newDeliverableModal').classList.add('hidden'); e.target.reset(); loadDeliverables(); } else { const err = await res.json().catch(()=>({})); alert('Error al guardar tarea: ' + (err.error || res.status)); } } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Tarea'; btn.disabled = false; }
   });
 
   async function loadRisks() {
     try {
-      const res = await fetch(`${API_URL}/gov/risks`, { headers });
-      let risks = await res.json(); risks = risks.filter(r => r.orgId === currentOrgId);
+      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const res = await fetch(`${API_URL}/gov/risks${qs}`, { headers });
+      let risks = await res.json(); 
       const tbody = document.getElementById('risksTableBody');
       if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
       tbody.innerHTML = risks.map(r => {
@@ -498,14 +510,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const newRiskForm = document.getElementById('newRiskForm'); if(newRiskForm) newRiskForm.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
-    const payload = { orgId: currentOrgId, companyId: document.getElementById('riskCompany').value, riskName: document.getElementById('riskName').value, category: document.getElementById('riskCategory').value, probability: parseInt(document.getElementById('riskProb').value), impact: parseInt(document.getElementById('riskImpact').value), mitigationPlan: document.getElementById('riskMitigation').value };
+    const payload = { orgId: currentOrgId === 'ALL' ? currentUser.orgId : currentOrgId, companyId: document.getElementById('riskCompany').value, riskName: document.getElementById('riskName').value, category: document.getElementById('riskCategory').value, probability: parseInt(document.getElementById('riskProb').value), impact: parseInt(document.getElementById('riskImpact').value), mitigationPlan: document.getElementById('riskMitigation').value };
     try { const res = await fetch(`${API_URL}/gov/risks`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newRiskModal').classList.add('hidden'); e.target.reset(); loadRisks(); } else { const err = await res.json().catch(()=>({})); alert('Error al guardar riesgo: ' + (err.error || res.status)); } } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
   });
 
   async function loadProcesses() {
     try {
-      const res = await fetch(`${API_URL}/gov/process-evals`, { headers });
-      let processes = await res.json(); processes = processes.filter(p => p.orgId === currentOrgId);
+      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const res = await fetch(`${API_URL}/gov/process-evals${qs}`, { headers });
+      let processes = await res.json(); 
       const tbody = document.getElementById('processesTableBody');
       if (processes.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay procesos evaluados.</td></tr>`; return; }
       tbody.innerHTML = processes.map(p => {
@@ -523,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const newProcessForm = document.getElementById('newProcessForm'); if(newProcessForm) newProcessForm.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Evaluando con IA...'; btn.disabled = true;
-    const payload = { orgId: currentOrgId, companyId: document.getElementById('procCompany').value, processName: document.getElementById('procName').value, volume: document.getElementById('procVolume').value, complexity: document.getElementById('procComplexity').value, dataType: document.getElementById('procDataType').value, hoursSpent: parseInt(document.getElementById('procHours').value) };
+    const payload = { orgId: currentOrgId === 'ALL' ? currentUser.orgId : currentOrgId, companyId: document.getElementById('procCompany').value, processName: document.getElementById('procName').value, volume: document.getElementById('procVolume').value, complexity: document.getElementById('procComplexity').value, dataType: document.getElementById('procDataType').value, hoursSpent: parseInt(document.getElementById('procHours').value) };
     try { const aiRes = await fetch(`${API_URL}/gov/analyze-process`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (!aiRes.ok) throw new Error("Error al evaluar con IA"); const aiData = await aiRes.json(); payload.score = aiData.score; payload.agentType = aiData.agentType; payload.recommendation = aiData.recommendation; const res = await fetch(`${API_URL}/gov/process-evals`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newProcessModal').classList.add('hidden'); e.target.reset(); loadProcesses(); alert(`✅ Proceso evaluado. Índice: ${aiData.score}%.\nAgente: ${aiData.agentType}`); } else { alert('Error al guardar la evaluación'); } } catch (err) { alert('Error: ' + err.message); } finally { btn.textContent = 'Evaluar con IA'; btn.disabled = false; }
   });
 
@@ -557,7 +570,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadEvidence() {
     try {
-      const res = await fetch(`${API_URL}/gov/evidence`, { headers }); if (!res.ok) throw new Error('Error');
+      const qs = currentOrgId === 'ALL' ? '?all=true' : '';
+      const res = await fetch(`${API_URL}/gov/evidence${qs}`, { headers }); if (!res.ok) throw new Error('Error');
       let evidence = await res.json(); const tbody = document.getElementById('evidenceTableBody');
       if (evidence.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay evidencias subidas aún.</td></tr>`; return; }
       tbody.innerHTML = evidence.map(e => {
@@ -700,13 +714,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const companyName = document.getElementById('orgSelector')?.selectedOptions[0]?.text || "Su Organización";
         const scoreText = document.getElementById('kpiCompliance').textContent.replace('%', '');
         
+        const qs = currentOrgId === 'ALL' ? '?all=true' : '';
         const [risksRes, evalsRes] = await Promise.all([
-          fetch(`${API_URL}/gov/risks`, { headers }), fetch(`${API_URL}/gov/evaluations`, { headers })
+          fetch(`${API_URL}/gov/risks${qs}`, { headers }), fetch(`${API_URL}/gov/evaluations${qs}`, { headers })
         ]);
 
-        const allRisks = await risksRes.json();
-        const risks = allRisks.filter(r => r.orgId === currentOrgId).slice(0, 3); 
-        const evaluations = (await evalsRes.json()).filter(e => e.orgId === currentOrgId);
+        const risks = (await risksRes.json()).slice(0, 3); 
+        const evaluations = await evalsRes.json();
 
         let pillars = { p1: 0, p2: 0, p3: 0, p4: 0 };
         if (evaluations.length > 0 && evaluations[0].answers) {

@@ -1,6 +1,5 @@
 /* =============================================================================
-   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.1)
-   Backend: Node.js + Express + MongoDB Atlas + Groq (openai/gpt-oss-120b)
+   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.2)
    ============================================================================= */
 
 import 'dotenv/config';
@@ -15,7 +14,6 @@ const app  = express();
 const PORT = process.env.PORT || 10000;
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_gokulab_2026';
 
-// Configuración de subida de archivos en memoria (para simular R2)
 const upload = multer({ storage: multer.memoryStorage() });
 
 function resolveMongoUri() {
@@ -147,31 +145,29 @@ function safeParseJSON(text) {
   try { return JSON.parse(t); } catch { const s = t.indexOf('{'); const e = t.lastIndexOf('}'); if (s !== -1 && e > s) { try { return JSON.parse(t.slice(s, e + 1)); } catch { return null; } } return null; }
 }
 
+/* ── ENDPOINTS DE DIAGNÓSTICO ── */
+app.get('/gov/debug/db', async (req, res) => {
+  try {
+    const orgs = await Org.find();
+    const companies = await Company.find();
+    const users = await User.find().select('-password');
+    res.json({ orgs, companies, users });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 /* ── ENDPOINTS DE AUTENTICACIÓN ── */
 app.post('/gov/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log(`[LOGIN] Intento de acceso para: ${email}`);
-    
     const user = await User.findOne({ email });
-    
-    if (!user) {
-      console.log(`[LOGIN] ❌ Usuario NO encontrado en la base de datos.`);
-      return res.status(401).json({ error: 'Usuario no encontrado' });
-    }
+    if (!user) return res.status(401).json({ error: 'Usuario no encontrado' });
     
     const validPassword = (password === user.password) || (user.password && await bcrypt.compare(password, user.password).catch(()=>false));
-    
-    if (!validPassword) {
-      console.log(`[LOGIN] ❌ Contraseña incorrecta para ${email}.`);
-      return res.status(401).json({ error: 'Contraseña incorrecta' });
-    }
+    if (!validPassword) return res.status(401).json({ error: 'Contraseña incorrecta' });
 
-    console.log(`[LOGIN] ✅ Acceso concedido a ${email}`);
     const token = jwt.sign({ _id: user._id, role: user.role, orgId: user.orgId, modules: user.modules }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { email: user.email, role: user.role, orgId: user.orgId, name: user.name, modules: user.modules } });
   } catch (error) {
-    console.error('[LOGIN ERROR]', error);
     res.status(500).json({ error: 'Error en el servidor al iniciar sesión' });
   }
 });
@@ -196,22 +192,35 @@ app.get('/gov/orgs', authenticateToken, async (req, res) => {
   catch (error) { res.status(500).json({ error: 'Error al cargar orgs' }); }
 });
 
-/* ── ENDPOINTS DE FILIALES ── */
+/* ── ENDPOINTS DE FILIALES (CON SOPORTE SUPERADMIN "ALL") ── */
 app.get('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
-  try { const companies = await Company.find({ orgId: req.params.orgId }); res.json(companies); } 
+  try { 
+    let query = { orgId: req.params.orgId };
+    // Si es Superadmin y pide "ALL", le devolvemos TODAS las empresas de la BD
+    if (req.params.orgId === 'ALL' && req.user.role === 'superadmin') {
+      query = {}; 
+    }
+    const companies = await Company.find(query); 
+    res.json(companies); 
+  } 
   catch (error) { res.status(500).json({ error: 'Error al cargar filiales' }); }
 });
 
 app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   try {
-    const company = await Company.create({ ...req.body, orgId: req.params.orgId });
+    const targetOrgId = req.params.orgId === 'ALL' ? req.user.orgId : req.params.orgId;
+    const company = await Company.create({ ...req.body, orgId: targetOrgId });
     res.status(201).json(company);
   } catch (error) { res.status(500).json({ error: 'Error al crear filial' }); }
 });
 
 /* ── ENDPOINTS DE INVENTARIO ── */
 app.get('/gov/ai-inventory', authenticateToken, async (req, res) => {
-  try { const items = await Inventory.find({ orgId: req.user.orgId }); res.json(items); } 
+  try { 
+    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const items = await Inventory.find(query); 
+    res.json(items); 
+  } 
   catch (error) { res.status(500).json({ error: 'Error al cargar inventario' }); }
 });
 
@@ -224,7 +233,11 @@ app.post('/gov/ai-inventory', authenticateToken, async (req, res) => {
 
 /* ── ENDPOINTS DE RIESGOS ── */
 app.get('/gov/risks', authenticateToken, async (req, res) => {
-  try { const risks = await Risk.find({ orgId: req.user.orgId }); res.json(risks); } 
+  try { 
+    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const risks = await Risk.find(query); 
+    res.json(risks); 
+  } 
   catch (error) { res.status(500).json({ error: 'Error al cargar riesgos' }); }
 });
 
@@ -246,7 +259,11 @@ app.delete('/gov/risks/:id', authenticateToken, async (req, res) => {
 
 /* ── ENDPOINTS DE PLAN DE TRABAJO ── */
 app.get('/gov/deliverables', authenticateToken, async (req, res) => {
-  try { const deliverables = await Deliverable.find({ orgId: req.user.orgId }); res.json(deliverables); } 
+  try { 
+    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const deliverables = await Deliverable.find(query); 
+    res.json(deliverables); 
+  } 
   catch (error) { res.status(500).json({ error: 'Error al cargar plan' }); }
 });
 
@@ -269,7 +286,11 @@ app.delete('/gov/deliverables/:id', authenticateToken, async (req, res) => {
 
 /* ── ENDPOINTS DE EVALUACIONES ── */
 app.get('/gov/evaluations', authenticateToken, async (req, res) => {
-  try { const evals = await Evaluation.find({ orgId: req.user.orgId }).sort({ createdAt: -1 }); res.json(evals); } 
+  try { 
+    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const evals = await Evaluation.find(query).sort({ createdAt: -1 }); 
+    res.json(evals); 
+  } 
   catch (error) { res.status(500).json({ error: 'Error al cargar evaluaciones' }); }
 });
 
@@ -282,7 +303,11 @@ app.post('/gov/evaluations', authenticateToken, async (req, res) => {
 
 /* ── ENDPOINTS DE EVIDENCIAS ── */
 app.get('/gov/evidence', authenticateToken, async (req, res) => {
-  try { const ev = await Evidence.find({ orgId: req.user.orgId }).sort({ ts: -1 }); res.json(ev); } 
+  try { 
+    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const ev = await Evidence.find(query).sort({ ts: -1 }); 
+    res.json(ev); 
+  } 
   catch (error) { res.status(500).json({ error: 'Error al cargar evidencias' }); }
 });
 
@@ -303,7 +328,11 @@ app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async
 
 /* ── ENDPOINTS DE PROCESOS ── */
 app.get('/gov/process-evals', authenticateToken, async (req, res) => {
-  try { const procs = await ProcessEval.find({ orgId: req.user.orgId }); res.json(procs); } 
+  try { 
+    const query = (req.user.role === 'superadmin' && req.query.all === 'true') ? {} : { orgId: req.user.orgId };
+    const procs = await ProcessEval.find(query); 
+    res.json(procs); 
+  } 
   catch (error) { res.status(500).json({ error: 'Error al cargar procesos' }); }
 });
 
@@ -432,7 +461,7 @@ app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 /* ── ARRANQUE Y SEED FORZADO ── */
 app.get('/health', (_req, res) => {
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
-  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.1' });
+  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.2' });
 });
 
 const server = app.listen(PORT, '0.0.0.0', () => console.log(`[SERVER] Escuchando en :${PORT}`));
@@ -463,8 +492,9 @@ if (MONGODB_URI) {
           superadmin.password = hashedPassword;
           superadmin.role = 'superadmin';
           superadmin.modules = ['gobernanza', 'automatizacion'];
+          // ⚠️ IMPORTANTE: NO sobreescribir su orgId si ya tiene uno
           await superadmin.save();
-          console.log('✅ [SEED] Superadmin ACTUALIZADO. La contraseña es: CambiarEstaClave2026!');
+          console.log('✅ [SEED] Superadmin ACTUALIZADO (orgId preservado).');
         }
 
         let org = await Org.findById('org_demo');
