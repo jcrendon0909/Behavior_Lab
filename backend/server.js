@@ -1,5 +1,5 @@
 /* =============================================================================
-   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.7)
+   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.5.0)
    ============================================================================= */
 
 import 'dotenv/config';
@@ -46,12 +46,16 @@ app.use(cors({
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '100kb' }));
 
-/* ── MODELOS ── */
+/* ── MODELOS CON COLECCIONES MAPEADAS A TUS DATOS REALES ── */
 const LeadSchema = new mongoose.Schema({
+  // Campos nuevos
   tipo_lead: { type: String, enum: ['gobernanza', 'automatizacion'], default: 'gobernanza', index: true },
   nombre: String, email: String, empresa: String, telefono: String,
   proceso: mongoose.Schema.Types.Mixed, resultado: mongoose.Schema.Types.Mixed,
   fuente: String, userAgent: String, ip: String, meta: mongoose.Schema.Types.Mixed,
+  // Campos heredados (para leer tus leads originales)
+  name: String, company: String, sector: String, shadow_ai: String, samd: String, risk_level: String,
+  ts: Date,
 }, { timestamps: true, strict: false, collection: 'leads' });
 const Lead = mongoose.models.Lead || mongoose.model('Lead', LeadSchema);
 
@@ -63,33 +67,42 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, enum: ['superadmin', 'admin', 'auditor'], default: 'admin' },
   orgId: String,
   modules: { type: [String], default: ['gobernanza'] }
-}, { timestamps: true, strict: false });
+}, { timestamps: true, strict: false, collection: 'users' });
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
-const OrgSchema = new mongoose.Schema({ name: String, modules: [String] }, { strict: false });
+const OrgSchema = new mongoose.Schema({ name: String, modules: [String] }, { strict: false, collection: 'orgs' });
 const Org = mongoose.models.Org || mongoose.model('Org', OrgSchema);
 
-const CompanySchema = new mongoose.Schema({ orgId: String, name: String, riskProfile: String }, { strict: false });
+const CompanySchema = new mongoose.Schema({ orgId: String, name: String, riskProfile: String }, { strict: false, collection: 'companies' });
 const Company = mongoose.models.Company || mongoose.model('Company', CompanySchema);
 
-// Estos modelos NO especifican `collection`, así que Mongoose pluraliza por defecto:
-// Inventory -> 'inventories', Risk -> 'risks', etc.
-const InventorySchema = new mongoose.Schema({ orgId: String, companyId: String, model_name: String, category: String, risk_level: String, status: String }, { strict: false });
+// 🔥 MAPEOS CRÍTICOS: apuntando a las colecciones con datos reales
+const InventorySchema = new mongoose.Schema({ 
+  orgId: String, companyId: String, model_name: String, category: String, vendor: String,
+  data_sensitivity: String, risk_level: String, status: String, description: String, evidence: mongoose.Schema.Types.Mixed
+}, { strict: false, collection: 'ai_inventory' });
 const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', InventorySchema);
 
-const RiskSchema = new mongoose.Schema({ orgId: String, companyId: String, riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String }, { strict: false });
-const Risk = mongoose.models.Risk || mongoose.model('Risk', RiskSchema);
-
-const DeliverableSchema = new mongoose.Schema({ orgId: String, taskName: String, phase: String, assignedTo: String, status: String, dueDate: String }, { strict: false });
-const Deliverable = mongoose.models.Deliverable || mongoose.model('Deliverable', DeliverableSchema);
-
-const EvaluationSchema = new mongoose.Schema({ orgId: String, companyId: String, framework: String, answers: mongoose.Schema.Types.Mixed, score: Number, risk_level: String, recommendations: mongoose.Schema.Types.Mixed }, { strict: false });
+const EvaluationSchema = new mongoose.Schema({ 
+  orgId: String, companyId: String, framework: String, answers: mongoose.Schema.Types.Mixed, 
+  score: Number, risk_level: String, recommendations: mongoose.Schema.Types.Mixed, createdBy: String
+}, { strict: false, collection: 'risk_evaluations' });
 const Evaluation = mongoose.models.Evaluation || mongoose.model('Evaluation', EvaluationSchema);
 
-const EvidenceSchema = new mongoose.Schema({ orgId: String, companyId: String, questionId: String, fileName: String, r2Url: String, validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now } }, { strict: false });
+const EvidenceSchema = new mongoose.Schema({ 
+  orgId: String, companyId: String, questionId: String, fileName: String, r2Url: String, 
+  validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now } 
+}, { strict: false, collection: 'evidence' });
 const Evidence = mongoose.models.Evidence || mongoose.model('Evidence', EvidenceSchema);
 
-const ProcessEvalSchema = new mongoose.Schema({ orgId: String, companyId: String, processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String }, { strict: false });
+// Estas colecciones no existen en tu DB actual, pero las dejamos para cuando se usen
+const RiskSchema = new mongoose.Schema({ orgId: String, companyId: String, riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String }, { strict: false, collection: 'risks' });
+const Risk = mongoose.models.Risk || mongoose.model('Risk', RiskSchema);
+
+const DeliverableSchema = new mongoose.Schema({ orgId: String, taskName: String, phase: String, assignedTo: String, status: String, dueDate: String }, { strict: false, collection: 'deliverables' });
+const Deliverable = mongoose.models.Deliverable || mongoose.model('Deliverable', DeliverableSchema);
+
+const ProcessEvalSchema = new mongoose.Schema({ orgId: String, companyId: String, processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String }, { strict: false, collection: 'processevals' });
 const ProcessEval = mongoose.models.ProcessEval || mongoose.model('ProcessEval', ProcessEvalSchema);
 
 /* ── UTILIDADES ── */
@@ -165,7 +178,6 @@ app.get('/gov/debug/db', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 🚨 NUEVO: DEBUG PROFUNDO DE COLECCIONES
 app.get('/gov/debug/collections', async (req, res) => {
   try {
     const collections = await mongoose.connection.db.listCollections().toArray();
@@ -179,16 +191,11 @@ app.get('/gov/debug/collections', async (req, res) => {
         const samples = await collRef.find({}).limit(5).toArray();
         const first = samples[0];
         sampleFields = first ? Object.keys(first) : [];
-        // Buscar campos que contengan "org" o "orgId"
         sampleOrgIds = [...new Set(samples.map(s => s.orgId || s.organizationId || s.org_id).filter(Boolean))];
       }
       result[coll.name] = { count, sampleFields, sampleOrgIds };
     }
-    res.json({
-      totalCollections: collections.length,
-      collections: result,
-      dbName: mongoose.connection.name,
-    });
+    res.json({ totalCollections: collections.length, collections: result, dbName: mongoose.connection.name });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -222,7 +229,7 @@ app.post('/gov/users', authenticateToken, async (req, res) => {
   try {
     const { name, email, password, role, orgId, modules } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashedPassword, role, orgId, modules });
+    const user = await User.create({ name, email, password: hashedPassword, hash: hashedPassword, role, orgId, modules });
     res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, orgId: user.orgId, modules: user.modules });
   } catch (error) { res.status(500).json({ error: 'Error al crear usuario' }); }
 });
@@ -236,9 +243,7 @@ app.get('/gov/orgs', authenticateToken, async (req, res) => {
 app.get('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   try { 
     let query = {};
-    if (req.params.orgId !== 'ALL') {
-      query = { orgId: req.params.orgId };
-    }
+    if (req.params.orgId !== 'ALL') query = { orgId: req.params.orgId };
     const companies = await Company.find(query); 
     res.json(companies); 
   } 
@@ -253,7 +258,7 @@ app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Error al crear filial' }); }
 });
 
-/* ── ENDPOINTS DE INVENTARIO ── */
+/* ── ENDPOINTS DE INVENTARIO (colección: ai_inventory) ── */
 app.get('/gov/ai-inventory', authenticateToken, async (req, res) => {
   try { 
     const query = getOrgQuery(req);
@@ -323,7 +328,7 @@ app.delete('/gov/deliverables/:id', authenticateToken, async (req, res) => {
   catch (error) { res.status(500).json({ error: 'Error al eliminar tarea' }); }
 });
 
-/* ── ENDPOINTS DE EVALUACIONES ── */
+/* ── ENDPOINTS DE EVALUACIONES (colección: risk_evaluations) ── */
 app.get('/gov/evaluations', authenticateToken, async (req, res) => {
   try { 
     const query = getOrgQuery(req);
@@ -340,7 +345,7 @@ app.post('/gov/evaluations', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Error al guardar evaluación' }); }
 });
 
-/* ── ENDPOINTS DE EVIDENCIAS ── */
+/* ── ENDPOINTS DE EVIDENCIAS (colección: evidence) ── */
 app.get('/gov/evidence', authenticateToken, async (req, res) => {
   try { 
     const query = getOrgQuery(req);
@@ -475,6 +480,8 @@ Estructura:
     const lead = await Lead.create({
       tipo_lead: 'automatizacion', nombre: data.nombre, email: data.email, empresa: data.empresa, telefono: data.telefono,
       proceso: data, resultado: assessment, fuente: 'automation-assessment',
+      // Campos compatibles
+      name: data.nombre, company: data.empresa,
     });
     leadId = lead._id.toString();
   } catch (dbErr) { console.error('[MONGO] Error guardando lead:', dbErr.message); }
@@ -489,6 +496,14 @@ app.get('/gov/assessments', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Error al cargar assessments' }); }
 });
 
+/* ── ENDPOINTS DE LEADS ── */
+app.get('/leads', authenticateToken, async (req, res) => {
+  try {
+    const leads = await Lead.find({ tipo_lead: 'gobernanza' }).sort({ createdAt: -1, ts: -1 });
+    res.json(leads);
+  } catch (error) { res.status(500).json({ error: 'Error al cargar leads' }); }
+});
+
 /* ── MANEJO DE ERRORES GLOBAL ── */
 app.use((err, req, res, next) => {
   console.error('[ERROR GLOBAL]', err.message);
@@ -500,7 +515,7 @@ app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 /* ── ARRANQUE Y SEED INTELIGENTE ── */
 app.get('/health', (_req, res) => {
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
-  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.7' });
+  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.5.0' });
 });
 
 const server = app.listen(PORT, '0.0.0.0', () => console.log(`[SERVER] Escuchando en :${PORT}`));
@@ -524,33 +539,33 @@ if (MONGODB_URI) {
           console.log('✅ [SEED] Superadmin ACTUALIZADO.');
         } else {
           await User.create({ 
-            name: 'Juan Carlos Rendón', 
-            email: superadminEmail, 
-            password: hashedPassword, 
-            hash: hashedPassword,
-            role: 'superadmin', 
-            orgId: 'org_demo', 
-            modules: ['gobernanza', 'automatizacion'] 
+            name: 'Juan Carlos Rendón', email: superadminEmail, password: hashedPassword, hash: hashedPassword,
+            role: 'superadmin', orgId: '6ad2a21d120d09e1b4aa2137', modules: ['gobernanza', 'automatizacion'] 
           });
           console.log('✅ [SEED] Superadmin CREADO.');
         }
 
-        // FIX: Reconstruir orgs usando el nombre de la primera empresa como nombre
+        // FIX: Reconstruir / renombrar orgs con nombres feos
         const companies = await Company.find();
         const uniqueOrgIds = [...new Set(companies.map(c => c.orgId).filter(Boolean))];
         
         for (const orgId of uniqueOrgIds) {
           let org = await Org.findById(orgId);
+          const orgCompanies = companies.filter(c => c.orgId === orgId);
+          const isUglyName = !org || !org.name || /^(Organización|Org)\s/.test(org.name) || org.name === 'GōkuLab Core';
+          
           if (!org) {
-            // Usar el nombre de la primera empresa como nombre de la org
-            const orgCompanies = companies.filter(c => c.orgId === orgId);
-            const orgName = orgCompanies.length > 0 ? `${orgCompanies[0].name}${orgCompanies.length > 1 ? ' & otros' : ''}` : `Org ${orgId.slice(-4)}`;
+            const orgName = orgCompanies.length > 0 ? `${orgCompanies[0].name}${orgCompanies.length > 1 ? ' & otros' : ''}` : `Organización ${orgId.slice(-4)}`;
             await Org.create({ _id: orgId, name: orgName, modules: ['gobernanza', 'automatizacion'] });
-            console.log(`✅ [SEED] Org reconstruida: "${orgName}" (ID: ${orgId})`);
+            console.log(`✅ [SEED] Org creada: "${orgName}"`);
+          } else if (isUglyName && orgCompanies.length > 0) {
+            const orgName = `${orgCompanies[0].name}${orgCompanies.length > 1 ? ' & otros' : ''}`;
+            org.name = orgName;
+            await org.save();
+            console.log(`✅ [SEED] Org renombrada: "${orgName}"`);
           }
         }
 
-        // Asegurar que la org del superadmin exista
         const superadminOrgId = superadmin.orgId;
         if (superadminOrgId) {
           let superadminOrg = await Org.findById(superadminOrgId);
@@ -560,6 +575,7 @@ if (MONGODB_URI) {
           }
         }
 
+        console.log('✅ [SEED] Proceso de arranque completado.');
       } catch (seedError) { console.error('❌ [SEED ERROR]', seedError.message); }
     })
     .catch((err) => console.error('[MONGO] Fallo de conexión:', err.message));

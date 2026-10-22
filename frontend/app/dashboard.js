@@ -605,17 +605,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   async function loadLeads() {
-    try {
-      const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
-      const tbody = document.getElementById('leadsTableBody');
-      if (leads.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Aún no hay prospectos.</td></tr>`; return; }
-      tbody.innerHTML = leads.map(l => {
-        const date = new Date(l.ts).toLocaleDateString('es-MX'); let badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
-        if (l.risk_level === 'alto') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 text-slate-500">${date}</td><td class="py-3 px-4 font-semibold text-slate-200">${l.name}</td><td class="py-3 px-4 text-teal-400">${l.email}</td><td class="py-3 px-4 text-slate-300">${l.company}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${l.risk_level}</span></td></tr>`;
-      }).join('');
-    } catch (error) {}
-  }
+  try {
+    const res = await fetch(`${API_URL}/leads`, { headers }); 
+    const leads = await res.json();
+    const tbody = document.getElementById('leadsTableBody');
+    if (leads.length === 0) { 
+      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Aún no hay prospectos.</td></tr>`; 
+      return; 
+    }
+    tbody.innerHTML = leads.map(l => {
+      // Manejo dual: campos nuevos (nombre/empresa/createdAt) o viejos (name/company/ts)
+      const date = new Date(l.createdAt || l.ts).toLocaleDateString('es-MX');
+      const nombre = l.nombre || l.name || 'Sin nombre';
+      const empresa = l.empresa || l.company || 'Sin empresa';
+      const riskLevel = l.risk_level || (l.resultado && l.resultado.risk_level) || 'N/A';
+      let badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+      if (riskLevel === 'alto' || riskLevel === 'Alto') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
+      else if (riskLevel === 'medio' || riskLevel === 'Medio') badgeColor = 'bg-amber-950 text-amber-400 border border-amber-800';
+      return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+        <td class="py-3 px-4 text-slate-500">${date}</td>
+        <td class="py-3 px-4 font-semibold text-slate-200">${nombre}</td>
+        <td class="py-3 px-4 text-teal-400">${l.email}</td>
+        <td class="py-3 px-4 text-slate-300">${empresa}</td>
+        <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${riskLevel}</span></td>
+      </tr>`;
+    }).join('');
+  } catch (error) { console.error("Error en leads:", error); }
+}
 
   async function loadUsers() {
     try {
