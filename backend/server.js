@@ -1,22 +1,19 @@
 /* =============================================================================
-   BehaviorLab API — server.js
+   BehaviorLab API — server.js  (ESM)
    Backend: Node.js + Express + MongoDB Atlas + Groq (openai/gpt-oss-120b)
    Deploy: Render  |  Frontend: Cloudflare Pages (behaviorlab.gokulab.mx)
 
-   v1.1.1 — Fix: arranque no bloqueante (app.listen primero, Mongo después)
-            para evitar "Port scan timeout" en Render.
+   v1.1.2 — Conversión a ES Modules (package.json tiene "type": "module")
+            Sin cambios funcionales respecto a v1.1.1.
+            Fix de arranque no bloqueante para Render se mantiene.
    ============================================================================= */
 
-'use strict';
+// Carga de .env en ESM: 'dotenv/config' ejecuta la config al importarse.
+import 'dotenv/config';
 
-require('dotenv').config();
-
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-
-const app = express();
-const PORT = process.env.PORT || 10000;
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    1. CONFIGURACIÓN / VARIABLES DE ENTORNO
@@ -28,9 +25,12 @@ const PORT = process.env.PORT || 10000;
      ALLOWED_ORIGINS      (lista separada por comas, adicional a las default)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const MONGODB_URI  = process.env.MONGODB_URI;
-const GROQ_MODEL   = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
-const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions';
+const app  = express();
+const PORT = process.env.PORT || 10000;
+
+const MONGODB_URI = process.env.MONGODB_URI;
+const GROQ_MODEL  = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+const GROQ_URL    = 'https://api.groq.com/openai/v1/chat/completions';
 
 // Recolecta GROQ_API_KEY_1 ... GROQ_API_KEY_5 (ignora las vacías)
 const GROQ_KEYS = [1, 2, 3, 4, 5]
@@ -636,7 +636,7 @@ app.post('/leads', leadsLimiter, async (req, res) => {
    9. HEALTHCHECK Y MANEJO DE ERRORES
    ═══════════════════════════════════════════════════════════════════════════ */
 
-app.get('/', (_req, res) => res.json({ ok: true, service: 'BehaviorLab API', version: '1.1.1' }));
+app.get('/', (_req, res) => res.json({ ok: true, service: 'BehaviorLab API', version: '1.1.2' }));
 
 app.get('/health', (_req, res) => {
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
@@ -667,9 +667,8 @@ app.use((err, _req, res, _next) => {
    ═══════════════════════════════════════════════════════════════════════════
    Regla crítica: el servidor HTTP DEBE abrir el puerto ANTES de conectar a
    Mongo, porque Render escanea el puerto en los primeros segundos. Si Mongo
-   tarda >90s (Atlas lento, IP no whitelisteada, DNS, etc.), el deploy falla
-   con "no open ports detected". Con este orden, Render ve el puerto al
-   instante y Mongo se conecta en paralelo sin bloquear el arranque.
+   tarda >90s, el deploy falla con "no open ports detected". Con este orden,
+   Render ve el puerto al instante y Mongo se conecta en paralelo.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const server = app.listen(PORT, '0.0.0.0', () => {
