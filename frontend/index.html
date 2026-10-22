@@ -1,476 +1,218 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BehAvIorLab · IA para operaciones críticas y gobernanza</title>
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MÓDULO: Assessment de Automatización (Lead Magnet v1)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section id="aa-section" class="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900 relative overflow-hidden">
+  <!-- Acentos de fondo -->
+  <div class="absolute inset-0 pointer-events-none opacity-40" aria-hidden="true">
+    <div class="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl"></div>
+    <div class="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-3xl"></div>
+  </div>
 
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=22" />
-  
-  <style>
-    .grc-input, .grc-select { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px 16px; color: white; outline: none; transition: all 0.3s ease; }
-    .grc-input:focus, .grc-select:focus { border-color: var(--accent-color, #00f2fe); background: rgba(255, 255, 255, 0.08); }
-    .grc-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #a0aec0; }
-  </style>
-</head>
-<body>
+  <div class="relative max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-10">
+      <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-medium tracking-wide uppercase">
+        <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+        Assessment · ~2 min
+      </span>
+      <h2 class="mt-4 text-3xl sm:text-4xl font-bold text-white">
+        Assessment de <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">Automatización</span>
+      </h2>
+      <p class="mt-3 text-slate-400 max-w-xl mx-auto">
+        Evalúa un proceso de tu empresa y descubre qué tan automatizable es, qué tipo de agente de IA necesita y cuánto ROI puedes esperar.
+      </p>
+    </div>
 
-  <canvas id="particles-canvas"></canvas>
-
-  <div id="app" style="position: relative; z-index: 1;">
-
-    <!-- NAVBAR -->
-    <nav class="navbar glass">
-      <div class="container">
-        <a href="#hero" class="logo"><img src="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg" alt="BehAvIorLab" class="logo-img"></a>
-        <div class="nav-links">
-          <a href="#hero">Inicio</a>
-          <a href="#about">Nosotros</a>
-          <a href="#servicios">Servicios</a>
-          <a href="#gobernanza">Gobernanza</a>
-          <a href="#calculadora">Diagnóstico</a>
-          <a href="#arquitectura">Arquitectura</a>
-          <a href="app/index.html" class="btn-nav" style="background: #00f2fe; color: #000; font-weight: bold;">Portal Clientes</a>
-        </div>
-        <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    <!-- Indicador de progreso -->
+    <div class="mb-6 flex items-center justify-center gap-3 text-xs" id="aa-progress">
+      <div class="flex items-center gap-2 aa-step-indicator" data-step="1">
+        <span class="aa-step-circle w-6 h-6 rounded-full flex items-center justify-center bg-teal-500 text-slate-900 font-bold">1</span>
+        <span class="aa-step-label text-slate-200 font-medium">Proceso</span>
       </div>
-    </nav>
-
-    <!-- HERO -->
-    <section class="hero" id="hero">
-      <div class="hero-overlay"></div>
-      <div class="hero-logo-bg"><img src="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.svg" alt="BehAvIorLab" class="hero-logo-watermark"></div>
-      <div class="container hero-content">
-        <div class="hero-badge">BehAvIorLab – Agentes de IA que entienden tu operación</div>
-        <h1 class="hero-title" id="hero-phrases"><span class="phrase">Agentes de IA que entienden procesos, no solo palabras.</span></h1>
-        <p class="hero-subtitle">Diseñamos agentes empresariales de IA que automatizan procesos complejos, se integran a tus sistemas y generan resultados medibles en semanas.</p>
-        <p class="hero-support">Soluciones a la medida para agilizar, estandarizar y escalar procesos críticos. <strong>Somos tu socio integral de IA.</strong></p>
-        <a href="#contacto" class="btn-primary">Agenda una reunión de descubrimiento →</a>
+      <div class="w-8 h-px bg-slate-700"></div>
+      <div class="flex items-center gap-2 aa-step-indicator" data-step="2">
+        <span class="aa-step-circle w-6 h-6 rounded-full flex items-center justify-center bg-slate-700 text-slate-400 font-bold">2</span>
+        <span class="aa-step-label text-slate-500">Contacto</span>
       </div>
-    </section>
-
-    <!-- QUIENES SOMOS -->
-    <section class="about" id="about">
-      <div class="container">
-        <div class="about-grid">
-          <div class="about-text">
-            <h2>Quiénes somos</h2>
-            <p><strong>BehAvIorLab</strong> es una consultora de inteligencia artificial con sede en México. Diseñamos agentes personalizados para empresas medianas y grandes en <strong>seguros, servicios financieros, retail, logística y gobierno</strong>.</p>
-            <p>Somos tu socio integral desde el descubrimiento hasta la mejora continua.</p>
-            <div class="about-features"><span>🧠 Matemáticas + IA</span><span>📊 Riesgo y decisión</span><span>⚡ Implementación real</span></div>
-          </div>
-          <div class="about-stats">
-            <div class="stat"><span class="stat-number" data-target="5">0</span><span class="stat-label">Sectores especializados</span></div>
-            <div class="stat"><span class="stat-number" data-target="100">0</span><span class="stat-label">Soluciones personalizadas</span></div>
-            <div class="stat"><span class="stat-number" data-target="24">0</span><span class="stat-label">Operación continua 24/7</span></div>
-          </div>
-        </div>
+      <div class="w-8 h-px bg-slate-700"></div>
+      <div class="flex items-center gap-2 aa-step-indicator" data-step="3">
+        <span class="aa-step-circle w-6 h-6 rounded-full flex items-center justify-center bg-slate-700 text-slate-400 font-bold">3</span>
+        <span class="aa-step-label text-slate-500">Resultado</span>
       </div>
-    </section>
+    </div>
 
-    <!-- CLIENTES -->
-    <section class="clients" id="clientes">
-      <div class="container">
-        <div class="clients-header"><span class="clients-badge">🤝 Empresas que confían en nosotros</span><h2 class="section-title">Nuestros clientes</h2></div>
-        <div class="clients-grid">
-          <div class="clients-track">
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/aicm.jpg" alt="AICM"></div>
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/cfe.jpg" alt="CFE"></div>
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/revlon.svg" alt="Revlon"></div>
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/ikea.jpg" alt="IKEA"></div>
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/mastercard.jpg" alt="Mastercard"></div>
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/aicm.jpg" alt="AICM"></div>
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/cfe.jpg" alt="CFE"></div>
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/revlon.svg" alt="Revlon"></div>
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/ikea.jpg" alt="IKEA"></div>
-            <div class="client-item"><img src="https://media.gokulab.mx/Behavior_Lab/Empresas/mastercard.jpg" alt="Mastercard"></div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- Card principal -->
+    <div class="bg-slate-800/60 backdrop-blur border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl">
 
-    <!-- EQUIPO -->
-    <section class="team" id="equipo">
-      <div class="container">
-        <div class="team-header"><span class="team-badge">🧪 El equipo</span><h2 class="section-title">Ciencia, negocio y desarrollo en un mismo laboratorio</h2></div>
-        <div class="team-grid">
-          <div class="team-card glass reveal"><div class="team-icon">📐</div><h3>Matemático</h3><p>Especialista en modelación y pensamiento estructurado.</p></div>
-          <div class="team-card glass reveal"><div class="team-icon">📊</div><h3>Actuario</h3><p>Experto en riesgo e incertidumbre.</p></div>
-          <div class="team-card glass reveal"><div class="team-icon">📈</div><h3>Economista</h3><p>Enfocado en valor y eficiencia.</p></div>
-          <div class="team-card glass reveal"><div class="team-icon">🏛️</div><h3>Politólogo</h3><p>Especialista en instituciones, regulación y actores.</p></div>
-        </div>
-      </div>
-    </section>
+      <!-- ═══════════════ STEP 1: PROCESO ═══════════════ -->
+      <div id="aa-step-1" class="aa-step space-y-6">
 
-    <!-- SERVICIOS -->
-    <section class="services" id="servicios">
-      <div class="container">
-        <div class="services-header">
-          <span class="services-badge">🚀 Nuestros servicios</span>
-          <h2 class="section-title">Tus procesos, impulsados por agentes de IA</h2>
+        <!-- processName -->
+        <div>
+          <label for="aa-process-name" class="block text-sm font-medium text-slate-200 mb-2">
+            ¿Qué proceso quieres evaluar?
+            <span class="text-slate-500 font-normal">(ej. Facturación, Atención a clientes)</span>
+          </label>
+          <input id="aa-process-name" type="text" maxlength="120" placeholder="Facturación de proveedores"
+            class="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
         </div>
-        <div class="services-grid">
-          <div class="service-card glass reveal"><div class="service-icon"><img src="https://media.gokulab.mx/Behavior_Lab/icons/automation.svg" alt="Automatización" /></div><h3>Automatización de atención al cliente</h3><p>IA conversacional que entiende, clasifica y resuelve 24/7.</p></div>
-          <div class="service-card glass reveal"><div class="service-icon"><img src="https://media.gokulab.mx/Behavior_Lab/icons/analytics.svg" alt="Inteligencia comercial" /></div><h3>Inteligencia comercial</h3><p>Analiza datos en tiempo real para optimizar decisiones.</p></div>
-          <div class="service-card glass reveal"><div class="service-icon"><img src="https://media.gokulab.mx/Behavior_Lab/icons/documents.svg" alt="Documentos" /></div><h3>Procesamiento de documentos</h3><p>Extrae, clasifica y valida información automáticamente.</p></div>
-          <div class="service-card glass reveal"><div class="service-icon"><img src="https://media.gokulab.mx/Behavior_Lab/icons/brain.svg" alt="Decisiones" /></div><h3>Soporte a decisiones</h3><p>Recomendaciones basadas en datos para ejecutivos.</p></div>
-        </div>
-      </div>
-    </section>
 
-    <!-- GOBERNANZA (Con Tarjetas Interactivas) -->
-    <section class="services" id="gobernanza" style="background: rgba(0,0,0,0.2);">
-      <div class="container">
-        <div class="services-header">
-          <span class="services-badge" style="background: rgba(0, 242, 254, 0.2); color: #00f2fe;">⚖️ Gobernanza y Cumplimiento</span>
-          <h2 class="section-title">No solo creamos Agentes, los hacemos auditables</h2>
-          <p class="services-intro">Protegemos tu operación con marcos internacionales (ISO 42001, NIST AI RMF) y cumplimiento regulatorio local (LFPDPPP, COFEPRIS / SaMD).</p>
-        </div>
-        <div class="services-grid">
-          <div class="service-card glass arch-item reveal" data-modal="modal-gob-diagnostico">
-            <div class="service-icon" style="font-size: 2rem;">⚖️</div>
-            <h3>Diagnóstico y Triaje</h3>
-            <p>Evaluación de madurez, inventario de modelos y clasificación de riesgo.</p>
-            <div class="arch-hover-info">🔍 Ver más</div>
-          </div>
-          <div class="service-card glass arch-item reveal" data-modal="modal-gob-hub">
-            <div class="service-icon" style="font-size: 2rem;">🏢</div>
-            <h3>Modelo Hub & Spoke</h3>
-            <p>Diseño de estructuras de gobierno corporativo para grupos multiempresa.</p>
-            <div class="arch-hover-info">🔍 Ver más</div>
-          </div>
-          <div class="service-card glass arch-item reveal" data-modal="modal-gob-compliance">
-            <div class="service-icon" style="font-size: 2rem;">🛡️</div>
-            <h3>Cumplimiento (GRC)</h3>
-            <p>Preparación para auditorías ISO 42001, NIST AI RMF y COFEPRIS.</p>
-            <div class="arch-hover-info">🔍 Ver más</div>
-          </div>
-          <div class="service-card glass arch-item reveal" data-modal="modal-gob-mlops">
-            <div class="service-icon" style="font-size: 2rem;">📊</div>
-            <h3>Monitoreo MLOps</h3>
-            <p>Evaluación continua de agentes: sesgos, drift y trazabilidad.</p>
-            <div class="arch-hover-info">🔍 Ver más</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CALCULADORA DE RIESGO -->
-    <section class="contact" id="calculadora" style="padding-top: 4rem;">
-      <div class="container">
-        <div class="contact-box glass" style="max-width: 800px; margin: 0 auto; text-align: left;">
-          <div style="text-align: center; margin-bottom: 2rem;">
-            <span class="services-badge">Evaluación Preliminar</span>
-            <h2 style="font-size: 2rem; margin-top: 1rem; color: white;">Calculadora de Riesgo de IA</h2>
-            <p style="color: #a0aec0;">Descubre el nivel de exposición de tu empresa en 3 simples pasos.</p>
-          </div>
-          <form id="riskForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <div><label class="grc-label">1. Sector Operativo de tu Empresa</label><select id="sector" class="grc-select"><option value="servicios">Servicios / Retail / Logística</option><option value="alimentos">Alimentos y Consumo Masivo</option><option value="salud">Cuidado Personal / Salud / Biotecnología</option></select></div>
-            <div><label class="grc-label">2. ¿Los colaboradores usan IA Generativa (ChatGPT, Claude, etc.)?</label><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;"><label style="cursor: pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="shadow_ai" value="alto" checked style="accent-color: #00f2fe;"><div style="font-size: 0.9rem; font-weight: bold; color: white; margin-top: 4px;">Sí, libremente</div><div style="font-size: 0.7rem; color: #a0aec0;">(Sin política)</div></label><label style="cursor: pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="shadow_ai" value="medio" style="accent-color: #00f2fe;"><div style="font-size: 0.9rem; font-weight: bold; color: white; margin-top: 4px;">Sí, con guías</div><div style="font-size: 0.7rem; color: #a0aec0;">(Informales)</div></label><label style="cursor: pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="shadow_ai" value="bajo" style="accent-color: #00f2fe;"><div style="font-size: 0.9rem; font-weight: bold; color: white; margin-top: 4px;">Sí, regulado</div><div style="font-size: 0.7rem; color: #a0aec0;">(Política oficial)</div></label></div></div>
-            <div><label class="grc-label">3. ¿Usan software para diagnósticos, recomendaciones o salud?</label><div style="display: flex; gap: 20px; color: white;"><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="samd" value="si" style="accent-color: #00f2fe;"> Sí (Aplica SaMD)</label><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="samd" value="no" checked style="accent-color: #00f2fe;"> No</label></div></div>
-            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;"><label class="grc-label">4. ¿A dónde enviamos tu reporte?</label><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;"><input type="text" id="leadName" placeholder="Tu Nombre" required class="grc-input"><input type="text" id="leadCompany" placeholder="Nombre de tu Empresa" required class="grc-input"></div><input type="email" id="leadEmail" placeholder="tu@empresa.com" required class="grc-input"></div>
-            <button type="button" id="btnCalcular" onclick="calcularRiesgo(event)" class="btn-primary" style="width: 100%; border: none; cursor: pointer; margin-top: 1rem;">Ver mi Diagnóstico Preliminar</button>
-          </form>
-          <div id="resultBox" style="display: none; margin-top: 2rem; padding: 1.5rem; background: rgba(0, 242, 254, 0.05); border: 1px solid #00f2fe; border-radius: 12px;"><h3 style="color: white; font-size: 1.2rem; margin-bottom: 1rem;">Tu Nivel de Exposición Preliminar:</h3><div id="resultBadges" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem;"></div><p id="resultSummary" style="color: #a0aec0; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem;"></p><div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;"><p style="color: white; font-weight: bold; margin-bottom: 0.5rem;">¿Quieres saber cómo mitigar estos riesgos?</p><a href="app/index.html" class="btn-primary" style="display: inline-block; font-size: 0.9rem;">Crear cuenta o Iniciar Sesión</a></div></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PROBLEMA VS SOLUCIÓN -->
-    <section class="problem-solution" id="problema">
-      <div class="container">
-        <h2 class="section-title">De la fragmentación a la operación autónoma</h2>
-        <div class="ps-grid">
-          <div class="problem-box glass"><h3>⚠️ Situación actual</h3><ul><li>Procesos fragmentados y poco estandarizados</li><li>Dependencia alta de tareas manuales</li><li>Respuestas inconsistentes entre canales</li><li>Costos operativos crecientes</li><li>Baja trazabilidad para medir desempeño</li></ul></div>
-          <div class="solution-box glass"><h3>✅ Situación deseada</h3><ul><li>Atención más rápida y consistente</li><li>Operación estandarizada 24/7</li><li>Escalabilidad sin crecer en estructura</li><li>Menor costo operativo</li><li>Información en tiempo real para decidir mejor</li></ul></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ARQUITECTURA -->
-    <section class="architecture" id="arquitectura">
-      <div class="container">
-        <h2 class="section-title">Arquitectura de la solución</h2>
-        <p class="arch-subtitle">Una capa de <strong>Gobernabilidad y Ciberseguridad</strong> protege cada etapa del proceso</p>
-        <div class="arch-wrapper">
-          <div class="arch-security-layer">
-            <div class="arch-security-badge"><span class="security-icon">🛡️</span><span>Gobernabilidad &amp; Ciberseguridad</span></div>
-            <div class="arch-diagram">
-              <div class="arch-item glass" data-modal="modal-canales"><div class="arch-icon">📱</div><span>Canales</span><small>Web, App, WhatsApp, Correo, Call Center</small><div class="arch-hover-info">🔍 Ver más</div></div>
-              <div class="arch-arrow">↓</div>
-              <div class="arch-item glass" data-modal="modal-agente"><div class="arch-icon">🧠</div><span>Agente IA</span><small>Comprensión, Clasificación, Respuesta, Resolución</small><div class="arch-hover-info">🔍 Ver más</div></div>
-              <div class="arch-arrow">↓</div>
-              <div class="arch-item glass" data-modal="modal-orquestacion"><div class="arch-icon">⚙️</div><span>Orquestación</span><small>Reglas, Flujos, Prioridades, Escalamiento</small><div class="arch-hover-info">🔍 Ver más</div></div>
-              <div class="arch-arrow">↓</div>
-              <div class="arch-item glass" data-modal="modal-integracion"><div class="arch-icon">🔗</div><span>Integración API</span><small>CRM, ERP, Core, Repositorios</small><div class="arch-hover-info">🔍 Ver más</div></div>
-              <div class="arch-arrow">↓</div>
-              <div class="arch-item glass" data-modal="modal-analitica"><div class="arch-icon">📊</div><span>Analítica y Monitoreo</span><small>Supervisión Humana y Mejora Continua</small><div class="arch-hover-info">🔍 Ver más</div></div>
+        <!-- volume + hoursSpent -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="aa-volume" class="block text-sm font-medium text-slate-200 mb-2">Volumen mensual</label>
+            <div class="relative">
+              <input id="aa-volume" type="number" min="0" step="1" placeholder="1200"
+                class="w-full px-4 py-3 pr-28 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">trans./mes</span>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- MÉTODO -->
-    <section class="method" id="metodo">
-      <div class="container">
-        <h2 class="section-title">Construcción de agentes</h2>
-        <p class="method-subtitle">Nuestra metodología en <strong>5 pasos</strong> para llevar tu agente de IA de la idea a la operación</p>
-        <div class="method-wrapper">
-          <div class="method-timeline">
-            <div class="method-item arch-item glass reveal" data-modal="modal-paso1"><div class="method-step-number">1</div><div class="method-icon">🔍</div><h3>Diagnóstico y priorización</h3><p>Identificamos el caso de uso con mayor impacto.</p><div class="method-hover-info">🔍 Ver más</div></div>
-            <div class="method-arrow">↓</div>
-            <div class="method-item arch-item glass reveal" data-modal="modal-paso2"><div class="method-step-number">2</div><div class="method-icon">📐</div><h3>Diseño y construcción</h3><p>Arquitectura del agente y definición de flujos.</p><div class="method-hover-info">🔍 Ver más</div></div>
-            <div class="method-arrow">↓</div>
-            <div class="method-item arch-item glass reveal" data-modal="modal-paso3"><div class="method-step-number">3</div><div class="method-icon">🧪</div><h3>Entrenamiento</h3><p>Con datos y lógica de negocio reales.</p><div class="method-hover-info">🔍 Ver más</div></div>
-            <div class="method-arrow">↓</div>
-            <div class="method-item arch-item glass reveal" data-modal="modal-paso4"><div class="method-step-number">4</div><div class="method-icon">🔗</div><h3>Integración y pruebas</h3><p>Conectamos con tus sistemas y validamos.</p><div class="method-hover-info">🔍 Ver más</div></div>
-            <div class="method-arrow">↓</div>
-            <div class="method-item arch-item glass reveal" data-modal="modal-paso5"><div class="method-step-number">5</div><div class="method-icon">🚀</div><h3>Despliegue y mejora continua</h3><p>Monitoreo, ajustes y evolución constante.</p><div class="method-hover-info">🔍 Ver más</div></div>
+          <div>
+            <label for="aa-hours" class="block text-sm font-medium text-slate-200 mb-2">
+              Horas dedicadas <span class="text-slate-500 font-normal">(por semana)</span>
+            </label>
+            <div class="relative">
+              <input id="aa-hours" type="number" min="0" max="500" step="1" placeholder="25"
+                class="w-full px-4 py-3 pr-24 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">h/semana</span>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">
+              Equivale a <span id="aa-hours-baseline" class="text-teal-400 font-medium">—</span> h/mes
+            </p>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- POR QUÉ BEHAVIORLAB -->
-    <section class="why" id="porque">
-      <div class="container">
-        <h2 class="section-title">¿Porqué BehAvIorLab?</h2>
-        <div class="why-grid">
-          <div class="why-item glass"><span class="why-icon">🎯</span><h3>Agentes a medida</h3><p>Cada agente se diseña desde cero para tus procesos únicos.</p></div>
-          <div class="why-item glass"><span class="why-icon">⚡</span><h3>Despliegue rápido</h3><p>De la idea al agente operativo en semanas.</p></div>
-          <div class="why-item glass"><span class="why-icon">🔌</span><h3>Integración sin fricciones</h3><p>Conectamos con tus sistemas existentes.</p></div>
-          <div class="why-item glass"><span class="why-icon">📈</span><h3>Retorno medible</h3><p>Definimos desde el inicio qué vamos a medir: tiempos, costos, ROI.</p></div>
+        <!-- complexity -->
+        <div>
+          <label class="block text-sm font-medium text-slate-200 mb-2">Complejidad del proceso</label>
+          <div class="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Complejidad del proceso">
+            <button type="button" role="radio" aria-checked="false" data-complexity="1"
+              class="aa-complexity-btn px-2 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 hover:border-teal-500/50 transition text-sm">
+              <div class="font-semibold">1</div><div class="text-[10px] mt-0.5">Muy baja</div>
+            </button>
+            <button type="button" role="radio" aria-checked="false" data-complexity="2"
+              class="aa-complexity-btn px-2 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 hover:border-teal-500/50 transition text-sm">
+              <div class="font-semibold">2</div><div class="text-[10px] mt-0.5">Baja</div>
+            </button>
+            <button type="button" role="radio" aria-checked="false" data-complexity="3"
+              class="aa-complexity-btn px-2 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 hover:border-teal-500/50 transition text-sm">
+              <div class="font-semibold">3</div><div class="text-[10px] mt-0.5">Media</div>
+            </button>
+            <button type="button" role="radio" aria-checked="false" data-complexity="4"
+              class="aa-complexity-btn px-2 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 hover:border-teal-500/50 transition text-sm">
+              <div class="font-semibold">4</div><div class="text-[10px] mt-0.5">Alta</div>
+            </button>
+            <button type="button" role="radio" aria-checked="false" data-complexity="5"
+              class="aa-complexity-btn px-2 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 hover:border-teal-500/50 transition text-sm">
+              <div class="font-semibold">5</div><div class="text-[10px] mt-0.5">Muy alta</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- dataType -->
+        <div>
+          <label class="block text-sm font-medium text-slate-200 mb-2">Tipo de dato predominante</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo de dato predominante">
+            <button type="button" role="radio" aria-checked="false" data-datatype="estructurado"
+              class="aa-datatype-btn text-left px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:border-teal-500/50 transition">
+              <div class="font-medium text-sm">Estructurado</div>
+              <div class="text-xs text-slate-500 mt-0.5">Tablas, ERP, CRM, formularios</div>
+            </button>
+            <button type="button" role="radio" aria-checked="false" data-datatype="semi-estructurado"
+              class="aa-datatype-btn text-left px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:border-teal-500/50 transition">
+              <div class="font-medium text-sm">Semi-estructurado</div>
+              <div class="text-xs text-slate-500 mt-0.5">CSV, JSON, correos con formato</div>
+            </button>
+            <button type="button" role="radio" aria-checked="false" data-datatype="documentos"
+              class="aa-datatype-btn text-left px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:border-teal-500/50 transition">
+              <div class="font-medium text-sm">Documentos</div>
+              <div class="text-xs text-slate-500 mt-0.5">PDFs, facturas, contratos</div>
+            </button>
+            <button type="button" role="radio" aria-checked="false" data-datatype="no-estructurado"
+              class="aa-datatype-btn text-left px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:border-teal-500/50 transition">
+              <div class="font-medium text-sm">No estructurado</div>
+              <div class="text-xs text-slate-500 mt-0.5">Texto libre, audio, imágenes</div>
+            </button>
+            <button type="button" role="radio" aria-checked="false" data-datatype="mixto"
+              class="aa-datatype-btn text-left px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:border-teal-500/50 transition sm:col-span-2">
+              <div class="font-medium text-sm">Mixto</div>
+              <div class="text-xs text-slate-500 mt-0.5">Combinación de documentos y datos estructurados</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- error step 1 -->
+        <div id="aa-error-1" role="alert" class="hidden p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-sm text-rose-300"></div>
+
+        <div class="pt-2">
+          <button id="aa-next-to-contact" type="button"
+            class="w-full sm:w-auto px-8 py-3 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-900 font-semibold hover:from-teal-400 hover:to-emerald-400 transition shadow-lg shadow-teal-500/20">
+            Continuar →
+          </button>
         </div>
       </div>
-    </section>
 
-    <!-- CONTACTO -->
-    <section class="contact" id="contacto">
-      <div class="container">
-        <div class="contact-box glass">
-          <h2>¿Listo para transformar tus operaciones?</h2>
-          <p>Agenda una reunión de descubrimiento y descubre el poder de los agentes de IA.</p>
-          <div class="contact-info"><a href="mailto:contacto@gokulab.com" class="btn-primary">contacto@gokulab.com</a><span class="contact-phone">📞 56 1266 8168</span><span class="contact-location">📍 Naucalpan, Edo. de México</span></div>
+      <!-- ═══════════════ STEP 2: CONTACTO ═══════════════ -->
+      <div id="aa-step-2" class="aa-step hidden space-y-5">
+        <div class="p-4 rounded-lg bg-teal-500/5 border border-teal-500/20 text-sm text-teal-200 flex items-start gap-3">
+          <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Estás a un paso. Ingresa tus datos para ver tu Índice de Automatización y el ROI estimado.</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="aa-nombre" class="block text-sm font-medium text-slate-200 mb-2">Nombre <span class="text-rose-400">*</span></label>
+            <input id="aa-nombre" type="text" maxlength="120" placeholder="Ana Pérez"
+              class="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
+          </div>
+          <div>
+            <label for="aa-empresa" class="block text-sm font-medium text-slate-200 mb-2">Empresa <span class="text-rose-400">*</span></label>
+            <input id="aa-empresa" type="text" maxlength="120" placeholder="ACME SA"
+              class="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
+          </div>
+        </div>
+
+        <div>
+          <label for="aa-email" class="block text-sm font-medium text-slate-200 mb-2">Email corporativo <span class="text-rose-400">*</span></label>
+          <input id="aa-email" type="email" maxlength="120" placeholder="ana@empresa.com"
+            class="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
+        </div>
+
+        <div>
+          <label for="aa-telefono" class="block text-sm font-medium text-slate-200 mb-2">Teléfono <span class="text-slate-500 font-normal">(opcional)</span></label>
+          <input id="aa-telefono" type="tel" maxlength="40" placeholder="+52 55 1234 5678"
+            class="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
+        </div>
+
+        <div id="aa-error" role="alert" class="hidden p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-sm text-rose-300"></div>
+
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+          <button id="aa-back-to-process" type="button"
+            class="px-6 py-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-600 transition">
+            ← Atrás
+          </button>
+          <button id="aa-submit" type="button"
+            class="flex-1 px-8 py-3 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-900 font-semibold hover:from-teal-400 hover:to-emerald-400 transition shadow-lg shadow-teal-500/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            <span id="aa-submit-label">Calcular mi índice</span>
+            <svg id="aa-spinner" class="hidden w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          </button>
         </div>
       </div>
-    </section>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-      <div class="container">
-        <p>&copy; 2026 BehAvIorLab · Todos los derechos reservados</p>
-        <div class="footer-socials"><a href="#">LinkedIn</a><a href="#">Twitter</a><a href="#">YouTube</a></div>
+      <!-- ═══════════════ STEP 3: RESULTADOS (mount del Bloque 3) ═══════════════ -->
+      <div id="aa-step-3" class="aa-step hidden">
+        <div id="aa-results-mount"></div>
       </div>
-    </footer>
 
-  </div> <!-- fin de #app -->
-
-  <!-- ========== MODALES DE GOBERNANZA (NUEVOS) ========== -->
-  <div class="arch-modal" id="modal-gob-diagnostico">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>⚖️ Diagnóstico y Triaje de IA</h3>
-      <p>Evaluamos el nivel de madurez de tu organización y clasificamos el riesgo de todos tus sistemas de IA (incluyendo Shadow AI).</p>
-      <ul>
-        <li><strong>Inventario de Modelos:</strong> Registramos cada algoritmo, herramienta o API de IA que usas.</li>
-        <li><strong>Semáforo de Riesgo:</strong> Clasificamos los modelos en Bajo, Medio, Alto o Inaceptable (según EU AI Act).</li>
-        <li><strong>Evaluación de Madurez:</strong> Medimos tus capacidades actuales frente a los controles de ISO 42001.</li>
-      </ul>
-      <p><small>Entregable: Un Dashboard Ejecutivo con el Score Global de Cumplimiento.</small></p>
     </div>
-  </div>
 
-  <div class="arch-modal" id="modal-gob-hub">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>🏢 Modelo Hub & Spoke</h3>
-      <p>Diseñamos la estructura de gobernanza organizacional para grupos multiempresa. Evitamos la parálisis operativa mientras cumplimos con las normativas.</p>
-      <ul>
-        <li><strong>El Hub (Centro):</strong> Define las políticas corporativas, el apetito de riesgo y el marco ético (Comité Central).</li>
-        <li><strong>Los Spokes (Filiales):</strong> Cada unidad de negocio (Oleofinos, Solave, etc.) implementa las políticas según su contexto operativo.</li>
-        <li><strong>Roles y Responsabilidades:</strong> Definimos quién es el Oficial de IA, quién audita y quién aprueba.</li>
-      </ul>
-      <p><small>Entregable: Manual de Organización y Gobernanza Corporativa de IA.</small></p>
-    </div>
+    <p class="mt-6 text-center text-xs text-slate-500">
+      Sin spam. Tus datos solo se usan para enviarte el diagnóstico y, si lo solicitas, coordinar una sesión.
+    </p>
   </div>
-
-  <div class="arch-modal" id="modal-gob-compliance">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>🛡️ Cumplimiento (GRC)</h3>
-      <p>Preparamos a tu empresa para pasar auditorías regulatorias sin miedo, alineando la operación a los estándares locales e internacionales.</p>
-      <ul>
-        <li><strong>ISO/IEC 42001:</strong> Implementación del Sistema de Gestión de Inteligencia Artificial (AIMS).</li>
-        <li><strong>COFEPRIS / SaMD:</strong> Validación de software como dispositivo médico para el sector salud.</li>
-        <li><strong>LFPDPPP:</strong> Cumplimiento estricto de protección de datos personales en modelos generativos.</li>
-      </ul>
-      <p><small>Entregable: Expediente Digital de Evidencias y Políticas listas para auditoría.</small></p>
-    </div>
-  </div>
-
-  <div class="arch-modal" id="modal-gob-mlops">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>📊 Monitoreo y MLOps</h3>
-      <p>La gobernanza no termina en el despliegue. Monitoreamos que tus agentes sigan siendo seguros y precisos con el tiempo.</p>
-      <ul>
-        <li><strong>Detección de Data Drift:</strong> Alertamos si los datos del mundo real cambian y el modelo empieza a fallar.</li>
-        <li><strong>Auditoría de Sesgos:</strong> Evaluamos periódicamente que las decisiones de la IA sean justas y equitativas.</li>
-        <li><strong>Trazabilidad:</strong> Guardamos logs inmutables (Audit Logs) para saber exactamente qué respondió la IA y por qué.</li>
-      </ul>
-      <p><small>Entregable: Reportes de Monitoreo Continuo y alertas de incidentes.</small></p>
-    </div>
-  </div>
-
-  <!-- ========== MODALES DE ARQUITECTURA (CON TEXTO COMPLETO) ========== -->
-  <div class="arch-modal" id="modal-canales">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>📱 Canales de entrada</h3>
-      <p>Integración con múltiples puntos de contacto: <strong>web, app móvil, WhatsApp, correo electrónico y call center</strong>. Cada canal se normaliza y unifica en un flujo único de atención.</p>
-      <ul>
-        <li><strong>Web / App:</strong> Chatbots y asistentes integrados que ofrecen respuestas inmediatas.</li>
-        <li><strong>WhatsApp / Correo:</strong> Automatización de respuestas, clasificación de solicitudes y extracción de datos clave.</li>
-        <li><strong>Call Center:</strong> Asistencia en vivo con respaldo de IA que sugiere respuestas al agente humano.</li>
-      </ul>
-      <p><small>La capa de seguridad garantiza autenticación, cifrado y prevención de fraudes en todos los canales.</small></p>
-    </div>
-  </div>
-
-  <div class="arch-modal" id="modal-agente">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>🧠 Agente IA</h3>
-      <p>El cerebro de la solución. Procesa la entrada del usuario mediante <strong>comprensión de lenguaje natural, clasificación de intención, generación de respuestas y resolución de tareas</strong>.</p>
-      <ul>
-        <li><strong>Comprensión:</strong> NLP avanzado para entender el contexto, el tono y las entidades de la solicitud.</li>
-        <li><strong>Clasificación:</strong> Identifica el tipo de solicitud (soporte, ventas, queja) y la prioriza.</li>
-        <li><strong>Respuesta:</strong> Genera respuestas precisas o ejecuta acciones (ej. consultar un saldo, agendar una cita).</li>
-        <li><strong>Resolución:</strong> Cierra el ciclo con confirmación o derivación inteligente a un humano.</li>
-      </ul>
-      <p><small>La gobernabilidad asegura que el agente opere dentro de políticas de ética y no alucine información crítica.</small></p>
-    </div>
-  </div>
-
-  <div class="arch-modal" id="modal-orquestacion">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>⚙️ Orquestación</h3>
-      <p>Coordina el flujo de trabajo: <strong>reglas de negocio, flujos condicionales, priorización de tareas y escalamiento a humanos</strong> cuando es necesario.</p>
-      <ul>
-        <li><strong>Reglas:</strong> Lógica de negocio definida por el cliente (ej. "Si el monto es > $10,000, requiere aprobación manual").</li>
-        <li><strong>Flujos:</strong> Secuencias de pasos dinámicos que el agente debe seguir según el contexto.</li>
-        <li><strong>Prioridades:</strong> Clasificación automática de atención urgente vs. rutinaria.</li>
-        <li><strong>Escalamiento:</strong> Transición suave a un agente humano con todo el contexto de la conversación.</li>
-      </ul>
-      <p><small>La ciberseguridad protege los datos en cada transición y valida los permisos del agente.</small></p>
-    </div>
-  </div>
-
-  <div class="arch-modal" id="modal-integracion">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>🔗 Integración API</h3>
-      <p>Conexión con los sistemas existentes del cliente: <strong>CRM, ERP, Core de negocio y repositorios internos</strong>. La integración es bidireccional y en tiempo real.</p>
-      <ul>
-        <li><strong>CRM:</strong> Actualización automática de contactos, creación de casos y seguimiento de oportunidades.</li>
-        <li><strong>ERP:</strong> Consulta de inventarios, creación de pedidos y validación de precios.</li>
-        <li><strong>Core:</strong> Operaciones críticas del negocio (ej. transferencias, validaciones de identidad).</li>
-        <li><strong>Repositorios:</strong> Acceso seguro a documentos, políticas y bases de conocimiento.</li>
-      </ul>
-      <p><small>Las API están protegidas con autenticación OAuth, cifrado TLS y políticas de mínimo privilegio.</small></p>
-    </div>
-  </div>
-
-  <div class="arch-modal" id="modal-analitica">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>📊 Analítica y Monitoreo</h3>
-      <p>Panel de control para <strong>supervisión humana, dashboards de rendimiento y mejora continua</strong>. Permite medir tiempos, volúmenes, errores y calidad de las respuestas.</p>
-      <ul>
-        <li><strong>Supervisión:</strong> Intervención humana en conversaciones donde el agente detecta baja confianza.</li>
-        <li><strong>Dashboards:</strong> Visualización de métricas clave en tiempo real (tiempo de respuesta, tasa de resolución).</li>
-        <li><strong>Mejora continua:</strong> Ajustes basados en datos y feedback del usuario para reentrenar el modelo.</li>
-      </ul>
-      <p><small>La gobernabilidad asegura que los datos se usen éticamente y que los logs sean auditables.</small></p>
-    </div>
-  </div>
-
-  <!-- ========== MODALES DE MÉTODO ========== -->
-  <div class="arch-modal" id="modal-paso1">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>🔍 Paso 1: Diagnóstico y priorización</h3>
-      <p>Analizamos los procesos actuales de tu organización para identificar <strong>cuellos de botella, tareas repetitivas y oportunidades de automatización</strong>.</p>
-      <ul>
-        <li><strong>Análisis de procesos:</strong> Mapeamos flujos de trabajo y puntos de fricción.</li>
-        <li><strong>Identificación de casos de uso:</strong> Seleccionamos el proceso con mayor impacto y ROI.</li>
-        <li><strong>Priorización:</strong> Definimos un plan de implementación escalonado.</li>
-      </ul>
-      <p><small>La gobernabilidad asegura que el agente opere dentro de políticas definidas.</small></p>
-    </div>
-  </div>
-
-  <div class="arch-modal" id="modal-paso2">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>📐 Paso 2: Diseño y construcción</h3>
-      <p>Diseñamos la arquitectura del agente, definimos los flujos de conversación y las reglas de negocio que guiarán su comportamiento.</p>
-      <ul>
-        <li><strong>Arquitectura:</strong> Selección de tecnologías y estructura del agente.</li>
-        <li><strong>Flujos:</strong> Diseño de la lógica de conversación y toma de decisiones.</li>
-        <li><strong>Reglas de negocio:</strong> Configuración de parámetros específicos de tu operación.</li>
-      </ul>
-      <p><small>La ciberseguridad protege los datos y el acceso en cada etapa.</small></p>
-    </div>
-  </div>
-
-  <div class="arch-modal" id="modal-paso3">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>🧪 Paso 3: Entrenamiento</h3>
-      <p>Entrenamos el agente con <strong>datos reales de tu negocio</strong> y ajustamos los modelos para que comprendan el contexto y las particularidades de tu operación.</p>
-      <ul>
-        <li><strong>Datos reales:</strong> Utilizamos información histórica y ejemplos concretos.</li>
-        <li><strong>Ajuste de modelos:</strong> Optimizamos el rendimiento con técnicas de fine-tuning.</li>
-        <li><strong>Validación:</strong> Probamos con casos reales para asegurar precisión.</li>
-      </ul>
-      <p><small>La gobernabilidad garantiza el uso ético y responsable de los datos.</small></p>
-    </div>
-  </div>
-
-  <div class="arch-modal" id="modal-paso4">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>🔗 Paso 4: Integración y pruebas</h3>
-      <p>Conectamos el agente con tus sistemas existentes (CRM, ERP, etc.) y realizamos pruebas de extremo a extremo para garantizar su correcto funcionamiento.</p>
-      <ul>
-        <li><strong>Integración API:</strong> Conexión bidireccional con tus plataformas.</li>
-        <li><strong>Pruebas E2E:</strong> Validamos el flujo completo, desde la entrada hasta la resolución.</li>
-        <li><strong>Seguridad:</strong> Verificamos autenticación, cifrado y protección de datos.</li>
-      </ul>
-      <p><small>La ciberseguridad protege las comunicaciones entre sistemas.</small></p>
-    </div>
-  </div>
-
-  <div class="arch-modal" id="modal-paso5">
-    <div class="arch-modal-content glass">
-      <span class="arch-modal-close">&times;</span>
-      <h3>🚀 Paso 5: Despliegue y mejora continua</h3>
-      <p>Realizamos un <strong>lanzamiento controlado por fases</strong> y monitoreamos el desempeño del agente para realizar ajustes iterativos y evolucionar con tu negocio.</p>
-      <ul>
-        <li><strong>Lanzamiento:</strong> Despliegue en producción con supervisión.</li>
-        <li><strong>Monitoreo:</strong> Dashboards de rendimiento y alertas.</li>
-        <li><strong>Mejora continua:</strong> Ajustes basados en métricas y feedback.</li>
-      </ul>
-      <p><small>La gobernabilidad asegura que el agente evolucione alineado a los objetivos del negocio.</small></p>
-    </div>
-  </div>
-
-  <script src="js/chat-widget.js?v=22" defer></script>
-  <script src="js/main.js?v=22" defer></script>
-  <script src="js/particles.js?v=22" defer></script>
-</body>
-</html>
+</section>
