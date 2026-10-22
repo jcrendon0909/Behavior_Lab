@@ -1,5 +1,5 @@
 /* =============================================================================
-   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.6)
+   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.7)
    ============================================================================= */
 
 import 'dotenv/config';
@@ -55,12 +55,11 @@ const LeadSchema = new mongoose.Schema({
 }, { timestamps: true, strict: false, collection: 'leads' });
 const Lead = mongoose.models.Lead || mongoose.model('Lead', LeadSchema);
 
-// FIX: Aceptar 'password' y 'hash' para compatibilidad con datos existentes
 const UserSchema = new mongoose.Schema({
   name: String, 
   email: { type: String, unique: true }, 
   password: String, 
-  hash: String, // <- Campo detectado en tus datos originales
+  hash: String,
   role: { type: String, enum: ['superadmin', 'admin', 'auditor'], default: 'admin' },
   orgId: String,
   modules: { type: [String], default: ['gobernanza'] }
@@ -73,6 +72,8 @@ const Org = mongoose.models.Org || mongoose.model('Org', OrgSchema);
 const CompanySchema = new mongoose.Schema({ orgId: String, name: String, riskProfile: String }, { strict: false });
 const Company = mongoose.models.Company || mongoose.model('Company', CompanySchema);
 
+// Estos modelos NO especifican `collection`, así que Mongoose pluraliza por defecto:
+// Inventory -> 'inventories', Risk -> 'risks', etc.
 const InventorySchema = new mongoose.Schema({ orgId: String, companyId: String, model_name: String, category: String, risk_level: String, status: String }, { strict: false });
 const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', InventorySchema);
 
@@ -164,6 +165,33 @@ app.get('/gov/debug/db', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 🚨 NUEVO: DEBUG PROFUNDO DE COLECCIONES
+app.get('/gov/debug/collections', async (req, res) => {
+  try {
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    const result = {};
+    for (const coll of collections) {
+      const collRef = mongoose.connection.db.collection(coll.name);
+      const count = await collRef.countDocuments();
+      let sampleFields = null;
+      let sampleOrgIds = [];
+      if (count > 0) {
+        const samples = await collRef.find({}).limit(5).toArray();
+        const first = samples[0];
+        sampleFields = first ? Object.keys(first) : [];
+        // Buscar campos que contengan "org" o "orgId"
+        sampleOrgIds = [...new Set(samples.map(s => s.orgId || s.organizationId || s.org_id).filter(Boolean))];
+      }
+      result[coll.name] = { count, sampleFields, sampleOrgIds };
+    }
+    res.json({
+      totalCollections: collections.length,
+      collections: result,
+      dbName: mongoose.connection.name,
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 /* ── ENDPOINTS DE AUTENTICACIÓN ── */
 app.post('/gov/auth/login', async (req, res) => {
   try {
@@ -171,7 +199,6 @@ app.post('/gov/auth/login', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ error: 'Usuario no encontrado' });
     
-    // FIX: Comprobar tanto el campo 'password' como 'hash'
     const hashToCompare = user.password || user.hash;
     if (!hashToCompare) return res.status(401).json({ error: 'Usuario sin contraseña asignada' });
 
@@ -473,7 +500,7 @@ app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 /* ── ARRANQUE Y SEED INTELIGENTE ── */
 app.get('/health', (_req, res) => {
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
-  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.6' });
+  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.7' });
 });
 
 const server = app.listen(PORT, '0.0.0.0', () => console.log(`[SERVER] Escuchando en :${PORT}`));
@@ -489,7 +516,6 @@ if (MONGODB_URI) {
         
         let superadmin = await User.findOne({ email: superadminEmail });
         if (superadmin) {
-          // FIX: Si el usuario existe, actualizar ambos campos para asegurar login
           superadmin.password = hashedPassword;
           superadmin.hash = hashedPassword; 
           superadmin.role = 'superadmin';
@@ -509,25 +535,29 @@ if (MONGODB_URI) {
           console.log('✅ [SEED] Superadmin CREADO.');
         }
 
-        // FIX MAESTRO: Reconstruir la colección 'Org' basándonos en las empresas existentes
+        // FIX: Reconstruir orgs usando el nombre de la primera empresa como nombre
         const companies = await Company.find();
-        const uniqueOrgIds = [...new Set(companies.map(c => c.orgId))];
+        const uniqueOrgIds = [...new Set(companies.map(c => c.orgId).filter(Boolean))];
         
         for (const orgId of uniqueOrgIds) {
-          if (!orgId) continue;
           let org = await Org.findById(orgId);
           if (!org) {
-            // Creamos un nombre genérico o inferido
-            const sampleCompany = companies.find(c => c.orgId === orgId);
-            const orgName = orgId === '6ad2a21d120d09e1b4aa2137' ? 'GōkuLab' : `Organización ${orgId.slice(-4)}`;
+            // Usar el nombre de la primera empresa como nombre de la org
+            const orgCompanies = companies.filter(c => c.orgId === orgId);
+            const orgName = orgCompanies.length > 0 ? `${orgCompanies[0].name}${orgCompanies.length > 1 ? ' & otros' : ''}` : `Org ${orgId.slice(-4)}`;
             await Org.create({ _id: orgId, name: orgName, modules: ['gobernanza', 'automatizacion'] });
-            console.log(`✅ [SEED] Organización reconstruida: ${orgName} (ID: ${orgId})`);
+            console.log(`✅ [SEED] Org reconstruida: "${orgName}" (ID: ${orgId})`);
           }
         }
 
         // Asegurar que la org del superadmin exista
-        if (!await Org.findById('6ad2a21d120d09e1b4aa2137')) {
-          await Org.create({ _id: '6ad2a21d120d09e1b4aa2137', name: 'GōkuLab Core', modules: ['gobernanza', 'automatizacion'] });
+        const superadminOrgId = superadmin.orgId;
+        if (superadminOrgId) {
+          let superadminOrg = await Org.findById(superadminOrgId);
+          if (!superadminOrg) {
+            await Org.create({ _id: superadminOrgId, name: 'GōkuLab', modules: ['gobernanza', 'automatizacion'] });
+            console.log(`✅ [SEED] Org del superadmin creada: GōkuLab`);
+          }
         }
 
       } catch (seedError) { console.error('❌ [SEED ERROR]', seedError.message); }
