@@ -13,13 +13,32 @@
     .grc-input:focus, .grc-select:focus { border-color: var(--accent-color, #00f2fe); background: rgba(255, 255, 255, 0.08); }
     .grc-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #a0aec0; }
     
-    /* Estilos específicos para el Assessment de Automatización */
+    /* Estilos del Bloque 2 */
     .aa-radio-card { cursor: pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center; transition: all 0.2s; }
     .aa-radio-card:hover { border-color: rgba(0, 242, 254, 0.5); }
     .aa-radio-card input { accent-color: #00f2fe; }
     .aa-radio-card div { font-size: 0.9rem; font-weight: bold; color: white; margin-top: 4px; }
     .aa-radio-card span { font-size: 0.7rem; color: #a0aec0; }
     .aa-text-left { text-align: left !important; }
+
+    /* Estilos del Bloque 3 (Resultados) */
+    .aa-fade-up { animation: aaFadeUp 0.5s ease-out forwards; opacity: 0; transform: translateY(10px); }
+    @keyframes aaFadeUp { to { opacity: 1; transform: translateY(0); } }
+    
+    .aa-gauge-container { position: relative; width: 180px; height: 180px; margin: 0 auto 1.5rem auto; }
+    .aa-gauge-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+    .aa-gauge-circle-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 12; }
+    .aa-gauge-circle-val { fill: none; stroke: #00f2fe; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 439.8; stroke-dashoffset: 439.8; transition: stroke-dashoffset 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
+    .aa-gauge-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+    
+    .aa-roi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 1.5rem; }
+    .aa-roi-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
+    .aa-roi-val { font-size: 1.8rem; font-weight: bold; color: #00f2fe; margin: 5px 0; }
+    
+    .aa-agent-box { background: rgba(0, 242, 254, 0.05); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .aa-phase-list { list-style: none; padding: 0; margin: 0; }
+    .aa-phase-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; font-size: 0.9rem; color: #cbd5e0; }
+    .aa-phase-num { background: rgba(0, 242, 254, 0.2); color: #00f2fe; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -631,7 +650,6 @@
         if (root.dataset.aaReady === '1') return;
         root.dataset.aaReady = '1';
 
-        // Actualizar barra de progreso
         function updateProgress(step) {
             state.step = step;
             $('#aa-ind-1').style.color = step >= 1 ? '#00f2fe' : '#4a5568';
@@ -643,7 +661,6 @@
             $('#aa-step-3').style.display = step === 3 ? 'block' : 'none';
         }
 
-        // Escuchar radios de complejidad y tipo de dato
         $$('input[name="aa_complexity"]', root).forEach(radio => {
           radio.addEventListener('change', (e) => { state.complexity = Number(e.target.value); });
         });
@@ -651,7 +668,6 @@
           radio.addEventListener('change', (e) => { state.dataType = e.target.value; });
         });
 
-        // Calcular horas/mes en vivo
         const hoursInput = $('#aa-hours', root);
         const hoursBaseline = $('#aa-hours-baseline', root);
         hoursInput.addEventListener('input', () => {
@@ -667,7 +683,6 @@
           box.style.display = 'block';
         }
 
-        // Botón Siguiente
         $('#aa-next-to-contact', root).addEventListener('click', () => {
           showError('#aa-error-1', '');
           const processName = $('#aa-process-name', root).value.trim();
@@ -689,13 +704,11 @@
           updateProgress(2);
         });
 
-        // Botón Atrás
         $('#aa-back-to-process', root).addEventListener('click', () => {
           showError('#aa-error', '');
           updateProgress(1);
         });
 
-        // Botón Enviar
         $('#aa-submit', root).addEventListener('click', async () => {
           if (state.submitting) return;
           showError('#aa-error', '');
@@ -734,7 +747,6 @@
             if (window.AutomationAssessmentResults && typeof window.AutomationAssessmentResults.render === 'function') {
               window.AutomationAssessmentResults.render(data.assessment, { payload: state, leadId: data.leadId });
             } else {
-              // Placeholder (Bloque 3 lo reemplazará)
               $('#aa-results-mount', root).innerHTML = `
                 <div style="text-align: center; padding: 2rem 0;">
                   <p style="color: #a0aec0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;">Índice de Automatización</p>
@@ -757,6 +769,125 @@
 
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
       else boot();
+    })();
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SCRIPT DEL BLOQUE 3: Renderizado Premium de Resultados
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <script>
+    (function () {
+      'use strict';
+
+      window.AutomationAssessmentResults = {
+        render: function (assessment, ctx) {
+          if (!assessment) return;
+          const mount = document.getElementById('aa-results-mount');
+          if (!mount) return;
+
+          const idx = Number(assessment.automationIndex) || 0;
+          const roiHours = Number(assessment.roiHoursPerMonth) || 0;
+          const baseline = Number(assessment.baselineHoursPerMonth) || 1; // evitar div por 0
+          const payback = Number(assessment.paybackMonths) || 1;
+          const daysEq = Math.round(roiHours / 8);
+          const remaining = Math.max(0, baseline - roiHours);
+          
+          const phases = Array.isArray(assessment.implementationPhases) ? assessment.implementationPhases : [];
+          const agentName = assessment.agentType || 'Agente de IA';
+          const agentDesc = assessment.agentDescription || 'Un agente diseñado para absorber las tareas repetitivas de este proceso.';
+
+          // Generar HTML de las fases
+          const phasesHtml = phases.map((p, i) => `
+            <li class="aa-phase-item">
+              <div class="aa-phase-num">${i + 1}</div>
+              <div>${p}</div>
+            </li>
+          `).join('');
+
+          mount.innerHTML = `
+            <div class="aa-fade-up" style="text-align: center;">
+              
+              <!-- Gauge Animado -->
+              <div class="aa-gauge-container">
+                <svg class="aa-gauge-svg" viewBox="0 0 160 160">
+                  <circle class="aa-gauge-circle-bg" cx="80" cy="80" r="70"></circle>
+                  <circle class="aa-gauge-circle-val" id="aa-gauge-anim" cx="80" cy="80" r="70"></circle>
+                </svg>
+                <div class="aa-gauge-text">
+                  <div style="font-size: 2.5rem; font-weight: 900; color: white; line-height: 1;">${idx}%</div>
+                  <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;">Automatizable</div>
+                </div>
+              </div>
+
+              <h3 style="color: #00f2fe; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem;">Oportunidad ${idx >= 70 ? 'Alta' : idx >= 40 ? 'Media' : 'Inicial'}</h3>
+              <p style="color: #a0aec0; font-size: 0.95rem; margin-bottom: 2rem;">Proceso evaluado: <strong>${(ctx && ctx.payload && ctx.payload.processName) || 'No especificado'}</strong></p>
+
+              <!-- Agente Recomendado -->
+              <div class="aa-agent-box">
+                <div style="font-size: 0.75rem; color: #00f2fe; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">Tipo de agente recomendado</div>
+                <h4 style="color: white; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem;">🤖 ${agentName}</h4>
+                <p style="color: #a0aec0; font-size: 0.9rem; line-height: 1.5; margin: 0;">${agentDesc}</p>
+              </div>
+
+              <!-- ROI Grid -->
+              <div class="aa-roi-grid">
+                <div class="aa-roi-card">
+                  <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase;">Horas Ahorradas</div>
+                  <div class="aa-roi-val">${roiHours}</div>
+                  <div style="font-size: 0.75rem; color: #a0aec0;">h/mes</div>
+                </div>
+                <div class="aa-roi-card">
+                  <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase;">Equivale a</div>
+                  <div class="aa-roi-val">${daysEq}</div>
+                  <div style="font-size: 0.75rem; color: #a0aec0;">días/mes</div>
+                </div>
+                <div class="aa-roi-card">
+                  <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase;">Payback</div>
+                  <div class="aa-roi-val">${payback}</div>
+                  <div style="font-size: 0.75rem; color: #a0aec0;">meses</div>
+                </div>
+              </div>
+
+              <p style="font-size: 0.85rem; color: #a0aec0; margin-bottom: 2rem; line-height: 1.5; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                ${assessment.roiExplanation || `Hoy dedicas ~${baseline} h/mes. Con un índice del ${idx}%, recuperarías ~${roiHours} h/mes (~${daysEq} días laborables).`}
+              </p>
+
+              <!-- Roadmap -->
+              <div style="text-align: left; margin-bottom: 2rem;">
+                <h4 style="color: white; font-size: 1rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Fases de implementación sugeridas</h4>
+                <ul class="aa-phase-list">
+                  ${phasesHtml}
+                </ul>
+              </div>
+
+              <!-- CTA -->
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <a href="mailto:contacto@gokulab.com?subject=Diagnóstico de Automatización - ${(ctx && ctx.payload && ctx.payload.processName) || ''}" class="btn-primary" style="width: 100%; text-decoration: none; border: none; cursor: pointer;">
+                  Agendar diagnóstico con un experto
+                </a>
+                <button type="button" onclick="location.reload()" class="btn-primary" style="background: rgba(255,255,255,0.05); color: white; width: 100%; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">
+                  Evaluar otro proceso
+                </button>
+              </div>
+
+              <div style="font-size: 0.7rem; color: #4a5568; margin-top: 1.5rem; text-align: center;">
+                Confianza del análisis: <strong>${assessment.confidence || 'Media'}</strong> | Fuente: ${assessment.source === 'groq' ? 'Análisis IA · Groq' : 'Heurística base'}
+              </div>
+
+            </div>
+          `;
+
+          // Animar el Gauge
+          requestAnimationFrame(() => {
+            const circle = document.getElementById('aa-gauge-anim');
+            if (circle) {
+              const circumference = 2 * Math.PI * 70;
+              const offset = circumference - (idx / 100) * circumference;
+              circle.style.strokeDashoffset = offset;
+            }
+          });
+        }
+      };
     })();
   </script>
 
