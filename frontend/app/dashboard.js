@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const API_URL = 'https://behavior-lab.onrender.com'; 
+  // const API_URL = 'http://localhost:3000'; 
+
   const token = localStorage.getItem('gov_token');
   if (!token) {
     window.location.href = 'index.html';
@@ -22,8 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('gov_token'); localStorage.removeItem('gov_user'); window.location.href = 'index.html';
   });
 
-  const tabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabProcessesBtn', 'tabAutomationBtn', 'tabLeadsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
-  const sections = ['dashboardSection', 'inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'processesSection', 'automationSection', 'leadsSection', 'usersSection', 'evidenceSection'];
+  const tabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabProcessesBtn', 'tabLeadsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
+  const sections = ['dashboardSection', 'inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'processesSection', 'leadsSection', 'usersSection', 'evidenceSection'];
 
   function resetTabs() {
     tabs.forEach(id => { 
@@ -52,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabDel = document.getElementById('tabDeliverablesBtn'); if(tabDel) tabDel.addEventListener('click', () => setTab('tabDeliverablesBtn', 'deliverablesSection', loadDeliverables));
   const tabCom = document.getElementById('tabCompaniesBtn'); if(tabCom) tabCom.addEventListener('click', () => setTab('tabCompaniesBtn', 'companiesSection'));
   const tabPro = document.getElementById('tabProcessesBtn'); if(tabPro) tabPro.addEventListener('click', () => setTab('tabProcessesBtn', 'processesSection', loadProcesses));
-  const tabAut = document.getElementById('tabAutomationBtn'); if(tabAut) tabAut.addEventListener('click', () => setTab('tabAutomationBtn', 'automationSection', loadAutomation));
   const tabLea = document.getElementById('tabLeadsBtn'); if(tabLea) tabLea.addEventListener('click', () => setTab('tabLeadsBtn', 'leadsSection', loadLeads));
   const tabUse = document.getElementById('tabUsersBtn'); if(tabUse) tabUse.addEventListener('click', () => setTab('tabUsersBtn', 'usersSection', loadUsers));
   const tabEvi = document.getElementById('tabEvidenceBtn'); if(tabEvi) tabEvi.addEventListener('click', () => setTab('tabEvidenceBtn', 'evidenceSection', loadEvidence));
@@ -113,10 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const closeDiagBtn = document.getElementById('closeDiagBtn'); if(closeDiagBtn) closeDiagBtn.addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
   const closeResultBtn = document.getElementById('closeResultBtn'); if(closeResultBtn) closeResultBtn.addEventListener('click', () => { modalDiag.classList.add('hidden'); modalDiag.classList.remove('flex'); });
-
-  const modalDetailAuto = document.getElementById('detailAutomationModal');
-  const closeAutomationModalBtn = document.getElementById('closeAutomationModalBtn');
-  if(closeAutomationModalBtn) closeAutomationModalBtn.addEventListener('click', () => { modalDetailAuto.classList.add('hidden'); modalDetailAuto.classList.remove('flex'); });
 
   // 2. FUNCIONES DE AUTOCOMPLETAR
   window.fillCommonRisk = function() {
@@ -186,62 +183,64 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('btnAI_Risk');
     const originalText = btn.textContent;
     btn.textContent = "🧠 Pensando..."; btn.disabled = true;
+    
     const companyName = document.getElementById('riskCompany').options[document.getElementById('riskCompany').selectedIndex]?.text || "la organización";
+    
     try {
-      const res = await fetch(`${API_URL}/gov/suggest-risk`, { method: 'POST', headers, body: JSON.stringify({ companyName }) });
+      const res = await fetch(`${API_URL}/gov/suggest-risk`, {
+        method: 'POST', headers, body: JSON.stringify({ companyName })
+      });
       const data = await res.json();
+      
       if (res.ok) {
         document.getElementById('riskName').value = data.riskName || "";
         document.getElementById('riskCategory').value = data.category || "Operacional";
         document.getElementById('riskProb').value = data.probability || 3;
         document.getElementById('riskImpact').value = data.impact || 3;
         document.getElementById('riskMitigation').value = data.mitigationPlan || "";
-      } else { alert("No se pudo generar el riesgo con IA."); }
-    } catch (error) { alert("Error de conexión con la IA."); } finally { btn.textContent = originalText; btn.disabled = false; }
+      } else {
+        alert("No se pudo generar el riesgo con IA.");
+      }
+    } catch (error) {
+      alert("Error de conexión con la IA.");
+    } finally {
+      btn.textContent = originalText; btn.disabled = false;
+    }
   }
 
   window.suggestTaskWithAI = async function() {
     const btn = document.getElementById('btnAI_Task');
     const originalText = btn.textContent;
     btn.textContent = "🧠 Pensando..."; btn.disabled = true;
+    
     const companyName = document.getElementById('orgSelector')?.selectedOptions[0]?.text || "la organización";
+
     try {
-      const res = await fetch(`${API_URL}/gov/suggest-task`, { method: 'POST', headers, body: JSON.stringify({ companyName }) });
+      const res = await fetch(`${API_URL}/gov/suggest-task`, {
+        method: 'POST', headers, body: JSON.stringify({ companyName })
+      });
       const data = await res.json();
+      
       if (res.ok) {
         document.getElementById('taskName').value = data.taskName || "";
         document.getElementById('taskPhase').value = data.phase || "Fase 1: Diagnóstico";
         document.getElementById('taskAssignee').value = data.assignedTo || "Ambos";
-      } else { alert("No se pudo generar la tarea con IA."); }
-    } catch (error) { alert("Error de conexión con la IA."); } finally { btn.textContent = originalText; btn.disabled = false; }
+      } else {
+        alert("No se pudo generar la tarea con IA.");
+      }
+    } catch (error) {
+      alert("Error de conexión con la IA.");
+    } finally {
+      btn.textContent = originalText; btn.disabled = false;
+    }
   }
 
-  // Helper para saber si estamos en vista global
-  const isAllOrgs = () => currentOrgId === 'ALL';
-
-  // Helper para obtener el nombre de la org por ID
-  const getOrgName = (id) => {
-    const org = orgsCache.find(o => o._id === id);
-    return org ? org.name : id;
-  };
-
-  // 4. CARGA DE DATOS Y CONTROL DE ACCESOS (RBAC)
+  // 4. CARGA DE DATOS
   async function init() {
     currentUser = JSON.parse(localStorage.getItem('gov_user'));
     if (!currentUser) return window.location.href = 'index.html';
-    
     document.getElementById('userEmail').textContent = currentUser.email;
     currentOrgId = currentUser.orgId;
-
-    const userModules = currentUser.modules || ['gobernanza'];
-    
-    if (!userModules.includes('gobernanza')) {
-      document.getElementById('navGobernanza').style.display = 'none';
-      document.getElementById('tabDashboardBtn').style.display = 'none';
-    }
-    if (!userModules.includes('automatizacion')) {
-      document.getElementById('navAutomatizacion').style.display = 'none';
-    }
 
     if (currentUser.role === 'superadmin') {
       const container = document.getElementById('orgSelectorContainer');
@@ -251,12 +250,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
           orgsCache = await res.json();
           const selector = document.getElementById('orgSelector');
-          selector.innerHTML = `<option value="ALL">Todas las Organizaciones</option>` + orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
-          if (orgsCache.some(o => o._id === currentOrgId)) selector.value = currentOrgId;
-
+          selector.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
           selector.addEventListener('change', (e) => {
             currentOrgId = e.target.value; 
-            toggleOrgColumns(); // Mostrar/ocultar columnas de Org
             loadDashboardData();
             if(!document.getElementById('dashboardSection').classList.contains('hidden')) loadExecutiveDashboard();
             if(!document.getElementById('matrixSection').classList.contains('hidden')) loadMatrix();
@@ -264,250 +260,123 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!document.getElementById('deliverablesSection').classList.contains('hidden')) loadDeliverables();
             if(!document.getElementById('processesSection').classList.contains('hidden')) loadProcesses();
             if(!document.getElementById('evidenceSection').classList.contains('hidden')) loadEvidence();
-            if(!document.getElementById('automationSection').classList.contains('hidden')) loadAutomation();
           });
         }
       } catch (e) { console.error("Error cargando orgs:", e); }
     } else {
-      document.getElementById('navAdmin').style.display = 'none'; 
+      document.getElementById('tabLeadsBtn').classList.add('hidden');
+      document.getElementById('tabUsersBtn').classList.add('hidden');
     }
     
-    if (userModules.includes('gobernanza')) {
-      setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard);
-    } else if (userModules.includes('automatizacion')) {
-      setTab('tabAutomationBtn', 'automationSection', loadAutomation);
-    }
-    
-    toggleOrgColumns();
+    setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard);
     loadDashboardData(); 
-  }
-
-  // Muestra u oculta las columnas de "Organización" en las tablas si estamos en "ALL"
-  function toggleOrgColumns() {
-    const display = isAllOrgs() ? '' : 'none';
-    ['thCompanyOrg', 'thRiskOrg', 'thDelivOrg', 'thCompOrg', 'thProcOrg', 'thEvOrg'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.classList.toggle('hidden', !isAllOrgs());
-    });
   }
 
   async function loadDashboardData() { await loadCompanies(); await loadInventory(); }
 
-  // 5. MÓDULO DE AUTOMATIZACIÓN
-  async function loadAutomation() {
-    try {
-      const res = await fetch(`${API_URL}/gov/assessments`, { headers });
-      if (!res.ok) throw new Error('Error');
-      const assessments = await res.json();
-      
-      const tbody = document.getElementById('automationTableBody');
-      if (assessments.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay assessments registrados.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = assessments.map(a => {
-        const date = new Date(a.createdAt).toLocaleDateString('es-MX');
-        const score = a.resultado?.automationIndex || 0;
-        let scoreColor = score > 70 ? 'text-teal-400' : (score > 40 ? 'text-amber-400' : 'text-rose-400');
-        
-        return `
-          <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
-            <td class="py-3 px-4 text-slate-400">${date}</td>
-            <td class="py-3 px-4 font-semibold text-slate-200">${a.nombre}<br><span class="text-xs text-slate-500">${a.empresa}</span></td>
-            <td class="py-3 px-4 text-teal-400 font-semibold">${a.proceso?.processName || 'N/A'}</td>
-            <td class="py-3 px-4 text-center font-bold ${scoreColor}">${score}%</td>
-            <td class="py-3 px-4 text-slate-300 text-xs">${a.resultado?.agentType || 'N/A'}</td>
-            <td class="py-3 px-4 text-center">
-              <button onclick='openAutomationDetail(${JSON.stringify(a).replace(/'/g, "&apos;")})' class="text-teal-400 hover:text-teal-300 underline text-xs font-bold">Ver Reporte</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    } catch (error) {
-      document.getElementById('automationTableBody').innerHTML = `<tr><td colspan="6" class="py-4 text-center text-rose-500">Error al cargar los assessments.</td></tr>`;
-    }
-  }
-
-  window.openAutomationDetail = function(lead) {
-    const res = lead.resultado;
-    document.getElementById('detProcessName').textContent = `Proceso: ${lead.proceso.processName}`;
-    document.getElementById('detIndex').textContent = `${res.automationIndex}%`;
-    document.getElementById('detAgentType').textContent = res.agentType;
-    document.getElementById('detAgentDesc').textContent = res.agentDescription;
-    document.getElementById('detRoiHours').textContent = res.roiHoursPerMonth;
-    document.getElementById('detRoiDays').textContent = Math.round(res.roiHoursPerMonth / 8);
-    document.getElementById('detPayback').textContent = res.paybackMonths;
-    
-    document.getElementById('detPhases').innerHTML = (res.implementationPhases || []).map((p, i) => `
-      <li class="flex items-start gap-3">
-        <div class="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">${i+1}</div>
-        <span>${p}</span>
-      </li>
-    `).join('');
-
-    const modal = document.getElementById('detailAutomationModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    setTimeout(() => {
-      const circle = document.getElementById('detGauge');
-      const idx = res.automationIndex;
-      const circumference = 2 * Math.PI * 70;
-      circle.style.strokeDashoffset = circumference - (idx / 100) * circumference;
-    }, 100);
-  };
-
-  // 6. RESTO DE FUNCIONES
   async function loadExecutiveDashboard() {
     try {
-      const qs = `?orgId=${currentOrgId}`;
       const [risksRes, tasksRes, evalsRes, evidenceRes] = await Promise.all([
-        fetch(`${API_URL}/gov/risks${qs}`, { headers }), fetch(`${API_URL}/gov/deliverables${qs}`, { headers }),
-        fetch(`${API_URL}/gov/evaluations${qs}`, { headers }), fetch(`${API_URL}/gov/evidence${qs}`, { headers })
+        fetch(`${API_URL}/gov/risks`, { headers }),
+        fetch(`${API_URL}/gov/deliverables`, { headers }),
+        fetch(`${API_URL}/gov/evaluations`, { headers }),
+        fetch(`${API_URL}/gov/evidence`, { headers })
       ]);
 
-      const risks = await risksRes.json();
-      const tasks = await tasksRes.json();
-      const evaluations = await evalsRes.json();
+      const risks = (await risksRes.json()).filter(r => r.orgId === currentOrgId);
+      const tasks = (await tasksRes.json()).filter(d => d.orgId === currentOrgId);
+      const evaluations = (await evalsRes.json()).filter(e => e.orgId === currentOrgId);
       const evidence = await evidenceRes.json(); 
 
-      console.log("Datos ejecutivos recibidos:", { risks, tasks, evaluations, evidence }); // 🔍 LOG DE DEPURACIÓN
-
-      // CÁLCULO DE KPIs (Promedio si es ALL)
-      if (isAllOrgs()) {
-        document.getElementById('orgSummaryContainer').classList.remove('hidden');
-        const grid = document.getElementById('orgSummaryGrid');
-        
-        // Agrupar evaluaciones por orgId
-        const evalsByOrg = {};
-        evaluations.forEach(e => {
-            if (!evalsByOrg[e.orgId]) evalsByOrg[e.orgId] = [];
-            evalsByOrg[e.orgId].push(e.score);
-        });
-        
-        grid.innerHTML = Object.keys(evalsByOrg).map(orgId => {
-            const scores = evalsByOrg[orgId];
-            const avg = Math.round(scores.reduce((a,b)=>a+b, 0) / scores.length);
-            return `<div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
-                <p class="text-xs text-slate-400 uppercase font-bold">${getOrgName(orgId)}</p>
-                <p class="text-2xl font-black text-teal-400">${avg}%</p>
-                <p class="text-xs text-slate-500">${scores.length} evaluaciones</p>
-            </div>`;
-        }).join('');
-
-        // KPI Global: Promedio de promedios
-        let totalScore = 0;
-        Object.keys(evalsByOrg).forEach(orgId => {
-            const scores = evalsByOrg[orgId];
-            totalScore += (scores.reduce((a,b)=>a+b, 0) / scores.length);
-        });
-        const globalAvg = Object.keys(evalsByOrg).length > 0 ? Math.round(totalScore / Object.keys(evalsByOrg).length) : 0;
-        
-        document.getElementById('kpiCompliance').textContent = `${globalAvg}%`;
-        document.getElementById('kpiCompliance').className = globalAvg > 60 ? 'text-5xl font-black text-teal-400' : 'text-5xl font-black text-amber-400';
+      const latestEval = evaluations[0]; 
+      if (latestEval) {
+        document.getElementById('kpiCompliance').textContent = `${latestEval.score}%`;
+        document.getElementById('kpiCompliance').className = latestEval.score > 60 ? 'text-5xl font-black text-teal-400' : 'text-5xl font-black text-amber-400';
       } else {
-        document.getElementById('orgSummaryContainer').classList.add('hidden');
-        const latestEval = evaluations[0]; 
-        if (latestEval) {
-            document.getElementById('kpiCompliance').textContent = `${latestEval.score}%`;
-            document.getElementById('kpiCompliance').className = latestEval.score > 60 ? 'text-5xl font-black text-teal-400' : 'text-5xl font-black text-amber-400';
-        } else {
-            document.getElementById('kpiCompliance').textContent = `0%`;
-            document.getElementById('kpiCompliance').className = 'text-5xl font-black text-slate-500';
-        }
+        document.getElementById('kpiCompliance').textContent = `0%`;
+        document.getElementById('kpiCompliance').className = 'text-5xl font-black text-slate-500';
       }
 
       const criticalRisks = risks.filter(r => r.riskLevel === 'Crítico' || r.riskLevel === 'Alto').length;
       document.getElementById('kpiRisks').textContent = criticalRisks;
       document.getElementById('kpiRisks').className = criticalRisks > 0 ? 'text-5xl font-black text-rose-400' : 'text-5xl font-black text-teal-400';
 
-      const totalTasks = tasks.length; const completedTasks = tasks.filter(t => t.status === 'Completado').length;
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter(t => t.status === 'Completado').length;
       const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
       document.getElementById('kpiTasks').textContent = `${progress}%`;
       document.getElementById('kpiTasksBar').style.width = `${progress}%`;
 
       const recentRisksDiv = document.getElementById('dashRecentRisks');
-      if (risks.length === 0) { recentRisksDiv.innerHTML = `<p class="text-sm text-slate-500">No hay riesgos registrados.</p>`; } 
-      else {
+      if (risks.length === 0) {
+        recentRisksDiv.innerHTML = `<p class="text-sm text-slate-500">No hay riesgos registrados.</p>`;
+      } else {
         recentRisksDiv.innerHTML = risks.slice(0, 3).map(r => {
           let badgeColor = r.riskLevel === 'Crítico' ? 'text-rose-400' : (r.riskLevel === 'Alto' ? 'text-orange-400' : 'text-amber-400');
-          return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><p class="text-sm text-slate-300 truncate w-3/4">${r.riskName} <span class="text-xs text-slate-500">(${getOrgName(r.orgId)})</span></p><span class="text-xs font-bold ${badgeColor}">${r.riskLevel}</span></div>`;
+          return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><p class="text-sm text-slate-300 truncate w-3/4">${r.riskName}</p><span class="text-xs font-bold ${badgeColor}">${r.riskLevel}</span></div>`;
         }).join('');
       }
+
       const recentEvidenceDiv = document.getElementById('dashRecentEvidence');
-      if (evidence.length === 0) { recentEvidenceDiv.innerHTML = `<p class="text-sm text-slate-500">No hay evidencias subidas.</p>`; } 
-      else {
+      if (evidence.length === 0) {
+        recentEvidenceDiv.innerHTML = `<p class="text-sm text-slate-500">No hay evidencias subidas.</p>`;
+      } else {
         recentEvidenceDiv.innerHTML = evidence.slice(0, 3).map(e => {
           const date = new Date(e.ts).toLocaleDateString('es-MX');
           return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><div><p class="text-sm text-slate-300 truncate w-48">${e.fileName.split('/').pop()}</p><p class="text-[10px] text-slate-500">${date} · ${e.questionId.replace('_',' ')}</p></div><a href="${e.r2Url}" target="_blank" class="text-xs text-teal-400 hover:underline">Ver</a></div>`;
         }).join('');
       }
+
     } catch (error) { console.error("Error cargando Dashboard Ejecutivo:", error); }
   }
 
   async function loadCompanies() {
     try {
-      const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers }); 
-      if (!res.ok) throw new Error('Error en respuesta del servidor');
+      const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers }); if (!res.ok) throw new Error('Error');
       companiesCache = await res.json();
-      
-      console.log("Empresas cargadas:", companiesCache); // 🔍 LOG DE DEPURACIÓN
-      
       document.getElementById('statCompanies').textContent = companiesCache.length;
       const tbody = document.getElementById('companiesTableBody');
-      if (companiesCache.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay filiales registradas.</td></tr>`; } 
+      if (companiesCache.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">No hay filiales.</td></tr>`; } 
       else {
-        tbody.innerHTML = companiesCache.map(c => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${c.name}</td><td class="py-3 px-4 text-slate-400 capitalize">${c.riskProfile.replace('_', ' ')}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(c.orgId)}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-teal-950 text-teal-400 border border-teal-800">Activa</span></td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${c._id}</td></tr>`).join('');
+        tbody.innerHTML = companiesCache.map(c => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${c.name}</td><td class="py-3 px-4 text-slate-400 capitalize">${c.riskProfile.replace('_', ' ')}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-teal-950 text-teal-400 border border-teal-800">Activa</span></td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${c._id}</td></tr>`).join('');
       }
       const selectModel = document.getElementById('modelCompany');
       selectModel.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
       const selectDiag = document.getElementById('diagCompany');
       selectDiag.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
-    } catch (error) { 
-      console.error("Error cargando empresas:", error); 
-      document.getElementById('companiesTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error al cargar empresas</td></tr>`;
-    }
+    } catch (error) {}
   }
 
   async function loadInventory() {
     try {
-      const qs = `?orgId=${currentOrgId}`;
-      const res = await fetch(`${API_URL}/gov/ai-inventory${qs}`, { headers }); if (!res.ok) throw new Error('Error');
-      let inventory = await res.json(); 
-      
-      console.log("Inventario cargado:", inventory); // 🔍 LOG DE DEPURACIÓN
-      
+      const res = await fetch(`${API_URL}/gov/ai-inventory`, { headers }); if (!res.ok) throw new Error('Error');
+      let inventory = await res.json(); inventory = inventory.filter(item => item.orgId === currentOrgId);
       document.getElementById('statTotalModels').textContent = inventory.length;
       document.getElementById('statHighRisk').textContent = inventory.filter(i => i.risk_level === 'alto').length;
       const tbody = document.getElementById('inventoryTableBody');
-      if (inventory.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay modelos.</td></tr>`; return; }
+      if (inventory.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay modelos.</td></tr>`; return; }
       tbody.innerHTML = inventory.map(item => {
         let riskColor = 'bg-slate-700 text-slate-300'; if (item.risk_level === 'alto') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800'; if (item.risk_level === 'medio') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800'; if (item.risk_level === 'bajo') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
         const company = companiesCache.find(c => c._id === item.companyId); const companyName = company ? company.name : 'Desconocida';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(item.orgId)}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status.replace('_', ' ')}</td></tr>`;
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status.replace('_', ' ')}</td></tr>`;
       }).join('');
-    } catch (error) { console.error("Error cargando inventario:", error); }
+    } catch (error) {}
   }
 
   async function loadMatrix() {
     try {
-      const qs = `?orgId=${currentOrgId}`;
-      const res = await fetch(`${API_URL}/gov/evaluations${qs}`, { headers });
+      const res = await fetch(`${API_URL}/gov/evaluations`, { headers });
       const evaluations = await res.json();
       const matrixGrid = document.getElementById('matrixGrid');
       const frameworks = ["ISO 42001", "NIST AI RMF", "EU AI Act", "LFPDPPP"];
       matrixGrid.innerHTML = frameworks.map(fw => {
-        const evalsForFw = evaluations.filter(e => e.framework === fw);
+        const evalForFw = evaluations.find(e => e.framework === fw && e.orgId === currentOrgId);
         let score = "--"; let statusText = "No Evaluado"; let color = "text-slate-500"; let border = "border-slate-700"; let bg = "bg-slate-800/30";
-        
-        if (evalsForFw.length > 0) {
-          // Si es ALL, promediamos. Si es una org, tomamos la última.
-          const avg = isAllOrgs() ? Math.round(evalsForFw.reduce((a,b)=>a+b.score, 0) / evalsForFw.length) : evalsForFw[0].score;
-          score = `${avg}%`;
-          if (avg > 85) { statusText = "Excelente"; color = "text-teal-400"; border = "border-teal-800"; bg = "bg-teal-950/20"; }
-          else if (avg > 60) { statusText = "Maduro"; color = "text-blue-400"; border = "border-blue-800"; bg = "bg-blue-950/20"; }
-          else if (avg > 30) { statusText = "En Desarrollo"; color = "text-amber-400"; border = "border-amber-800"; bg = "bg-amber-950/20"; }
+        if (evalForFw) {
+          score = `${evalForFw.score}%`;
+          if (evalForFw.score > 85) { statusText = "Excelente"; color = "text-teal-400"; border = "border-teal-800"; bg = "bg-teal-950/20"; }
+          else if (evalForFw.score > 60) { statusText = "Maduro"; color = "text-blue-400"; border = "border-blue-800"; bg = "bg-blue-950/20"; }
+          else if (evalForFw.score > 30) { statusText = "En Desarrollo"; color = "text-amber-400"; border = "border-amber-800"; bg = "bg-amber-950/20"; }
           else { statusText = "Crítico"; color = "text-rose-400"; border = "border-rose-800"; bg = "bg-rose-950/20"; }
         }
         return `<div class="p-6 rounded-2xl border ${border} ${bg}"><h3 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">${fw}</h3><div class="flex justify-between items-end"><div><p class="text-4xl font-black ${color} mb-1">${score}</p><p class="text-xs font-semibold ${color}">${statusText}</p></div><button onclick="openDiagnosticFor('${fw}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition">Evaluar</button></div></div>`;
@@ -519,17 +388,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadDeliverables() {
     try {
-      const qs = `?orgId=${currentOrgId}`;
-      const res = await fetch(`${API_URL}/gov/deliverables${qs}`, { headers });
-      let deliverables = await res.json(); 
+      const res = await fetch(`${API_URL}/gov/deliverables`, { headers });
+      let deliverables = await res.json(); deliverables = deliverables.filter(d => d.orgId === currentOrgId);
       const tbody = document.getElementById('deliverablesTableBody');
-      if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
+      if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
       tbody.innerHTML = deliverables.map(d => {
         let badgeColor = 'bg-slate-700 text-slate-300';
         if (d.status === 'Pendiente') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
         if (d.status === 'En Progreso') badgeColor = 'bg-amber-950 text-amber-400 border border-amber-800';
         if (d.status === 'Completado') badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${d.taskName}</td><td class="py-3 px-4 text-slate-400">${d.phase}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(d.orgId)}</td><td class="py-3 px-4 text-slate-400">${d.assignedTo}</td><td class="py-3 px-4"><select onchange="updateDeliverableStatus('${d._id}', this.value)" class="px-3 py-1 rounded-lg text-xs font-semibold uppercase ${badgeColor} outline-none cursor-pointer appearance-none text-center"><option value="Pendiente" ${d.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option><option value="En Progreso" ${d.status === 'En Progreso' ? 'selected' : ''}>En Progreso</option><option value="Completado" ${d.status === 'Completado' ? 'selected' : ''}>Completado</option></select></td><td class="py-3 px-4 text-center"><button onclick="deleteDeliverable('${d._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Tarea">🗑️</button></td></tr>`;
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${d.taskName}</td><td class="py-3 px-4 text-slate-400">${d.phase}</td><td class="py-3 px-4 text-slate-400">${d.assignedTo}</td><td class="py-3 px-4"><select onchange="updateDeliverableStatus('${d._id}', this.value)" class="px-3 py-1 rounded-lg text-xs font-semibold uppercase ${badgeColor} outline-none cursor-pointer appearance-none text-center"><option value="Pendiente" ${d.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option><option value="En Progreso" ${d.status === 'En Progreso' ? 'selected' : ''}>En Progreso</option><option value="Completado" ${d.status === 'Completado' ? 'selected' : ''}>Completado</option></select></td><td class="py-3 px-4 text-center"><button onclick="deleteDeliverable('${d._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Tarea">🗑️</button></td></tr>`;
       }).join('');
     } catch (error) { console.error("Error plan:", error); }
   }
@@ -540,127 +408,162 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.deleteDeliverable = async function(id) {
     if(!confirm("¿Estás seguro de eliminar esta tarea del plan?")) return;
-    try { const res = await fetch(`${API_URL}/gov/deliverables/${id}`, { method: 'DELETE', headers }); if (res.ok) loadDeliverables(); } catch (error) { alert("Error al eliminar tarea"); }
+    try {
+      const res = await fetch(`${API_URL}/gov/deliverables/${id}`, { method: 'DELETE', headers });
+      if (res.ok) loadDeliverables();
+    } catch (error) { alert("Error al eliminar tarea"); }
   }
 
   const newDeliverableForm = document.getElementById('newDeliverableForm'); if(newDeliverableForm) newDeliverableForm.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
-    const payload = { orgId: currentOrgId === 'ALL' ? currentUser.orgId : currentOrgId, taskName: document.getElementById('taskName').value, phase: document.getElementById('taskPhase').value, assignedTo: document.getElementById('taskAssignee').value, dueDate: document.getElementById('taskDate').value || null };
-    try { const res = await fetch(`${API_URL}/gov/deliverables`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newDeliverableModal').classList.add('hidden'); e.target.reset(); loadDeliverables(); } else { const err = await res.json().catch(()=>({})); alert('Error al guardar tarea: ' + (err.error || res.status)); } } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Tarea'; btn.disabled = false; }
+    const payload = { orgId: currentOrgId, taskName: document.getElementById('taskName').value, phase: document.getElementById('taskPhase').value, assignedTo: document.getElementById('taskAssignee').value, dueDate: document.getElementById('taskDate').value || null };
+    try { 
+      const res = await fetch(`${API_URL}/gov/deliverables`, { method: 'POST', headers, body: JSON.stringify(payload) }); 
+      if (res.ok) { document.getElementById('newDeliverableModal').classList.add('hidden'); e.target.reset(); loadDeliverables(); } 
+      else { const err = await res.json().catch(()=>({})); alert('Error al guardar tarea: ' + (err.error || res.status)); }
+    } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Tarea'; btn.disabled = false; }
   });
 
   async function loadRisks() {
     try {
-      const qs = `?orgId=${currentOrgId}`;
-      const res = await fetch(`${API_URL}/gov/risks${qs}`, { headers });
-      let risks = await res.json(); 
+      const res = await fetch(`${API_URL}/gov/risks`, { headers });
+      let risks = await res.json(); risks = risks.filter(r => r.orgId === currentOrgId);
       const tbody = document.getElementById('risksTableBody');
-      if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
+      if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
       tbody.innerHTML = risks.map(r => {
         let badgeColor = 'bg-slate-700 text-slate-300';
         if (r.riskLevel === 'Crítico') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
         if (r.riskLevel === 'Alto') badgeColor = 'bg-orange-950 text-orange-400 border border-orange-800';
         if (r.riskLevel === 'Medio') badgeColor = 'bg-amber-950 text-amber-400 border border-amber-800';
         if (r.riskLevel === 'Bajo') badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${r.riskName}</td><td class="py-3 px-4 text-slate-400">${r.category}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(r.orgId)}</td><td class="py-3 px-4 text-slate-400 text-center">${r.probability} / 5</td><td class="py-3 px-4 text-slate-400 text-center">${r.impact} / 5</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${r.riskLevel} (${r.riskScore})</span></td><td class="py-3 px-4 text-slate-400 text-xs max-w-xs truncate" title="${r.mitigationPlan}">${r.mitigationPlan}</td><td class="py-3 px-4 text-center"><button onclick="deleteRisk('${r._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Riesgo">🗑️</button></td></tr>`;
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${r.riskName}</td><td class="py-3 px-4 text-slate-400">${r.category}</td><td class="py-3 px-4 text-slate-400 text-center">${r.probability} / 5</td><td class="py-3 px-4 text-slate-400 text-center">${r.impact} / 5</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${r.riskLevel} (${r.riskScore})</span></td><td class="py-3 px-4 text-slate-400 text-xs max-w-xs truncate" title="${r.mitigationPlan}">${r.mitigationPlan}</td><td class="py-3 px-4 text-center"><button onclick="deleteRisk('${r._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Riesgo">🗑️</button></td></tr>`;
       }).join('');
     } catch (error) { console.error("Error cargando riesgos:", error); }
   }
 
   window.deleteRisk = async function(id) {
     if(!confirm("¿Estás seguro de eliminar este riesgo?")) return;
-    try { const res = await fetch(`${API_URL}/gov/risks/${id}`, { method: 'DELETE', headers }); if (res.ok) loadRisks(); } catch (error) { alert("Error al eliminar riesgo"); }
+    try {
+      const res = await fetch(`${API_URL}/gov/risks/${id}`, { method: 'DELETE', headers });
+      if (res.ok) loadRisks();
+    } catch (error) { alert("Error al eliminar riesgo"); }
   }
 
   const newRiskForm = document.getElementById('newRiskForm'); if(newRiskForm) newRiskForm.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
-    const payload = { orgId: currentOrgId === 'ALL' ? currentUser.orgId : currentOrgId, companyId: document.getElementById('riskCompany').value, riskName: document.getElementById('riskName').value, category: document.getElementById('riskCategory').value, probability: parseInt(document.getElementById('riskProb').value), impact: parseInt(document.getElementById('riskImpact').value), mitigationPlan: document.getElementById('riskMitigation').value };
-    try { const res = await fetch(`${API_URL}/gov/risks`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newRiskModal').classList.add('hidden'); e.target.reset(); loadRisks(); } else { const err = await res.json().catch(()=>({})); alert('Error al guardar riesgo: ' + (err.error || res.status)); } } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
+    const payload = { orgId: currentOrgId, companyId: document.getElementById('riskCompany').value, riskName: document.getElementById('riskName').value, category: document.getElementById('riskCategory').value, probability: parseInt(document.getElementById('riskProb').value), impact: parseInt(document.getElementById('riskImpact').value), mitigationPlan: document.getElementById('riskMitigation').value };
+    try { 
+      const res = await fetch(`${API_URL}/gov/risks`, { method: 'POST', headers, body: JSON.stringify(payload) }); 
+      if (res.ok) { document.getElementById('newRiskModal').classList.add('hidden'); e.target.reset(); loadRisks(); } 
+      else { const err = await res.json().catch(()=>({})); alert('Error al guardar riesgo: ' + (err.error || res.status)); }
+    } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
   });
 
+  // 5. OPORTUNIDADES DE IA (PROCESOS)
   async function loadProcesses() {
     try {
-      const qs = `?orgId=${currentOrgId}`;
-      const res = await fetch(`${API_URL}/gov/process-evals${qs}`, { headers });
-      let processes = await res.json(); 
+      const res = await fetch(`${API_URL}/gov/process-evals`, { headers });
+      let processes = await res.json(); processes = processes.filter(p => p.orgId === currentOrgId);
       const tbody = document.getElementById('processesTableBody');
-      if (processes.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No hay procesos evaluados.</td></tr>`; return; }
+      if (processes.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay procesos evaluados.</td></tr>`; return; }
       tbody.innerHTML = processes.map(p => {
         let scoreColor = 'text-teal-400';
-        if (p.score < 50) scoreColor = 'text-rose-400'; else if (p.score < 75) scoreColor = 'text-amber-400';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${p.processName}<br><span class="text-xs font-normal text-teal-400">${p.agentType}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${p.volume}</td><td class="py-3 px-4 text-slate-400 capitalize">${p.complexity}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(p.orgId)}</td><td class="py-3 px-4 text-slate-400 text-center">${p.hoursSpent} hrs</td><td class="py-3 px-4 text-center font-bold ${scoreColor}">${p.score}%</td><td class="py-3 px-4 text-center"><button onclick="deleteProcess('${p._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Proceso">🗑️</button></td></tr>`;
+        if (p.score < 50) scoreColor = 'text-rose-400';
+        else if (p.score < 75) scoreColor = 'text-amber-400';
+        
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+          <td class="py-3 px-4 font-semibold text-slate-200">${p.processName}<br><span class="text-xs font-normal text-teal-400">${p.agentType}</span></td>
+          <td class="py-3 px-4 text-slate-400 capitalize">${p.volume}</td>
+          <td class="py-3 px-4 text-slate-400 capitalize">${p.complexity}</td>
+          <td class="py-3 px-4 text-slate-400 text-center">${p.hoursSpent} hrs</td>
+          <td class="py-3 px-4 text-center font-bold ${scoreColor}">${p.score}%</td>
+          <td class="py-3 px-4 text-center"><button onclick="deleteProcess('${p._id}')" class="text-rose-500 hover:text-rose-400 transition" title="Eliminar Proceso">🗑️</button></td>
+        </tr>`;
       }).join('');
     } catch (error) { console.error("Error cargando procesos:", error); }
   }
 
   window.deleteProcess = async function(id) {
     if(!confirm("¿Estás seguro de eliminar esta evaluación de proceso?")) return;
-    try { const res = await fetch(`${API_URL}/gov/process-evals/${id}`, { method: 'DELETE', headers }); if (res.ok) loadProcesses(); } catch (error) { alert("Error al eliminar proceso"); }
+    try {
+      const res = await fetch(`${API_URL}/gov/process-evals/${id}`, { method: 'DELETE', headers });
+      if (res.ok) loadProcesses();
+    } catch (error) { alert("Error al eliminar proceso"); }
   }
 
   const newProcessForm = document.getElementById('newProcessForm'); if(newProcessForm) newProcessForm.addEventListener('submit', async (e) => {
-    e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Evaluando con IA...'; btn.disabled = true;
-    const payload = { orgId: currentOrgId === 'ALL' ? currentUser.orgId : currentOrgId, companyId: document.getElementById('procCompany').value, processName: document.getElementById('procName').value, volume: document.getElementById('procVolume').value, complexity: document.getElementById('procComplexity').value, dataType: document.getElementById('procDataType').value, hoursSpent: parseInt(document.getElementById('procHours').value) };
-    try { const aiRes = await fetch(`${API_URL}/gov/analyze-process`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (!aiRes.ok) throw new Error("Error al evaluar con IA"); const aiData = await aiRes.json(); payload.score = aiData.score; payload.agentType = aiData.agentType; payload.recommendation = aiData.recommendation; const res = await fetch(`${API_URL}/gov/process-evals`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newProcessModal').classList.add('hidden'); e.target.reset(); loadProcesses(); alert(`✅ Proceso evaluado. Índice: ${aiData.score}%.\nAgente: ${aiData.agentType}`); } else { alert('Error al guardar la evaluación'); } } catch (err) { alert('Error: ' + err.message); } finally { btn.textContent = 'Evaluar con IA'; btn.disabled = false; }
+    e.preventDefault(); 
+    const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Evaluando con IA...'; btn.disabled = true;
+    
+    const payload = { 
+      orgId: currentOrgId, 
+      companyId: document.getElementById('procCompany').value, 
+      processName: document.getElementById('procName').value, 
+      volume: document.getElementById('procVolume').value, 
+      complexity: document.getElementById('procComplexity').value, 
+      dataType: document.getElementById('procDataType').value, 
+      hoursSpent: parseInt(document.getElementById('procHours').value) 
+    };
+
+    try { 
+      // 1. Llamar a Groq para evaluar el proceso
+      const aiRes = await fetch(`${API_URL}/gov/analyze-process`, {
+        method: 'POST', headers, body: JSON.stringify(payload)
+      });
+      
+      if (!aiRes.ok) throw new Error("Error al evaluar con IA");
+      const aiData = await aiRes.json();
+
+      // 2. Guardar en la base de datos
+      payload.score = aiData.score;
+      payload.agentType = aiData.agentType;
+      payload.recommendation = aiData.recommendation;
+
+      const res = await fetch(`${API_URL}/gov/process-evals`, { method: 'POST', headers, body: JSON.stringify(payload) });
+      if (res.ok) { 
+        document.getElementById('newProcessModal').classList.add('hidden'); 
+        e.target.reset(); 
+        loadProcesses(); 
+        alert(`✅ Proceso evaluado. Índice de Automatización: ${aiData.score}%.\nAgente sugerido: ${aiData.agentType}`);
+      } 
+      else { alert('Error al guardar la evaluación'); }
+    } catch (err) { alert('Error: ' + err.message); } finally { btn.textContent = 'Evaluar con IA'; btn.disabled = false; }
   });
 
+  // 6. RESTO DE FUNCIONES
   async function loadLeads() {
-  try {
-    const res = await fetch(`${API_URL}/leads`, { headers }); 
-    const leads = await res.json();
-    const tbody = document.getElementById('leadsTableBody');
-    if (leads.length === 0) { 
-      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Aún no hay prospectos.</td></tr>`; 
-      return; 
-    }
-    tbody.innerHTML = leads.map(l => {
-      // Manejo dual: campos nuevos (nombre/empresa/createdAt) o viejos (name/company/ts)
-      const date = new Date(l.createdAt || l.ts).toLocaleDateString('es-MX');
-      const nombre = l.nombre || l.name || 'Sin nombre';
-      const empresa = l.empresa || l.company || 'Sin empresa';
-      const riskLevel = l.risk_level || (l.resultado && l.resultado.risk_level) || 'N/A';
-      let badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
-      if (riskLevel === 'alto' || riskLevel === 'Alto') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
-      else if (riskLevel === 'medio' || riskLevel === 'Medio') badgeColor = 'bg-amber-950 text-amber-400 border border-amber-800';
-      return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
-        <td class="py-3 px-4 text-slate-500">${date}</td>
-        <td class="py-3 px-4 font-semibold text-slate-200">${nombre}</td>
-        <td class="py-3 px-4 text-teal-400">${l.email}</td>
-        <td class="py-3 px-4 text-slate-300">${empresa}</td>
-        <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${riskLevel}</span></td>
-      </tr>`;
-    }).join('');
-  } catch (error) { console.error("Error en leads:", error); }
-}
+    try {
+      const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
+      const tbody = document.getElementById('leadsTableBody');
+      if (leads.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Aún no hay prospectos.</td></tr>`; return; }
+      tbody.innerHTML = leads.map(l => {
+        const date = new Date(l.ts).toLocaleDateString('es-MX'); let badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+        if (l.risk_level === 'alto') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 text-slate-500">${date}</td><td class="py-3 px-4 font-semibold text-slate-200">${l.name}</td><td class="py-3 px-4 text-teal-400">${l.email}</td><td class="py-3 px-4 text-slate-300">${l.company}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${badgeColor}">${l.risk_level}</span></td></tr>`;
+      }).join('');
+    } catch (error) {}
+  }
 
   async function loadUsers() {
     try {
       const res = await fetch(`${API_URL}/gov/users`, { headers }); const users = await res.json();
       const tbody = document.getElementById('usersTableBody');
-      tbody.innerHTML = users.map(u => `
-        <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
-          <td class="py-3 px-4 font-semibold text-slate-200">${u.name || 'Sin nombre'}</td>
-          <td class="py-3 px-4 text-slate-300">${u.email}</td>
-          <td class="py-3 px-4 text-teal-400 capitalize">${u.role}</td>
-          <td class="py-3 px-4 text-slate-400 text-xs"><span class="bg-slate-700 px-2 py-1 rounded text-teal-300">${(u.modules || ['gobernanza']).join(', ')}</span></td>
-          <td class="py-3 px-4 text-slate-500 font-mono text-xs">${u.orgId}</td>
-        </tr>`).join('');
+      tbody.innerHTML = users.map(u => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${u.name || 'Sin nombre'}</td><td class="py-3 px-4 text-slate-300">${u.email}</td><td class="py-3 px-4 text-teal-400 capitalize">${u.role}</td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${u.orgId}</td></tr>`).join('');
     } catch (error) { console.error("Error users:", error); }
   }
 
   async function loadEvidence() {
     try {
-      const qs = `?orgId=${currentOrgId}`;
-      const res = await fetch(`${API_URL}/gov/evidence${qs}`, { headers }); if (!res.ok) throw new Error('Error');
+      const res = await fetch(`${API_URL}/gov/evidence`, { headers }); if (!res.ok) throw new Error('Error');
       let evidence = await res.json(); const tbody = document.getElementById('evidenceTableBody');
-      if (evidence.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay evidencias subidas aún.</td></tr>`; return; }
+      if (evidence.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay evidencias subidas aún.</td></tr>`; return; }
       tbody.innerHTML = evidence.map(e => {
         const date = new Date(e.ts).toLocaleDateString('es-MX'); let statusColor = 'bg-teal-950 text-teal-400 border border-teal-800';
         if (!e.validation.valido) statusColor = 'bg-rose-950 text-rose-400 border border-rose-800';
         const downloadBtn = `<a href="${e.r2Url}" target="_blank" class="text-teal-400 hover:text-teal-300 underline text-xs font-bold">Descargar PDF</a>`;
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 text-slate-500">${date}</td><td class="py-3 px-4 text-slate-300 font-mono text-xs">${e.fileName.split('/').pop()}</td><td class="py-3 px-4 text-slate-200 font-semibold uppercase">${e.questionId.replace('_', ' ')}</td><td class="py-3 px-4 text-slate-400 ${isAllOrgs() ? '' : 'hidden'}">${getOrgName(e.orgId)}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${statusColor}">${e.validation.valido ? 'Válido' : 'Rechazado'}</span><div class="text-[10px] text-slate-500 mt-1 max-w-xs truncate" title="${e.validation.razon}">${e.validation.razon}</div></td><td class="py-3 px-4">${downloadBtn}</td></tr>`;
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 text-slate-500">${date}</td><td class="py-3 px-4 text-slate-300 font-mono text-xs">${e.fileName.split('/').pop()}</td><td class="py-3 px-4 text-slate-200 font-semibold uppercase">${e.questionId.replace('_', ' ')}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${statusColor}">${e.validation.valido ? 'Válido' : 'Rechazado'}</span><div class="text-[10px] text-slate-500 mt-1 max-w-xs truncate" title="${e.validation.razon}">${e.validation.razon}</div></td><td class="py-3 px-4">${downloadBtn}</td></tr>`;
       }).join('');
-    } catch (error) { document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="6" class="py-4 text-center text-rose-500">Error al cargar el expediente.</td></tr>`; }
+    } catch (error) { document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error al cargar el expediente.</td></tr>`; }
   }
 
   window.subirEvidencia = async function(event, qId) {
@@ -696,14 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const newUserForm = document.getElementById('newUserForm'); if(newUserForm) newUserForm.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Creando...'; btn.disabled = true;
-    
-    const selectedModules = Array.from(document.querySelectorAll('input[name="userModule"]:checked')).map(cb => cb.value);
-
-    const payload = { 
-      name: document.getElementById('userName').value, email: document.getElementById('userEmailInput').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value, orgId: document.getElementById('userOrg').value,
-      modules: selectedModules.length > 0 ? selectedModules : ['gobernanza']
-    };
-    
+    const payload = { name: document.getElementById('userName').value, email: document.getElementById('userEmailInput').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value, orgId: document.getElementById('userOrg').value };
     try { const res = await fetch(`${API_URL}/gov/users`, { method: 'POST', headers, body: JSON.stringify(payload) }); let data = {}; try { data = await res.json(); } catch (e) {} if (res.ok) { document.getElementById('newUserModal').classList.add('hidden'); e.target.reset(); loadUsers(); alert("Usuario creado exitosamente."); } else { alert('Error: ' + (data.error || 'Revisa la terminal')); } } catch (err) { alert('Error de red.'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
   });
 
@@ -727,17 +623,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const percentage = Math.round((totalScore / 60) * 100);
+    
     const p1 = (answers['q1']?.score||0) + (answers['q2']?.score||0) + (answers['q3']?.score||0);
     const p2 = (answers['q4']?.score||0) + (answers['q5']?.score||0) + (answers['q6']?.score||0);
     const p3 = (answers['q7']?.score||0) + (answers['q8']?.score||0) + (answers['q9']?.score||0);
     const p4 = (answers['q10']?.score||0) + (answers['q11']?.score||0) + (answers['q12']?.score||0);
     
-    const p1Pct = Math.round((p1 / 15) * 100); const p2Pct = Math.round((p2 / 15) * 100); const p3Pct = Math.round((p3 / 15) * 100); const p4Pct = Math.round((p4 / 15) * 100);
+    const p1Pct = Math.round((p1 / 15) * 100);
+    const p2Pct = Math.round((p2 / 15) * 100);
+    const p3Pct = Math.round((p3 / 15) * 100);
+    const p4Pct = Math.round((p4 / 15) * 100);
 
-    document.getElementById('scorePillar1').textContent = `${p1Pct}%`; document.getElementById('barPillar1').style.width = `${p1Pct}%`;
-    document.getElementById('scorePillar2').textContent = `${p2Pct}%`; document.getElementById('barPillar2').style.width = `${p2Pct}%`;
-    document.getElementById('scorePillar3').textContent = `${p3Pct}%`; document.getElementById('barPillar3').style.width = `${p3Pct}%`;
-    document.getElementById('scorePillar4').textContent = `${p4Pct}%`; document.getElementById('barPillar4').style.width = `${p4Pct}%`;
+    document.getElementById('scorePillar1').textContent = `${p1Pct}%`;
+    document.getElementById('barPillar1').style.width = `${p1Pct}%`;
+    document.getElementById('scorePillar2').textContent = `${p2Pct}%`;
+    document.getElementById('barPillar2').style.width = `${p2Pct}%`;
+    document.getElementById('scorePillar3').textContent = `${p3Pct}%`;
+    document.getElementById('barPillar3').style.width = `${p3Pct}%`;
+    document.getElementById('scorePillar4').textContent = `${p4Pct}%`;
+    document.getElementById('barPillar4').style.width = `${p4Pct}%`;
 
     let riskLevel = 'alto', label = 'Crítico', color = 'text-rose-400';
     if (percentage > 30 && percentage <= 60) { riskLevel = 'medio'; label = 'En Desarrollo'; color = 'text-amber-400'; }
@@ -794,13 +698,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const companyName = document.getElementById('orgSelector')?.selectedOptions[0]?.text || "Su Organización";
         const scoreText = document.getElementById('kpiCompliance').textContent.replace('%', '');
         
-        const qs = `?orgId=${currentOrgId}`;
         const [risksRes, evalsRes] = await Promise.all([
-          fetch(`${API_URL}/gov/risks${qs}`, { headers }), fetch(`${API_URL}/gov/evaluations${qs}`, { headers })
+          fetch(`${API_URL}/gov/risks`, { headers }),
+          fetch(`${API_URL}/gov/evaluations`, { headers })
         ]);
 
-        const risks = (await risksRes.json()).slice(0, 3); 
-        const evaluations = await evalsRes.json();
+        const allRisks = await risksRes.json();
+        const risks = allRisks.filter(r => r.orgId === currentOrgId).slice(0, 3); 
+        const evaluations = (await evalsRes.json()).filter(e => e.orgId === currentOrgId);
 
         let pillars = { p1: 0, p2: 0, p3: 0, p4: 0 };
         if (evaluations.length > 0 && evaluations[0].answers) {
@@ -809,29 +714,157 @@ document.addEventListener('DOMContentLoaded', () => {
           const p2 = (a['q4']?.score||0) + (a['q5']?.score||0) + (a['q6']?.score||0);
           const p3 = (a['q7']?.score||0) + (a['q8']?.score||0) + (a['q9']?.score||0);
           const p4 = (a['q10']?.score||0) + (a['q11']?.score||0) + (a['q12']?.score||0);
-          pillars = { p1: Math.round((p1 / 15) * 100), p2: Math.round((p2 / 15) * 100), p3: Math.round((p3 / 15) * 100), p4: Math.round((p4 / 15) * 100) };
+          pillars = {
+            p1: Math.round((p1 / 15) * 100),
+            p2: Math.round((p2 / 15) * 100),
+            p3: Math.round((p3 / 15) * 100),
+            p4: Math.round((p4 / 15) * 100)
+          };
         }
 
-        const res = await fetch(`${API_URL}/gov/generate-strategic-report`, { method: 'POST', headers, body: JSON.stringify({ companyName, score: parseInt(scoreText) || 0, pillars, risks }) });
+        const res = await fetch(`${API_URL}/gov/generate-strategic-report`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ companyName, score: parseInt(scoreText) || 0, pillars, risks })
+        });
+
         if (!res.ok) throw new Error("Error en el servidor");
         const data = await res.json();
 
         const currentDate = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
         const w = window.open('', '_blank');
         
-        const risksHtml = risks.map(r => `<tr class="border-b border-gray-200"><td class="py-2 px-4 font-bold text-gray-800">${r.riskName}</td><td class="py-2 px-4 text-center"><span class="px-2 py-1 rounded text-xs font-bold ${r.riskLevel === 'Crítico' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}">${r.riskLevel}</span></td><td class="py-2 px-4 text-sm text-gray-600">${r.mitigationPlan}</td></tr>`).join('');
+        const risksHtml = risks.map(r => `
+          <tr class="border-b border-gray-200">
+            <td class="py-2 px-4 font-bold text-gray-800">${r.riskName}</td>
+            <td class="py-2 px-4 text-center"><span class="px-2 py-1 rounded text-xs font-bold ${r.riskLevel === 'Crítico' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}">${r.riskLevel}</span></td>
+            <td class="py-2 px-4 text-sm text-gray-600">${r.mitigationPlan}</td>
+          </tr>
+        `).join('');
 
         w.document.write(`
-          <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte Ejecutivo - ${companyName}</title><script src="https://cdn.tailwindcss.com"></script><style>@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display: none !important; } }</style></head>
-          <body class="bg-gray-50 font-sans text-gray-800 p-8"><div class="max-w-4xl mx-auto mb-4 no-print flex justify-end"><button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded shadow-lg transition">🖨️ Guardar como PDF / Imprimir</button></div>
-          <div class="max-w-4xl mx-auto bg-white p-12 shadow-2xl rounded-sm border-t-8 border-indigo-600">
-            <div class="text-center mb-10 border-b pb-6"><h1 class="text-3xl font-black text-gray-900 uppercase tracking-tight">Reporte Estratégico de Gobernanza de IA</h1><p class="text-xl font-semibold text-gray-700 mt-2">${companyName}</p><p class="text-sm text-gray-400 mt-1">Generado el ${currentDate} por BehaviorLab Consulting</p></div>
-            <div class="mb-10"><h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">1. Resumen Ejecutivo</h2><div class="text-sm text-justify leading-relaxed text-gray-700 whitespace-pre-wrap">${data.executiveSummary}</div></div>
-            <div class="mb-10"><h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">2. Análisis de Brechas (Gap Analysis)</h2><div class="flex items-center gap-6 mb-4"><div class="flex-1 bg-gray-100 p-4 rounded-lg text-center"><p class="text-sm text-gray-500 uppercase font-bold">Score Global</p><p class="text-3xl font-black text-indigo-600">${scoreText}%</p></div><div class="flex-[2]"><p class="text-sm text-gray-700 leading-relaxed">${data.gapAnalysis}</p></div></div><div class="grid grid-cols-4 gap-4 mt-4"><div class="text-center"><p class="text-xs text-gray-500">Gobernanza</p><p class="font-bold text-lg">${pillars.p1}%</p></div><div class="text-center"><p class="text-xs text-gray-500">Riesgos</p><p class="font-bold text-lg">${pillars.p2}%</p></div><div class="text-center"><p class="text-xs text-gray-500">Ciclo de Vida</p><p class="font-bold text-lg">${pillars.p3}%</p></div><div class="text-center"><p class="text-xs text-gray-500">Transparencia</p><p class="font-bold text-lg">${pillars.p4}%</p></div></div></div>
-            <div class="mb-10"><h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">3. Top 3 Riesgos Identificados</h2><table class="w-full text-left border-collapse"><thead><tr class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wider"><th class="py-2 px-4 rounded-tl">Riesgo</th><th class="py-2 px-4 text-center">Criticidad</th><th class="py-2 px-4 rounded-tr">Plan de Mitigación</th></tr></thead><tbody>${risksHtml}</tbody></table></div>
-            <div class="mb-10"><h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">4. Roadmap Estratégico de Implementación</h2><div class="space-y-6 mt-6"><div class="flex gap-4"><div class="w-16 flex flex-col items-center"><div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">1</div><div class="w-0.5 h-full bg-indigo-200 mt-2"></div></div><div class="pb-4"><h3 class="text-lg font-bold text-gray-800">Quick Wins (0-60 días)</h3><p class="text-sm text-gray-600 mt-1">${data.roadmap.phase1}</p></div></div><div class="flex gap-4"><div class="w-16 flex flex-col items-center"><div class="w-8 h-8 rounded-full bg-indigo-400 text-white flex items-center justify-center font-bold">2</div><div class="w-0.5 h-full bg-indigo-200 mt-2"></div></div><div class="pb-4"><h3 class="text-lg font-bold text-gray-800">Fundación (6 meses)</h3><p class="text-sm text-gray-600 mt-1">${data.roadmap.phase2}</p></div></div><div class="flex gap-4"><div class="w-16 flex flex-col items-center"><div class="w-8 h-8 rounded-full bg-indigo-200 text-indigo-800 flex items-center justify-center font-bold">3</div></div><div><h3 class="text-lg font-bold text-gray-800">Escalamiento y Auditoría (12 meses)</h3><p class="text-sm text-gray-600 mt-1">${data.roadmap.phase3}</p></div></div></div></div>
-            <div class="mt-16 pt-8 border-t border-gray-200 text-center"><p class="text-xs text-gray-400 mb-6">Documento confidencial generado por BehaviorLab AI.</p><div class="flex justify-between px-12"><div class="text-center"><div class="border-t border-gray-400 w-48 mt-8"></div><p class="font-bold text-gray-800 text-sm mt-2">Dirección General</p></div><div class="text-center"><div class="border-t border-gray-400 w-48 mt-8"></div><p class="font-bold text-gray-800 text-sm mt-2">Consultor de Gobernanza IA</p></div></div></div>
-          </div></body></html>`);
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+            <meta charset="UTF-8">
+            <title>Reporte Ejecutivo - ${companyName}</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <style>
+              @media print {
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .no-print { display: none !important; }
+              }
+            </style>
+          </head>
+          <body class="bg-gray-50 font-sans text-gray-800 p-8">
+            
+            <div class="max-w-4xl mx-auto mb-4 no-print flex justify-end">
+              <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded shadow-lg transition">
+                🖨️ Guardar como PDF / Imprimir
+              </button>
+            </div>
+
+            <div class="max-w-4xl mx-auto bg-white p-12 shadow-2xl rounded-sm border-t-8 border-indigo-600">
+              
+              <div class="text-center mb-10 border-b pb-6">
+                <h1 class="text-3xl font-black text-gray-900 uppercase tracking-tight">Reporte Estratégico de Gobernanza de IA</h1>
+                <p class="text-xl font-semibold text-gray-700 mt-2">${companyName}</p>
+                <p class="text-sm text-gray-400 mt-1">Generado el ${currentDate} por BehaviorLab Consulting</p>
+              </div>
+
+              <div class="mb-10">
+                <h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">1. Resumen Ejecutivo</h2>
+                <div class="text-sm text-justify leading-relaxed text-gray-700 whitespace-pre-wrap">${data.executiveSummary}</div>
+              </div>
+
+              <div class="mb-10">
+                <h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">2. Análisis de Brechas (Gap Analysis)</h2>
+                <div class="flex items-center gap-6 mb-4">
+                  <div class="flex-1 bg-gray-100 p-4 rounded-lg text-center">
+                    <p class="text-sm text-gray-500 uppercase font-bold">Score Global</p>
+                    <p class="text-3xl font-black text-indigo-600">${scoreText}%</p>
+                  </div>
+                  <div class="flex-[2]">
+                    <p class="text-sm text-gray-700 leading-relaxed">${data.gapAnalysis}</p>
+                  </div>
+                </div>
+                <div class="grid grid-cols-4 gap-4 mt-4">
+                  <div class="text-center"><p class="text-xs text-gray-500">Gobernanza</p><p class="font-bold text-lg">${pillars.p1}%</p></div>
+                  <div class="text-center"><p class="text-xs text-gray-500">Riesgos</p><p class="font-bold text-lg">${pillars.p2}%</p></div>
+                  <div class="text-center"><p class="text-xs text-gray-500">Ciclo de Vida</p><p class="font-bold text-lg">${pillars.p3}%</p></div>
+                  <div class="text-center"><p class="text-xs text-gray-500">Transparencia</p><p class="font-bold text-lg">${pillars.p4}%</p></div>
+                </div>
+              </div>
+
+              <div class="mb-10">
+                <h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">3. Top 3 Riesgos Identificados</h2>
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wider">
+                      <th class="py-2 px-4 rounded-tl">Riesgo</th>
+                      <th class="py-2 px-4 text-center">Criticidad</th>
+                      <th class="py-2 px-4 rounded-tr">Plan de Mitigación</th>
+                    </tr>
+                  </thead>
+                  <tbody>${risksHtml}</tbody>
+                </table>
+              </div>
+
+              <div class="mb-10">
+                <h2 class="text-xl font-bold text-indigo-900 mb-3 border-b-2 border-indigo-100 pb-1">4. Roadmap Estratégico de Implementación</h2>
+                
+                <div class="space-y-6 mt-6">
+                  <div class="flex gap-4">
+                    <div class="w-16 flex flex-col items-center">
+                      <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">1</div>
+                      <div class="w-0.5 h-full bg-indigo-200 mt-2"></div>
+                    </div>
+                    <div class="pb-4">
+                      <h3 class="text-lg font-bold text-gray-800">Quick Wins (0-60 días)</h3>
+                      <p class="text-sm text-gray-600 mt-1">${data.roadmap.phase1}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex gap-4">
+                    <div class="w-16 flex flex-col items-center">
+                      <div class="w-8 h-8 rounded-full bg-indigo-400 text-white flex items-center justify-center font-bold">2</div>
+                      <div class="w-0.5 h-full bg-indigo-200 mt-2"></div>
+                    </div>
+                    <div class="pb-4">
+                      <h3 class="text-lg font-bold text-gray-800">Fundación (6 meses)</h3>
+                      <p class="text-sm text-gray-600 mt-1">${data.roadmap.phase2}</p>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-4">
+                    <div class="w-16 flex flex-col items-center">
+                      <div class="w-8 h-8 rounded-full bg-indigo-200 text-indigo-800 flex items-center justify-center font-bold">3</div>
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-bold text-gray-800">Escalamiento y Auditoría (12 meses)</h3>
+                      <p class="text-sm text-gray-600 mt-1">${data.roadmap.phase3}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-16 pt-8 border-t border-gray-200 text-center">
+                <p class="text-xs text-gray-400 mb-6">Documento confidencial generado por BehaviorLab AI.</p>
+                <div class="flex justify-between px-12">
+                  <div class="text-center">
+                    <div class="border-t border-gray-400 w-48 mt-8"></div>
+                    <p class="font-bold text-gray-800 text-sm mt-2">Dirección General</p>
+                  </div>
+                  <div class="text-center">
+                    <div class="border-t border-gray-400 w-48 mt-8"></div>
+                    <p class="font-bold text-gray-800 text-sm mt-2">Consultor de Gobernanza IA</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </body>
+          </html>
+        `);
         w.document.close();
       } catch (error) {
         console.error(error);

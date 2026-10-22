@@ -5,13 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard | Behavior Lab</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .aa-gauge-container { position: relative; width: 180px; height: 180px; margin: 0 auto; }
-    .aa-gauge-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-    .aa-gauge-circle-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 12; }
-    .aa-gauge-circle-val { fill: none; stroke: #2dd4bf; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 439.8; stroke-dashoffset: 439.8; transition: stroke-dashoffset 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
-    .aa-gauge-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-  </style>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
   
@@ -30,26 +23,37 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-8">
-    
-    <!-- NAVEGACIÓN AGRUPADA POR MÓDULOS -->
+    <div class="mb-6 flex justify-between items-end">
+      <div>
+        <h1 class="text-3xl font-bold mb-2">Panel de Gobernanza</h1>
+        <p class="text-slate-400">Visión general del estado de IA de tu organización.</p>
+      </div>
+      <button id="btnGeneratePolicy" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2 px-6 rounded-lg transition shadow-lg shadow-blue-500/20 flex items-center gap-2"><span>📄</span> Generar Política</button>
+    </div>
+
+    <!-- NAVEGACIÓN AGRUPADA -->
     <div class="flex items-center space-x-6 border-b border-slate-800 pb-2 mb-6 overflow-x-auto">
-      <div id="navGobernanza" class="flex items-center space-x-2">
-        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2">Gobernanza</span>
+      <div class="flex items-center space-x-2">
         <button type="button" id="tabDashboardBtn" class="text-teal-400 font-semibold pb-2 border-b-2 border-teal-400 transition whitespace-nowrap px-2">Dashboard</button>
+      </div>
+      <div class="h-5 w-px bg-slate-700"></div>
+      <div class="flex items-center space-x-2">
         <button type="button" id="tabInventoryBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Inventario</button>
         <button type="button" id="tabRisksBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Riesgos</button>
         <button type="button" id="tabMatrixBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Matriz</button>
         <button type="button" id="tabEvidenceBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Evidencia</button>
-        <button type="button" id="tabDeliverablesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Plan</button>
+      </div>
+      <div class="h-5 w-px bg-slate-700"></div>
+      <div class="flex items-center space-x-2">
+        <button type="button" id="tabDeliverablesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Plan de Trabajo</button>
         <button type="button" id="tabCompaniesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Filiales</button>
       </div>
       <div class="h-5 w-px bg-slate-700"></div>
-      <div id="navAutomatizacion" class="flex items-center space-x-2">
-        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2">Automatización</span>
-        <button type="button" id="tabAutomationBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">🤖 Assessment de Procesos</button>
+      <div class="flex items-center space-x-2">
+        <button type="button" id="tabProcessesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">💡 Oportunidades de IA</button>
       </div>
       <div class="h-5 w-px bg-slate-700"></div>
-      <div id="navAdmin" class="flex items-center space-x-2">
+      <div class="flex items-center space-x-2">
         <button type="button" id="tabUsersBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Usuarios</button>
         <button type="button" id="tabLeadsBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Prospectos</button>
       </div>
@@ -62,38 +66,49 @@
           <span>📄</span> Generar Reporte Estratégico (PDF)
         </button>
       </div>
-      
-      <!-- CONTENEDOR DE RESUMEN POR ORGANIZACIÓN (Solo visible cuando es 'ALL') -->
-      <div id="orgSummaryContainer" class="hidden mb-8 bg-slate-800/40 border border-slate-700 rounded-2xl p-6">
-        <h3 class="text-lg font-bold text-white mb-4">Resumen por Organización</h3>
-        <div id="orgSummaryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden">
           <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl">🏆</div>
           <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Score Promedio de Cumplimiento</h3>
-          <div class="flex items-end gap-3"><p id="kpiCompliance" class="text-5xl font-black text-teal-400">--%</p><p class="text-sm text-slate-500 mb-1 pb-1">Global</p></div>
+          <div class="flex items-end gap-3">
+            <p id="kpiCompliance" class="text-5xl font-black text-teal-400">--%</p>
+            <p class="text-sm text-slate-500 mb-1 pb-1">Global</p>
+          </div>
         </div>
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden">
           <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl">⚠️</div>
           <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Riesgos Críticos / Altos</h3>
-          <div class="flex items-end gap-3"><p id="kpiRisks" class="text-5xl font-black text-rose-400">--</p><p class="text-sm text-slate-500 mb-1 pb-1">detectados</p></div>
+          <div class="flex items-end gap-3">
+            <p id="kpiRisks" class="text-5xl font-black text-rose-400">--</p>
+            <p class="text-sm text-slate-500 mb-1 pb-1">detectados</p>
+          </div>
         </div>
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden">
           <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl">📋</div>
           <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Avance del Plan de Trabajo</h3>
-          <div class="flex items-end gap-3 mb-2"><p id="kpiTasks" class="text-4xl font-black text-blue-400">--%</p></div>
-          <div class="w-full bg-slate-900 rounded-full h-2.5"><div id="kpiTasksBar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div></div>
+          <div class="flex items-end gap-3 mb-2">
+            <p id="kpiTasks" class="text-4xl font-black text-blue-400">--%</p>
+          </div>
+          <div class="w-full bg-slate-900 rounded-full h-2.5">
+            <div id="kpiTasksBar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div>
+          </div>
         </div>
       </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-          <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Riesgos Recientes</h3><button onclick="document.getElementById('tabRisksBtn').click()" class="text-xs text-teal-400 hover:underline">Ver todos</button></div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-white">Riesgos Recientes</h3>
+            <button onclick="document.getElementById('tabRisksBtn').click()" class="text-xs text-teal-400 hover:underline">Ver todos</button>
+          </div>
           <div class="space-y-3" id="dashRecentRisks"><p class="text-sm text-slate-500">Cargando...</p></div>
         </div>
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-          <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Evidencias Recientes</h3><button onclick="document.getElementById('tabEvidenceBtn').click()" class="text-xs text-teal-400 hover:underline">Ver todas</button></div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-white">Evidencias Recientes</h3>
+            <button onclick="document.getElementById('tabEvidenceBtn').click()" class="text-xs text-teal-400 hover:underline">Ver todas</button>
+          </div>
           <div class="space-y-3" id="dashRecentEvidence"><p class="text-sm text-slate-500">Cargando...</p></div>
         </div>
       </div>
@@ -115,7 +130,7 @@
             <button id="openModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nuevo Modelo</button>
           </div>
         </div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Modelo</th><th class="py-3 px-4">Categoría</th><th id="thCompanyOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Filial</th><th class="py-3 px-4">Riesgo</th><th class="py-3 px-4">Estado</th></tr></thead><tbody id="inventoryTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando datos...</td></tr></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Modelo</th><th class="py-3 px-4">Categoría</th><th class="py-3 px-4">Filial</th><th class="py-3 px-4">Riesgo</th><th class="py-3 px-4">Estado</th></tr></thead><tbody id="inventoryTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando datos...</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -137,8 +152,8 @@
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Riesgo</th><th class="py-3 px-4">Categoría</th><th id="thRiskOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Prob.</th><th class="py-3 px-4">Imp.</th><th class="py-3 px-4">Nivel</th><th class="py-3 px-4">Mitigación</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
-            <tbody id="risksTableBody" class="text-sm"><tr><td colspan="8" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Riesgo</th><th class="py-3 px-4">Categoría</th><th class="py-3 px-4">Prob.</th><th class="py-3 px-4">Imp.</th><th class="py-3 px-4">Nivel</th><th class="py-3 px-4">Mitigación</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
+            <tbody id="risksTableBody" class="text-sm"><tr><td colspan="7" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -153,8 +168,8 @@
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Tarea</th><th class="py-3 px-4">Fase</th><th id="thDelivOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Responsable</th><th class="py-3 px-4">Estatus</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
-            <tbody id="deliverablesTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Tarea</th><th class="py-3 px-4">Fase</th><th class="py-3 px-4">Responsable</th><th class="py-3 px-4">Estatus</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
+            <tbody id="deliverablesTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -164,7 +179,7 @@
     <div id="companiesSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Directorio de Filiales</h2></div><button id="openCompanyModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nueva Filial</button></div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Perfil</th><th id="thCompOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Estado</th><th class="py-3 px-4">ID</th></tr></thead><tbody id="companiesTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Perfil</th><th class="py-3 px-4">Estado</th><th class="py-3 px-4">ID</th></tr></thead><tbody id="companiesTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -173,15 +188,15 @@
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-6">
           <div>
-            <h2 class="text-lg font-bold">Evaluación de Procesos (Interno)</h2>
-            <p class="text-sm text-slate-400">Descubre qué agentes de IA pueden ahorrarte más tiempo.</p>
+            <h2 class="text-lg font-bold">Evaluación de Procesos para Automatización</h2>
+            <p class="text-sm text-slate-400">Descubre qué agentes de IA pueden ahorrarte más tiempo y dinero.</p>
           </div>
           <button id="openProcessModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition shadow-lg shadow-teal-500/20">+ Evaluar Proceso</button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Proceso</th><th class="py-3 px-4">Volumen</th><th class="py-3 px-4">Complejidad</th><th id="thProcOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Horas/Mes</th><th class="py-3 px-4">Índice Auto.</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
-            <tbody id="processesTableBody" class="text-sm"><tr><td colspan="7" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Proceso</th><th class="py-3 px-4">Volumen</th><th class="py-3 px-4">Complejidad</th><th class="py-3 px-4">Horas/Mes</th><th class="py-3 px-4">Índice Auto.</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
+            <tbody id="processesTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -199,7 +214,7 @@
     <div id="usersSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Gestión de Usuarios</h2></div><button id="openUserModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Invitar Usuario</button></div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Email</th><th class="py-3 px-4">Rol</th><th class="py-3 px-4">Módulos</th><th class="py-3 px-4">ID Org</th></tr></thead><tbody id="usersTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Email</th><th class="py-3 px-4">Rol</th><th class="py-3 px-4">ID Org</th></tr></thead><tbody id="usersTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -209,43 +224,15 @@
         <div class="mb-6"><h2 class="text-lg font-bold">Expediente Digital de Evidencias</h2><p class="text-sm text-slate-400">Documentos validados por la IA y almacenados en R2.</p></div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Fecha</th><th class="py-3 px-4">Archivo</th><th class="py-3 px-4">Pregunta</th><th id="thEvOrg" class="py-3 px-4 hidden">Organización</th><th class="py-3 px-4">Estatus IA</th><th class="py-3 px-4">Acciones</th></tr></thead>
-            <tbody id="evidenceTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Fecha</th><th class="py-3 px-4">Archivo</th><th class="py-3 px-4">Pregunta</th><th class="py-3 px-4">Estatus IA</th><th class="py-3 px-4">Acciones</th></tr></thead>
+            <tbody id="evidenceTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
-
-    <!-- 11. NUEVA SECCIÓN: MÓDULO DE AUTOMATIZACIÓN -->
-    <div id="automationSection" class="hidden">
-      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-        <div class="mb-6">
-          <h2 class="text-xl font-bold">Resultados del Assessment de Automatización</h2>
-          <p class="text-sm text-slate-400">Procesos evaluados por los clientes. Detalle del ROI y Agentes recomendados.</p>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-slate-700 text-sm text-slate-400">
-                <th class="py-3 px-4">Fecha</th>
-                <th class="py-3 px-4">Cliente</th>
-                <th class="py-3 px-4">Proceso</th>
-                <th class="py-3 px-4 text-center">Índice</th>
-                <th class="py-3 px-4">Agente Recomendado</th>
-                <th class="py-3 px-4 text-center">Acción</th>
-              </tr>
-            </thead>
-            <tbody id="automationTableBody" class="text-sm">
-              <tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
   </main>
 
-  <!-- MODALES (Mismos que antes) -->
+  <!-- MODALES -->
   <div id="newModelModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Modelo de IA</h2>
@@ -283,15 +270,6 @@
           <div><label class="block text-sm font-semibold text-slate-300 mb-1">Rol</label><select id="userRole" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="admin">Admin (Cliente)</option><option value="auditor">Auditor</option><option value="superadmin">Superadmin</option></select></div>
         </div>
         <div><label class="block text-sm font-semibold text-slate-300 mb-1">Organización</label><select id="userOrg" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
-        
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
-          <label class="block text-sm font-semibold text-teal-400 mb-2">Acceso a Módulos</label>
-          <div class="flex gap-4">
-            <label class="flex items-center gap-2 cursor-pointer text-sm text-slate-300"><input type="checkbox" name="userModule" value="gobernanza" checked class="accent-teal-500 w-4 h-4"> Gobernanza (GRC)</label>
-            <label class="flex items-center gap-2 cursor-pointer text-sm text-slate-300"><input type="checkbox" name="userModule" value="automatizacion" class="accent-teal-500 w-4 h-4"> Automatización (IA)</label>
-          </div>
-        </div>
-
         <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeUserModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Crear Usuario</button></div>
       </form>
     </div>
@@ -339,20 +317,49 @@
     </div>
   </div>
 
+  <!-- NUEVO MODAL: EVALUAR PROCESO -->
   <div id="newProcessModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Evaluar Proceso para Automatizar</h2>
       <form id="newProcessForm" class="space-y-4">
         <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Proceso</label><input type="text" id="procName" required placeholder="Ej. Facturación de proveedores" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        
         <div class="grid grid-cols-2 gap-4">
-          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Volumen de Tareas</label><select id="procVolume" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="bajo">Bajo (Pocas al día)</option><option value="medio">Medio (Decenas al día)</option><option value="alto">Alto (Cientos/Miles al día)</option></select></div>
-          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Complejidad de Decisión</label><select id="procComplexity" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="baja">Baja (Reglas simples)</option><option value="media">Media (Requiere análisis)</option><option value="alta">Alta (Criterio humano profundo)</option></select></div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Volumen de Tareas</label>
+            <select id="procVolume" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+              <option value="bajo">Bajo (Pocas al día)</option>
+              <option value="medio">Medio (Decenas al día)</option>
+              <option value="alto">Alto (Cientos/Miles al día)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Complejidad de Decisión</label>
+            <select id="procComplexity" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+              <option value="baja">Baja (Reglas simples)</option>
+              <option value="media">Media (Requiere análisis)</option>
+              <option value="alta">Alta (Criterio humano profundo)</option>
+            </select>
+          </div>
         </div>
+
         <div class="grid grid-cols-2 gap-4">
-          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Tipo de Datos</label><select id="procDataType" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="estructurado">Estructurado (Formularios, CRM)</option><option value="semi">Semiestructurado (Emails, PDFs)</option><option value="no_estructurado">No Estructurado (Imágenes, Audio)</option></select></div>
-          <div><label class="block text-sm font-semibold text-slate-300 mb-1">Horas Hombre / Mes</label><input type="number" id="procHours" required placeholder="Ej. 120" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Tipo de Datos</label>
+            <select id="procDataType" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+              <option value="estructurado">Estructurado (Formularios, CRM)</option>
+              <option value="semi">Semiestructurado (Emails, PDFs)</option>
+              <option value="no_estructurado">No Estructurado (Imágenes, Audio)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1">Horas Hombre / Mes</label>
+            <input type="number" id="procHours" required placeholder="Ej. 120" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none">
+          </div>
         </div>
+
         <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label><select id="procCompany" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">Global</option></select></div>
+
         <div class="flex justify-end gap-3 mt-6">
           <button type="button" id="closeProcessModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button>
           <button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition flex items-center gap-2"><span>🧠</span> Evaluar con IA</button>
@@ -361,6 +368,7 @@
     </div>
   </div>
 
+  <!-- DIAGNÓSTICO -->
   <div id="diagnosticModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 w-full max-w-4xl shadow-2xl my-8">
       <div id="diagnosticFormContainer">
@@ -411,6 +419,7 @@
         </form>
       </div>
 
+      <!-- RESULTADOS CON DESGLOSE POR PILARES -->
       <div id="diagnosticResultContainer" class="hidden py-4">
         <div class="text-center mb-6">
           <div class="text-5xl mb-2">🎯</div>
@@ -424,6 +433,7 @@
           <div id="finalRiskLabel" class="text-sm font-bold text-slate-300">Evaluando...</div>
         </div>
 
+        <!-- Desglose por Pilares -->
         <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-8 max-w-2xl mx-auto">
           <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider text-center">Desglose por Pilar de Gobernanza</h3>
           <div class="space-y-3">
@@ -458,56 +468,6 @@
         </div>
         
         <div class="text-center"><button type="button" id="closeResultBtn" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-8 rounded-xl transition">Cerrar</button></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="detailAutomationModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-2xl shadow-2xl my-8">
-      <div class="flex justify-between items-start mb-6 border-b border-slate-700 pb-4">
-        <div>
-          <h2 class="text-2xl font-bold text-white">Reporte de Automatización</h2>
-          <p id="detProcessName" class="text-teal-400 font-semibold"></p>
-        </div>
-        <button id="closeAutomationModalBtn" class="text-slate-400 hover:text-white text-2xl">&times;</button>
-      </div>
-      <div class="text-center mb-8">
-        <div class="aa-gauge-container">
-          <svg class="aa-gauge-svg" viewBox="0 0 160 160">
-            <circle class="aa-gauge-circle-bg" cx="80" cy="80" r="70"></circle>
-            <circle class="aa-gauge-circle-val" id="detGauge" cx="80" cy="80" r="70"></circle>
-          </svg>
-          <div class="aa-gauge-text">
-            <div id="detIndex" class="text-4xl font-black text-white">0%</div>
-            <div class="text-xs text-slate-400 uppercase tracking-widest mt-1">Automatizable</div>
-          </div>
-        </div>
-      </div>
-      <div class="bg-slate-900 border border-slate-700 rounded-xl p-5 mb-6">
-        <div class="text-xs text-teal-400 uppercase font-bold mb-1">Agente Recomendado</div>
-        <h4 id="detAgentType" class="text-lg font-bold text-white mb-2"></h4>
-        <p id="detAgentDesc" class="text-sm text-slate-400 leading-relaxed"></p>
-      </div>
-      <div class="grid grid-cols-3 gap-4 mb-6">
-        <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-center">
-          <div class="text-xs text-slate-400 uppercase">Ahorro</div>
-          <div id="detRoiHours" class="text-2xl font-bold text-teal-400 my-1">0</div>
-          <div class="text-xs text-slate-500">h/mes</div>
-        </div>
-        <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-center">
-          <div class="text-xs text-slate-400 uppercase">Equivale a</div>
-          <div id="detRoiDays" class="text-2xl font-bold text-teal-400 my-1">0</div>
-          <div class="text-xs text-slate-500">días/mes</div>
-        </div>
-        <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-center">
-          <div class="text-xs text-slate-400 uppercase">Payback</div>
-          <div id="detPayback" class="text-2xl font-bold text-teal-400 my-1">0</div>
-          <div class="text-xs text-slate-500">meses</div>
-        </div>
-      </div>
-      <div class="mb-6">
-        <h4 class="text-sm font-bold text-white mb-3">Roadmap de Implementación</h4>
-        <ul id="detPhases" class="space-y-2 text-sm text-slate-300"></ul>
       </div>
     </div>
   </div>
