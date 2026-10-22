@@ -1,5 +1,5 @@
 /* =============================================================================
-   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.5)
+   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.6)
    ============================================================================= */
 
 import 'dotenv/config';
@@ -55,36 +55,40 @@ const LeadSchema = new mongoose.Schema({
 }, { timestamps: true, strict: false, collection: 'leads' });
 const Lead = mongoose.models.Lead || mongoose.model('Lead', LeadSchema);
 
+// FIX: Aceptar 'password' y 'hash' para compatibilidad con datos existentes
 const UserSchema = new mongoose.Schema({
-  name: String, email: { type: String, unique: true }, password: String,
+  name: String, 
+  email: { type: String, unique: true }, 
+  password: String, 
+  hash: String, // <- Campo detectado en tus datos originales
   role: { type: String, enum: ['superadmin', 'admin', 'auditor'], default: 'admin' },
   orgId: String,
   modules: { type: [String], default: ['gobernanza'] }
-}, { timestamps: true });
+}, { timestamps: true, strict: false });
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
-const OrgSchema = new mongoose.Schema({ name: String, modules: [String] });
+const OrgSchema = new mongoose.Schema({ name: String, modules: [String] }, { strict: false });
 const Org = mongoose.models.Org || mongoose.model('Org', OrgSchema);
 
-const CompanySchema = new mongoose.Schema({ orgId: String, name: String, riskProfile: String });
+const CompanySchema = new mongoose.Schema({ orgId: String, name: String, riskProfile: String }, { strict: false });
 const Company = mongoose.models.Company || mongoose.model('Company', CompanySchema);
 
-const InventorySchema = new mongoose.Schema({ orgId: String, companyId: String, model_name: String, category: String, risk_level: String, status: String });
+const InventorySchema = new mongoose.Schema({ orgId: String, companyId: String, model_name: String, category: String, risk_level: String, status: String }, { strict: false });
 const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', InventorySchema);
 
-const RiskSchema = new mongoose.Schema({ orgId: String, companyId: String, riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String });
+const RiskSchema = new mongoose.Schema({ orgId: String, companyId: String, riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String }, { strict: false });
 const Risk = mongoose.models.Risk || mongoose.model('Risk', RiskSchema);
 
-const DeliverableSchema = new mongoose.Schema({ orgId: String, taskName: String, phase: String, assignedTo: String, status: String, dueDate: String });
+const DeliverableSchema = new mongoose.Schema({ orgId: String, taskName: String, phase: String, assignedTo: String, status: String, dueDate: String }, { strict: false });
 const Deliverable = mongoose.models.Deliverable || mongoose.model('Deliverable', DeliverableSchema);
 
-const EvaluationSchema = new mongoose.Schema({ orgId: String, companyId: String, framework: String, answers: mongoose.Schema.Types.Mixed, score: Number, risk_level: String, recommendations: mongoose.Schema.Types.Mixed });
+const EvaluationSchema = new mongoose.Schema({ orgId: String, companyId: String, framework: String, answers: mongoose.Schema.Types.Mixed, score: Number, risk_level: String, recommendations: mongoose.Schema.Types.Mixed }, { strict: false });
 const Evaluation = mongoose.models.Evaluation || mongoose.model('Evaluation', EvaluationSchema);
 
-const EvidenceSchema = new mongoose.Schema({ orgId: String, companyId: String, questionId: String, fileName: String, r2Url: String, validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now } });
+const EvidenceSchema = new mongoose.Schema({ orgId: String, companyId: String, questionId: String, fileName: String, r2Url: String, validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now } }, { strict: false });
 const Evidence = mongoose.models.Evidence || mongoose.model('Evidence', EvidenceSchema);
 
-const ProcessEvalSchema = new mongoose.Schema({ orgId: String, companyId: String, processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String });
+const ProcessEvalSchema = new mongoose.Schema({ orgId: String, companyId: String, processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String }, { strict: false });
 const ProcessEval = mongoose.models.ProcessEval || mongoose.model('ProcessEval', ProcessEvalSchema);
 
 /* ── UTILIDADES ── */
@@ -115,13 +119,9 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Helper DEFINITIVO para determinar qué orgId filtrar
 const getOrgQuery = (req) => {
-  // Si es Superadmin y pide "ALL" (Todas), devolvemos vacío para traer todo
   if (req.user.role === 'superadmin' && req.query.orgId === 'ALL') return {};
-  // Si es Superadmin y pide una org específica, filtramos por esa org
   if (req.user.role === 'superadmin' && req.query.orgId) return { orgId: req.query.orgId };
-  // Si es un cliente normal, solo ve su propia org
   return { orgId: req.user.orgId };
 };
 
@@ -159,7 +159,7 @@ app.get('/gov/debug/db', async (req, res) => {
   try {
     const orgs = await Org.find();
     const companies = await Company.find();
-    const users = await User.find().select('-password');
+    const users = await User.find().select('-password -hash');
     res.json({ orgs, companies, users });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -171,7 +171,11 @@ app.post('/gov/auth/login', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ error: 'Usuario no encontrado' });
     
-    const validPassword = (password === user.password) || (user.password && await bcrypt.compare(password, user.password).catch(()=>false));
+    // FIX: Comprobar tanto el campo 'password' como 'hash'
+    const hashToCompare = user.password || user.hash;
+    if (!hashToCompare) return res.status(401).json({ error: 'Usuario sin contraseña asignada' });
+
+    const validPassword = (password === hashToCompare) || await bcrypt.compare(password, hashToCompare).catch(()=>false);
     if (!validPassword) return res.status(401).json({ error: 'Contraseña incorrecta' });
 
     const token = jwt.sign({ _id: user._id, role: user.role, orgId: user.orgId, modules: user.modules }, JWT_SECRET, { expiresIn: '7d' });
@@ -183,7 +187,7 @@ app.post('/gov/auth/login', async (req, res) => {
 
 /* ── ENDPOINTS DE USUARIOS Y ORGS ── */
 app.get('/gov/users', authenticateToken, async (req, res) => {
-  try { const users = await User.find().select('-password'); res.json(users); } 
+  try { const users = await User.find().select('-password -hash'); res.json(users); } 
   catch (error) { res.status(500).json({ error: 'Error al cargar usuarios' }); }
 });
 
@@ -193,7 +197,7 @@ app.post('/gov/users', authenticateToken, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, password: hashedPassword, role, orgId, modules });
     res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, orgId: user.orgId, modules: user.modules });
-  } catch (error) { res.status(500).json({ error: 'Error al crear usuario (puede que el correo ya exista)' }); }
+  } catch (error) { res.status(500).json({ error: 'Error al crear usuario' }); }
 });
 
 app.get('/gov/orgs', authenticateToken, async (req, res) => {
@@ -466,10 +470,10 @@ app.use((err, req, res, next) => {
 
 app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 
-/* ── ARRANQUE Y SEED FORZADO ── */
+/* ── ARRANQUE Y SEED INTELIGENTE ── */
 app.get('/health', (_req, res) => {
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
-  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.5' });
+  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.6' });
 });
 
 const server = app.listen(PORT, '0.0.0.0', () => console.log(`[SERVER] Escuchando en :${PORT}`));
@@ -482,19 +486,50 @@ if (MONGODB_URI) {
         const superadminEmail = 'jcrendon@gokulab.mx';
         const superadminPassword = 'CambiarEstaClave2026!'; 
         const hashedPassword = await bcrypt.hash(superadminPassword, 10);
+        
         let superadmin = await User.findOne({ email: superadminEmail });
-        if (!superadmin) {
-          await User.create({ name: 'Juan Carlos Rendón', email: superadminEmail, password: hashedPassword, role: 'superadmin', orgId: 'org_demo', modules: ['gobernanza', 'automatizacion'] });
-        } else {
+        if (superadmin) {
+          // FIX: Si el usuario existe, actualizar ambos campos para asegurar login
           superadmin.password = hashedPassword;
+          superadmin.hash = hashedPassword; 
           superadmin.role = 'superadmin';
           superadmin.modules = ['gobernanza', 'automatizacion'];
           await superadmin.save();
+          console.log('✅ [SEED] Superadmin ACTUALIZADO.');
+        } else {
+          await User.create({ 
+            name: 'Juan Carlos Rendón', 
+            email: superadminEmail, 
+            password: hashedPassword, 
+            hash: hashedPassword,
+            role: 'superadmin', 
+            orgId: 'org_demo', 
+            modules: ['gobernanza', 'automatizacion'] 
+          });
+          console.log('✅ [SEED] Superadmin CREADO.');
         }
-        let org = await Org.findById('org_demo');
-        if (!org) {
-          await Org.create({ _id: 'org_demo', name: 'GōkuLab', modules: ['gobernanza', 'automatizacion'] });
+
+        // FIX MAESTRO: Reconstruir la colección 'Org' basándonos en las empresas existentes
+        const companies = await Company.find();
+        const uniqueOrgIds = [...new Set(companies.map(c => c.orgId))];
+        
+        for (const orgId of uniqueOrgIds) {
+          if (!orgId) continue;
+          let org = await Org.findById(orgId);
+          if (!org) {
+            // Creamos un nombre genérico o inferido
+            const sampleCompany = companies.find(c => c.orgId === orgId);
+            const orgName = orgId === '6ad2a21d120d09e1b4aa2137' ? 'GōkuLab' : `Organización ${orgId.slice(-4)}`;
+            await Org.create({ _id: orgId, name: orgName, modules: ['gobernanza', 'automatizacion'] });
+            console.log(`✅ [SEED] Organización reconstruida: ${orgName} (ID: ${orgId})`);
+          }
         }
+
+        // Asegurar que la org del superadmin exista
+        if (!await Org.findById('6ad2a21d120d09e1b4aa2137')) {
+          await Org.create({ _id: '6ad2a21d120d09e1b4aa2137', name: 'GōkuLab Core', modules: ['gobernanza', 'automatizacion'] });
+        }
+
       } catch (seedError) { console.error('❌ [SEED ERROR]', seedError.message); }
     })
     .catch((err) => console.error('[MONGO] Fallo de conexión:', err.message));
