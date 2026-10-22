@@ -1,5 +1,6 @@
 /* =============================================================================
-   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA
+   BehaviorLab API — server.js  (ESM) - VERSIÓN FINAL COMPLETA (v1.4.1)
+   Backend: Node.js + Express + MongoDB Atlas + Groq (openai/gpt-oss-120b)
    ============================================================================= */
 
 import 'dotenv/config';
@@ -150,17 +151,27 @@ function safeParseJSON(text) {
 app.post('/gov/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ error: 'Credenciales inválidas (Usuario no encontrado)' });
+    console.log(`[LOGIN] Intento de acceso para: ${email}`);
     
-    // Nota: En tu código original quizás usabas bcrypt.compare(password, user.password)
-    // Para que puedas probar de inmediato si no tienes hash, permitimos texto plano temporalmente
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      console.log(`[LOGIN] ❌ Usuario NO encontrado en la base de datos.`);
+      return res.status(401).json({ error: 'Usuario no encontrado' });
+    }
+    
     const validPassword = (password === user.password) || (user.password && await bcrypt.compare(password, user.password).catch(()=>false));
-    if (!validPassword) return res.status(401).json({ error: 'Credenciales inválidas (Contraseña incorrecta)' });
+    
+    if (!validPassword) {
+      console.log(`[LOGIN] ❌ Contraseña incorrecta para ${email}.`);
+      return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
 
+    console.log(`[LOGIN] ✅ Acceso concedido a ${email}`);
     const token = jwt.sign({ _id: user._id, role: user.role, orgId: user.orgId, modules: user.modules }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { email: user.email, role: user.role, orgId: user.orgId, name: user.name, modules: user.modules } });
   } catch (error) {
+    console.error('[LOGIN ERROR]', error);
     res.status(500).json({ error: 'Error en el servidor al iniciar sesión' });
   }
 });
@@ -278,13 +289,12 @@ app.get('/gov/evidence', authenticateToken, async (req, res) => {
 app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
-    // Aquí iría tu lógica de subida a R2. Por ahora simulamos que fue exitoso:
     const ev = await Evidence.create({
       orgId: req.user.orgId,
       companyId: req.body.companyId,
       questionId: req.body.questionId,
       fileName: req.file.originalname,
-      r2Url: 'https://media.gokulab.mx/demo.pdf', // URL falsa para probar
+      r2Url: 'https://media.gokulab.mx/demo.pdf',
       validation: { valido: true, razon: 'Evidencia validada por IA (Simulación)' }
     });
     res.json({ ok: true, evidence: ev, validation: ev.validation });
@@ -357,7 +367,7 @@ app.post('/gov/generate-strategic-report', authenticateToken, async (req, res) =
   } catch (e) { res.status(500).json({ error: 'Error IA' }); }
 });
 
-/* ── ENDPOINT PÚBLICO: ASSESSMENT (CORREGIDO EN ESPAÑOL) ── */
+/* ── ENDPOINT PÚBLICO: ASSESSMENT ── */
 const assessmentLimiter = rateLimiter({ windowMs: 10 * 60 * 1000, max: 10 });
 app.post('/api/public/automation-assessment', assessmentLimiter, async (req, res) => {
   const v = validateAssessmentPayload(req.body || {});
@@ -370,22 +380,22 @@ app.post('/api/public/automation-assessment', assessmentLimiter, async (req, res
       messages: [
         { role: 'system', content: `Eres un Arquitecto de Automatización de BehaviorLab. 
 Devuelve EXCLUSIVAMENTE un objeto JSON válido.
-REGLA CRÍTICA: TODOS los textos (agentType, agentDescription, roiExplanation, implementationPhases) DEBEN ESTAR ESTRICTAMENTE EN ESPAÑOL. Por ejemplo, usa "Extracción de Documentos" en lugar de "Document Extraction".
-El JSON debe tener esta estructura exacta:
+REGLA CRÍTICA: TODOS los textos (agentType, agentDescription, roiExplanation, implementationPhases) DEBEN ESTAR ESTRICTAMENTE EN ESPAÑOL.
+Estructura:
 {
-  "automationIndex": (número del 0 al 100),
+  "automationIndex": (número 0-100),
   "agentType": "(texto en español)",
   "agentDescription": "(texto en español)",
   "roiHoursPerMonth": (número),
   "baselineHoursPerMonth": (número),
   "roiExplanation": "(texto en español)",
   "paybackMonths": (número),
-  "implementationPhases": ["(texto en español)", "(texto en español)"],
+  "implementationPhases": ["(texto en español)"],
   "confidence": "alta" | "media" | "baja"
 }` },
         { role: 'user', content: `Proceso: ${data.processName}, Volumen: ${data.volume}, Complejidad: ${COMPLEXITY_LABEL[data.complexity]}, Datos: ${data.dataType}, Horas: ${data.hoursSpent}/sem.` },
       ],
-      temperature: 0.1 // Temperatura baja para que sea más estricto
+      temperature: 0.1
     });
     assessment = normalizeAssessment(safeParseJSON(content), data, false);
   } catch (err) {
@@ -411,7 +421,7 @@ app.get('/gov/assessments', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Error al cargar assessments' }); }
 });
 
-/* ── MANEJO DE ERRORES GLOBAL (Evita que devuelva HTML) ── */
+/* ── MANEJO DE ERRORES GLOBAL ── */
 app.use((err, req, res, next) => {
   console.error('[ERROR GLOBAL]', err.message);
   res.status(500).json({ error: err.message || 'Error interno del servidor' });
@@ -419,36 +429,12 @@ app.use((err, req, res, next) => {
 
 app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 
-/* ── ARRANQUE ── */
+/* ── ARRANQUE Y SEED FORZADO ── */
 app.get('/health', (_req, res) => {
   const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
-  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.0' });
+  res.status(dbState === 'connected' ? 200 : 503).json({ ok: dbState === 'connected', db: dbState, version: '1.4.1' });
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => console.log(`[SERVER] Escuchando en :${PORT}`));
-
-if (MONGODB_URI) {
-  mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
-    .then(async () => {
-      console.log('[MONGO] Conectado');
-      // Crear Superadmin por defecto si no existe ninguno
-      const count = await User.countDocuments();
-      if (count === 0) {
-        const hashedPassword = await bcrypt.hash('GokuLab2026!', 10);
-        await User.create({ name: 'Superadmin', email: 'jcrendon@gokulab.mx', password: hashedPassword, role: 'superadmin', orgId: 'org_demo', modules: ['gobernanza', 'automatizacion'] });
-        await Org.create({ name: 'GōkuLab', _id: 'org_demo', modules: ['gobernanza', 'automatizacion'] });
-        console.log('[SEED] Superadmin creado: jcrendon@gokulab.mx / GokuLab2026!');
-      }
-    })
-    .catch((err) => console.error('[MONGO] Fallo:', err.message));
-}
-
-process.on('SIGTERM', async () => {
-  server.close(() => console.log('[SERVER] Cerrado'));
-  await mongoose.connection.close().catch(() => {});
-  process.exit(0);
-});
-/* ── ARRANQUE Y SEED FORZADO ── */
 const server = app.listen(PORT, '0.0.0.0', () => console.log(`[SERVER] Escuchando en :${PORT}`));
 
 if (MONGODB_URI) {
@@ -456,17 +442,14 @@ if (MONGODB_URI) {
     .then(async () => {
       console.log('[MONGO] Conectado a Atlas');
       
-      // ⚠️ SEED FORZADO: Garantiza que tu usuario siempre tenga esta clave
       try {
         const superadminEmail = 'jcrendon@gokulab.mx';
-        const superadminPassword = 'CambiarEstaClave2026!'; // Tu contraseña original
+        const superadminPassword = 'CambiarEstaClave2026!'; 
         const hashedPassword = await bcrypt.hash(superadminPassword, 10);
         
-        // Buscar si ya existe
         let superadmin = await User.findOne({ email: superadminEmail });
         
         if (!superadmin) {
-          // Si no existe, lo crea
           await User.create({ 
             name: 'Juan Carlos Rendón', 
             email: superadminEmail, 
@@ -475,24 +458,21 @@ if (MONGODB_URI) {
             orgId: 'org_demo', 
             modules: ['gobernanza', 'automatizacion'] 
           });
-          console.log('[SEED] Superadmin CREADO exitosamente.');
+          console.log('✅ [SEED] Superadmin CREADO con contraseña: CambiarEstaClave2026!');
         } else {
-          // Si YA existe, le fuerza la contraseña nueva encriptada y los módulos
           superadmin.password = hashedPassword;
           superadmin.role = 'superadmin';
           superadmin.modules = ['gobernanza', 'automatizacion'];
           await superadmin.save();
-          console.log('[SEED] Superadmin ACTUALIZADO con la nueva contraseña.');
+          console.log('✅ [SEED] Superadmin ACTUALIZADO. La contraseña es: CambiarEstaClave2026!');
         }
 
-        // También asegurarnos de que la Organización exista
         let org = await Org.findById('org_demo');
         if (!org) {
           await Org.create({ _id: 'org_demo', name: 'GōkuLab', modules: ['gobernanza', 'automatizacion'] });
         }
-        
       } catch (seedError) {
-        console.error('[SEED ERROR]', seedError.message);
+        console.error('❌ [SEED ERROR]', seedError.message);
       }
     })
     .catch((err) => console.error('[MONGO] Fallo de conexión:', err.message));
