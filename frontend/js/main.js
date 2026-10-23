@@ -13,6 +13,7 @@
       if (isNaN(target) || target === 0) return;
       const duration = 2000;
       const startTime = performance.now();
+
       function updateCounter(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
@@ -105,6 +106,7 @@
     const phraseElement = document.querySelector('#hero-phrases .phrase');
     if (!phraseElement) return;
     let currentIndex = 0;
+
     function changePhrase() {
       phraseElement.style.opacity = 0;
       setTimeout(() => {
@@ -175,7 +177,7 @@
       setupSmoothScroll();
       setupCounterObserver();
       setupPhraseCarousel();
-      setupModals();  // 👈 Añadido
+      setupModals();
     });
   } else {
     setupRevealObserver();
@@ -183,7 +185,7 @@
     setupSmoothScroll();
     setupCounterObserver();
     setupPhraseCarousel();
-    setupModals();   // 👈 Añadido
+    setupModals();
   }
 
 })();
