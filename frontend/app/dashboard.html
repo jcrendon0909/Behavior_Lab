@@ -51,6 +51,7 @@
       <div class="h-5 w-px bg-slate-700"></div>
       <div class="flex items-center space-x-2">
         <button type="button" id="tabProcessesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">💡 Oportunidades de IA</button>
+        <button type="button" id="tabAssessmentsBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">⚡ Automatización</button>
       </div>
       <div class="h-5 w-px bg-slate-700"></div>
       <div class="flex items-center space-x-2">
@@ -202,7 +203,34 @@
       </div>
     </div>
 
-    <!-- 8. PROSPECTOS -->
+    <!-- 8. ASSESSMENT DE AUTOMATIZACIÓN (NUEVO) -->
+    <div id="assessmentsSection" class="hidden">
+      <div class="mb-6 flex justify-between items-end">
+        <div>
+          <h2 class="text-2xl font-bold text-white mb-2">Assessment de Automatización</h2>
+          <p class="text-slate-400 text-sm">Resultados del Wizard público.</p>
+        </div>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl overflow-hidden">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-slate-950/50">
+            <tr class="border-b border-slate-700 text-sm text-slate-400">
+              <th class="py-3 px-4">Fecha</th>
+              <th class="py-3 px-4">Contacto</th>
+              <th class="py-3 px-4">Empresa</th>
+              <th class="py-3 px-4">Proceso</th>
+              <th class="py-3 px-4 text-center">Índice IA</th>
+              <th class="py-3 px-4">Agente / ROI</th>
+            </tr>
+          </thead>
+          <tbody id="assessmentsTableBody" class="text-sm divide-y divide-slate-800">
+            <tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 9. PROSPECTOS -->
     <div id="leadsSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="mb-4"><h2 class="text-lg font-bold">Prospectos Capturados</h2></div>
@@ -210,15 +238,15 @@
       </div>
     </div>
 
-    <!-- 9. USUARIOS -->
+    <!-- 10. USUARIOS -->
     <div id="usersSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Gestión de Usuarios</h2></div><button id="openUserModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Invitar Usuario</button></div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Email</th><th class="py-3 px-4">Rol</th><th class="py-3 px-4">ID Org</th></tr></thead><tbody id="usersTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Email</th><th class="py-3 px-4">Rol</th><th class="py-3 px-4">Módulos</th><th class="py-3 px-4">ID Org</th></tr></thead><tbody id="usersTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
       </div>
     </div>
 
-    <!-- 10. EVIDENCIA -->
+    <!-- 11. EVIDENCIA -->
     <div id="evidenceSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="mb-6"><h2 class="text-lg font-bold">Expediente Digital de Evidencias</h2><p class="text-sm text-slate-400">Documentos validados por la IA y almacenados en R2.</p></div>
@@ -270,6 +298,20 @@
           <div><label class="block text-sm font-semibold text-slate-300 mb-1">Rol</label><select id="userRole" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="admin">Admin (Cliente)</option><option value="auditor">Auditor</option><option value="superadmin">Superadmin</option></select></div>
         </div>
         <div><label class="block text-sm font-semibold text-slate-300 mb-1">Organización</label><select id="userOrg" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
+        
+        <!-- NUEVOS CHECKBOXES DE MÓDULOS -->
+        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+          <label class="text-sm font-semibold text-slate-300 mb-2 block">Módulos Permitidos:</label>
+          <div class="flex gap-6">
+            <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+              <input type="checkbox" id="userModuleGob" value="gobernanza" checked class="accent-teal-500 w-4 h-4"> Gobernanza
+            </label>
+            <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+              <input type="checkbox" id="userModuleAuto" value="automatizacion" class="accent-teal-500 w-4 h-4"> Automatización
+            </label>
+          </div>
+        </div>
+
         <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeUserModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Crear Usuario</button></div>
       </form>
     </div>

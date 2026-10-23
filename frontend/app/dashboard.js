@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('gov_token'); localStorage.removeItem('gov_user'); window.location.href = 'index.html';
   });
 
-  const tabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabProcessesBtn', 'tabLeadsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
-  const sections = ['dashboardSection', 'inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'processesSection', 'leadsSection', 'usersSection', 'evidenceSection'];
+  const tabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabProcessesBtn', 'tabLeadsBtn', 'tabAssessmentsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
+  const sections = ['dashboardSection', 'inventorySection', 'matrixSection', 'risksSection', 'deliverablesSection', 'companiesSection', 'processesSection', 'leadsSection', 'assessmentsSection', 'usersSection', 'evidenceSection'];
 
   function resetTabs() {
     tabs.forEach(id => { 
@@ -55,8 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabCom = document.getElementById('tabCompaniesBtn'); if(tabCom) tabCom.addEventListener('click', () => setTab('tabCompaniesBtn', 'companiesSection'));
   const tabPro = document.getElementById('tabProcessesBtn'); if(tabPro) tabPro.addEventListener('click', () => setTab('tabProcessesBtn', 'processesSection', loadProcesses));
   const tabLea = document.getElementById('tabLeadsBtn'); if(tabLea) tabLea.addEventListener('click', () => setTab('tabLeadsBtn', 'leadsSection', loadLeads));
+  const tabAss = document.getElementById('tabAssessmentsBtn'); if(tabAss) tabAss.addEventListener('click', () => setTab('tabAssessmentsBtn', 'assessmentsSection', loadAssessments));
   const tabUse = document.getElementById('tabUsersBtn'); if(tabUse) tabUse.addEventListener('click', () => setTab('tabUsersBtn', 'usersSection', loadUsers));
-  const tabEvi = document.getElementById('tabEvidenceBtn'); if(tabEvi) tabEvi.addEventListener('click', () => setTab('tabEvidenceBtn', 'evidenceSection', loadEvidence));
+  const tabEvi = document.getElementById('tabEvidenceBtn'); if(tabEvi) tabEvi.addEventListener('click', () => setTab('tabEvidenceBtn', 'evidenceSection',loadEvidence));
 
   // MODALES
   const modalModel = document.getElementById('newModelModal');
@@ -64,13 +65,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModalBtn = document.getElementById('closeModalBtn'); if(closeModalBtn) closeModalBtn.addEventListener('click', () => modalModel.classList.add('hidden'));
 
   const modalCompany = document.getElementById('newCompanyModal');
-  const openCompanyModalBtn = document.getElementById('openCompanyModalBtn'); if(openCompanyModalBtn) openCompanyModalBtn.addEventListener('click', () => modalCompany.classList.remove('hidden'));
+  const openCompanyModalBtn = document.getElementById('openCompanyModalBtn'); if(openCompanyModalBtn) openCompanyModalBtn.addEventListener('click', () =>modalCompany.classList.remove('hidden'));
   const closeCompanyModalBtn = document.getElementById('closeCompanyModalBtn'); if(closeCompanyModalBtn) closeCompanyModalBtn.addEventListener('click', () => modalCompany.classList.add('hidden'));
 
   const modalUser = document.getElementById('newUserModal');
   const openUserModalBtn = document.getElementById('openUserModalBtn'); if(openUserModalBtn) openUserModalBtn.addEventListener('click', async () => {
     const userOrgSelect = document.getElementById('userOrg');
-    if (orgsCache.length === 0) { try { const res = await fetch(`${API_URL}/gov/orgs`, { headers }); if (res.ok) orgsCache = await res.json(); } catch(e) {} }
+    if (orgsCache.length === 0) { try { const res = await fetch(`${API_URL}/gov/orgs`, { headers }); if (res.ok) orgsCache = await res.json(); } catch(e){} }
     userOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
     modalUser.classList.remove('hidden');
   });
@@ -93,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeRiskModalBtn = document.getElementById('closeRiskModalBtn'); if(closeRiskModalBtn) closeRiskModalBtn.addEventListener('click', () => modalRisk.classList.add('hidden'));
 
   const modalProcess = document.getElementById('newProcessModal');
-  const openProcessModalBtn = document.getElementById('openProcessModalBtn'); if(openProcessModalBtn) openProcessModalBtn.addEventListener('click', () => {
+  const openProcessModalBtn = document.getElementById('openProcessModalBtn'); if(openProcessModalBtn) openProcessModalBtn.addEventListener('click', () =>{
     const selectProcComp = document.getElementById('procCompany');
     selectProcComp.innerHTML = `<option value="">Global (Toda la org)</option>` + companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
     modalProcess.classList.remove('hidden');
@@ -235,14 +236,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 4. CARGA DE DATOS
+  // 4. CARGA DE DATOS Y LÓGICA RBAC
   async function init() {
     currentUser = JSON.parse(localStorage.getItem('gov_user'));
     if (!currentUser) return window.location.href = 'index.html';
     document.getElementById('userEmail').textContent = currentUser.email;
     currentOrgId = currentUser.orgId;
 
-    if (currentUser.role === 'superadmin') {
+    // --- LÓGICA RBAC (Filtro de pestañas por módulos) ---
+    const userModules = currentUser.modules || ['gobernanza'];
+    const isSuperAdmin = currentUser.role === 'superadmin';
+
+    // Ocultar todas las pestañas por defecto para luego mostrar las permitidas
+    tabs.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+
+    // Pestañas de Gobernanza
+    const govTabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabProcessesBtn', 'tabLeadsBtn', 'tabEvidenceBtn'];
+    if (isSuperAdmin || userModules.includes('gobernanza')) {
+      govTabs.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'block'; });
+    }
+
+    // Pestaña de Automatización (Assessments)
+    if (isSuperAdmin || userModules.includes('automatizacion')) {
+      const el = document.getElementById('tabAssessmentsBtn'); if(el) el.style.display = 'block';
+    }
+
+    // Pestañas exclusivas de Superadmin
+    if (isSuperAdmin) {
+      const usersTab = document.getElementById('tabUsersBtn'); if(usersTab) usersTab.style.display = 'block';
+    }
+
+    // --- FIN LÓGICA RBAC ---
+
+    if (isSuperAdmin) {
       const container = document.getElementById('orgSelectorContainer');
       container.classList.remove('hidden'); container.classList.add('flex');
       try {
@@ -264,12 +290,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (e) { console.error("Error cargando orgs:", e); }
     } else {
-      document.getElementById('tabLeadsBtn').classList.add('hidden');
-      document.getElementById('tabUsersBtn').classList.add('hidden');
+      document.getElementById('tabLeadsBtn').style.display = 'none';
     }
     
-    setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard);
-    loadDashboardData(); 
+    // Establecer la pestaña inicial según el rol/módulo
+    if (isSuperAdmin || userModules.includes('gobernanza')) {
+      setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard);
+      loadDashboardData(); 
+    } else if (userModules.includes('automatizacion')) {
+      setTab('tabAssessmentsBtn', 'assessmentsSection', loadAssessments);
+    }
   }
 
   async function loadDashboardData() { await loadCompanies(); await loadInventory(); }
@@ -356,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('inventoryTableBody');
       if (inventory.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay modelos.</td></tr>`; return; }
       tbody.innerHTML = inventory.map(item => {
-        let riskColor = 'bg-slate-700 text-slate-300'; if (item.risk_level === 'alto') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800'; if (item.risk_level === 'medio') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800'; if (item.risk_level === 'bajo') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+        let riskColor = 'bg-slate-700 text-slate-300'; if (item.risk_level === 'alto') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800'; if(item.risk_level === 'medio') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800'; if (item.risk_level === 'bajo') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
         const company = companiesCache.find(c => c._id === item.companyId); const companyName = company ? company.name : 'Desconocida';
         return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status.replace('_', ' ')}</td></tr>`;
       }).join('');
@@ -465,7 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${API_URL}/gov/process-evals`, { headers });
       let processes = await res.json(); processes = processes.filter(p => p.orgId === currentOrgId);
       const tbody = document.getElementById('processesTableBody');
-      if (processes.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay procesos evaluados.</td></tr>`; return; }
+      if (processes.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay procesos evaluados.</td></tr>`;return; }
       tbody.innerHTML = processes.map(p => {
         let scoreColor = 'text-teal-400';
         if (p.score < 50) scoreColor = 'text-rose-400';
@@ -506,7 +536,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try { 
-      // 1. Llamar a Groq para evaluar el proceso
       const aiRes = await fetch(`${API_URL}/gov/analyze-process`, {
         method: 'POST', headers, body: JSON.stringify(payload)
       });
@@ -514,7 +543,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!aiRes.ok) throw new Error("Error al evaluar con IA");
       const aiData = await aiRes.json();
 
-      // 2. Guardar en la base de datos
       payload.score = aiData.score;
       payload.agentType = aiData.agentType;
       payload.recommendation = aiData.recommendation;
@@ -535,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
       const tbody = document.getElementById('leadsTableBody');
-      if (leads.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Aún no hay prospectos.</td></tr>`; return; }
+      if (leads.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Aún no hay prospectos.</td></tr>`; return;}
       tbody.innerHTML = leads.map(l => {
         const date = new Date(l.ts).toLocaleDateString('es-MX'); let badgeColor = 'bg-teal-950 text-teal-400 border border-teal-800';
         if (l.risk_level === 'alto') badgeColor = 'bg-rose-950 text-rose-400 border border-rose-800';
@@ -544,11 +572,50 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {}
   }
 
+  // NUEVA FUNCIÓN: CARGAR ASSESSMENTS DE AUTOMATIZACIÓN
+  async function loadAssessments() {
+    try {
+      const res = await fetch(`${API_URL}/gov/assessments`, { headers }); 
+      const assessments = await res.json();
+      const tbody = document.getElementById('assessmentsTableBody');
+      if (!tbody) return;
+
+      if (assessments.length === 0) { 
+        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">Aún no hay evaluaciones de automatización.</td></tr>`; 
+        return; 
+      }
+      
+      tbody.innerHTML = assessments.map(a => {
+        const date = new Date(a.createdAt || a.ts).toLocaleDateString('es-MX');
+        const idx = a.resultado?.automationIndex || 0;
+        const roi = a.resultado?.roiHoursPerMonth || 0;
+        const agent = a.resultado?.agentType || 'No definido';
+        const process = a.proceso?.processName || 'Desconocido';
+        
+        let idxColor = 'text-teal-400';
+        if (idx < 40) idxColor = 'text-rose-400';
+        else if (idx < 70) idxColor = 'text-amber-400';
+
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+          <td class="py-3 px-4 text-slate-500">${date}</td>
+          <td class="py-3 px-4 font-semibold text-slate-200">${a.nombre}<br><span class="text-xs text-slate-400">${a.email}</span></td>
+          <td class="py-3 px-4 text-slate-300">${a.empresa}</td>
+          <td class="py-3 px-4 text-slate-300 font-semibold">${process}</td>
+          <td class="py-3 px-4 text-center font-bold text-xl ${idxColor}">${idx}%</td>
+          <td class="py-3 px-4 text-slate-300 text-sm">${agent}<br><span class="text-xs text-teal-400">~${roi} hrs/mes</span></td>
+        </tr>`;
+      }).join('');
+    } catch (error) { console.error("Error cargando assessments:", error); }
+  }
+
   async function loadUsers() {
     try {
       const res = await fetch(`${API_URL}/gov/users`, { headers }); const users = await res.json();
       const tbody = document.getElementById('usersTableBody');
-      tbody.innerHTML = users.map(u => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${u.name || 'Sin nombre'}</td><td class="py-3 px-4 text-slate-300">${u.email}</td><td class="py-3 px-4 text-teal-400 capitalize">${u.role}</td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${u.orgId}</td></tr>`).join('');
+      tbody.innerHTML = users.map(u => {
+        const modulesStr = (u.modules || ['gobernanza']).join(', ');
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${u.name || 'Sin nombre'}</td><td class="py-3 px-4 text-slate-300">${u.email}</td><td class="py-3 px-4 text-teal-400 capitalize">${u.role}</td><td class="py-3 px-4 text-slate-400 text-xs">${modulesStr}</td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${u.orgId}</td></tr>`;
+      }).join('');
     } catch (error) { console.error("Error users:", error); }
   }
 
@@ -588,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const newModelForm = document.getElementById('newModelForm'); if(newModelForm) newModelForm.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
     const payload = { companyId: document.getElementById('modelCompany').value, model_name: document.getElementById('modelName').value, category: document.getElementById('modelCategory').value, risk_level: document.getElementById('modelRisk').value, vendor: 'Desconocido', status: 'en_uso' };
-    try { const res = await fetch(`${API_URL}/gov/ai-inventory`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newModelModal').classList.add('hidden'); e.target.reset(); loadInventory(); } else alert('Error'); } catch (err) { alert('Error'); } finally { btn.textContent = 'Guardar Modelo'; btn.disabled = false; }
+    try { const res = await fetch(`${API_URL}/gov/ai-inventory`, { method: 'POST', headers, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById('newModelModal').classList.add('hidden'); e.target.reset(); loadInventory(); } else alert('Error'); } catch (err) { alert('Error'); } finally {btn.textContent = 'Guardar Modelo'; btn.disabled = false; }
   });
 
   const newCompanyForm = document.getElementById('newCompanyForm'); if(newCompanyForm) newCompanyForm.addEventListener('submit', async (e) => {
@@ -599,8 +666,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const newUserForm = document.getElementById('newUserForm'); if(newUserForm) newUserForm.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Creando...'; btn.disabled = true;
-    const payload = { name: document.getElementById('userName').value, email: document.getElementById('userEmailInput').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value, orgId: document.getElementById('userOrg').value };
-    try { const res = await fetch(`${API_URL}/gov/users`, { method: 'POST', headers, body: JSON.stringify(payload) }); let data = {}; try { data = await res.json(); } catch (e) {} if (res.ok) { document.getElementById('newUserModal').classList.add('hidden'); e.target.reset(); loadUsers(); alert("Usuario creado exitosamente."); } else { alert('Error: ' + (data.error || 'Revisa la terminal')); } } catch (err) { alert('Error de red.'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
+    
+    // Capturar módulos seleccionados
+    const modules = [];
+    if(document.getElementById('userModuleGob')?.checked) modules.push('gobernanza');
+    if(document.getElementById('userModuleAuto')?.checked) modules.push('automatizacion');
+    if(modules.length === 0) modules.push('gobernanza'); // fallback
+
+    const payload = { 
+      name: document.getElementById('userName').value, 
+      email: document.getElementById('userEmailInput').value, 
+      password: document.getElementById('userPassword').value, 
+      role: document.getElementById('userRole').value, 
+      orgId: document.getElementById('userOrg').value,
+      modules: modules
+    };
+    
+    try { 
+      const res = await fetch(`${API_URL}/gov/users`, { method: 'POST', headers, body: JSON.stringify(payload) }); 
+      let data = {}; try { data = await res.json(); } catch (e) {} 
+      if (res.ok) { document.getElementById('newUserModal').classList.add('hidden'); e.target.reset(); loadUsers(); alert("Usuario creado exitosamente."); } 
+      else { alert('Error: ' + (data.error || 'Revisa la terminal')); } 
+    } catch (err) { alert('Error de red.'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
   });
 
   const diagnosticForm = document.getElementById('diagnosticForm'); if(diagnosticForm) diagnosticForm.addEventListener('submit', async (e) => {
@@ -654,7 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`${API_URL}/gov/evaluations`, { method: 'POST', headers, body: JSON.stringify(payload) });
       if (res.ok) {
         document.getElementById('statMaturity').textContent = `${percentage}%`; document.getElementById('statMaturity').className = `text-4xl font-bold ${color}`;
-        document.getElementById('finalScore').textContent = `${percentage}%`; document.getElementById('finalScore').className = `text-6xl font-black mb-1 ${color}`;
+        document.getElementById('finalScore').textContent = `${percentage}%`; document.getElementById('finalScore').className = `text-6xl font-black mb-1${color}`;
         document.getElementById('finalRiskLabel').textContent = label;
         document.getElementById('resultFrameworkName').textContent = `Marco: ${framework}`;
         document.getElementById('roadmapPhase1').textContent = phase1.join(" ") || "Nada pendiente.";
@@ -670,7 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
           btnAI.textContent = '📄 Ver Reporte en PDF'; btnAI.disabled = false; btnAI.classList.replace('bg-slate-600', 'bg-blue-600');
           btnAI.onclick = () => {
             const w = window.open('', '_blank');
-            w.document.write(`<!DOCTYPE html><html><head><title>Reporte - ${companyName}</title><script src="https://cdn.tailwindcss.com"></script></head><body class="p-12"><div class="max-w-3xl mx-auto"><h1 class="text-3xl font-black border-b-4 border-blue-600 pb-4 mb-4">Reporte Ejecutivo (${framework})</h1><p class="text-xl"><b>Empresa:</b> ${companyName}</p><p class="mb-6"><b>Score:</b> ${percentage}% (${label})</p><div class="prose"><h3 class="font-bold text-lg">Análisis IA:</h3><p class="whitespace-pre-wrap">${aiData.report}</p></div></div></body></html>`);
+            w.document.write(`<!DOCTYPE html><html><head><title>Reporte - ${companyName}</title><script src="https://cdn.tailwindcss.com"></script></head><body class="p-12"><div class="max-w-3xl mx-auto"><h1 class="text-3xl font-black border-b-4 border-blue-600 pb-4 mb-4">Reporte Ejecutivo (${framework})</h1><p class="text-xl"><b>Empresa:</b> ${companyName}</p><p class="mb-6"><b>Score:</b> ${percentage}% (${label})</p><div class="prose"><h3 class="font-boldtext-lg">Análisis IA:</h3><p class="whitespace-pre-wrap">${aiData.report}</p></div></div></body></html>`);
             w.document.close();
           };
         } else { btnAI.textContent = '❌ Error de IA'; btnAI.disabled = false; }
