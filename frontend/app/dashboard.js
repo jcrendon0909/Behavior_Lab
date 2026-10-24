@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let companiesCache = []; 
   let orgsCache = [];
 
-  // Helper para comparar ObjectIds (de Mongo) con Strings (del JWT)
+  // Helper para comparar IDs de forma segura
   const isSameOrg = (id1, id2) => {
     if (!id1 || !id2) return false;
     return id1.toString() === id2.toString();
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabUse = document.getElementById('tabUsersBtn'); if(tabUse) tabUse.addEventListener('click', () => setTab('tabUsersBtn', 'usersSection', loadUsers));
   const tabEvi = document.getElementById('tabEvidenceBtn'); if(tabEvi) tabEvi.addEventListener('click', () => setTab('tabEvidenceBtn', 'evidenceSection', loadEvidence));
 
-  // MODALES (Se mantienen igual)
+  // MODALES
   const modalModel = document.getElementById('newModelModal');
   const openModalBtn = document.getElementById('openModalBtn'); if(openModalBtn) openModalBtn.addEventListener('click', () => modalModel.classList.remove('hidden'));
   const closeModalBtn = document.getElementById('closeModalBtn'); if(closeModalBtn) closeModalBtn.addEventListener('click', () => modalModel.classList.add('hidden'));
@@ -390,11 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (inventory.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay modelos.</td></tr>`; return; }
       tbody.innerHTML = inventory.map(item => {
         let riskColor = 'bg-slate-700 text-slate-300'; if (item.risk_level === 'alto') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800'; if(item.risk_level === 'medio') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800'; if (item.risk_level === 'bajo') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
-        
-        // CORRECCIÓN AQUÍ: usamos isSameOrg para buscar el nombre de la compañía
         const company = companiesCache.find(c => isSameOrg(c._id, item.companyId)); 
         const companyName = company ? company.name : 'Desconocida';
-        
         return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status ? item.status.replace('_', ' ') : 'N/A'}</td></tr>`;
       }).join('');
     } catch (error) { console.error("Error cargando inventario:", error); }
@@ -407,7 +404,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const matrixGrid = document.getElementById('matrixGrid');
       const frameworks = ["ISO 42001", "NIST AI RMF", "EU AI Act", "LFPDPPP"];
       matrixGrid.innerHTML = frameworks.map(fw => {
-        // CORRECCIÓN AQUÍ: usamos isSameOrg
         const evalForFw = evaluations.find(e => e.framework === fw && isSameOrg(e.orgId, currentOrgId));
         let score = "--"; let statusText = "No Evaluado"; let color = "text-slate-500"; let border = "border-slate-700"; let bg = "bg-slate-800/30";
         if (evalForFw) {
