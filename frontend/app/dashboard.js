@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let companiesCache = []; 
   let orgsCache = [];
 
+  // Helper para comparar ObjectIds (de Mongo) con Strings (del JWT)
+  const isSameOrg = (id1, id2) => {
+    if (!id1 || !id2) return false;
+    return id1.toString() === id2.toString();
+  };
+
   // 1. EVENTOS BÁSICOS
   const logoutBtn = document.getElementById('logoutBtn');
   if(logoutBtn) logoutBtn.addEventListener('click', () => {
@@ -48,18 +54,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const tabDash = document.getElementById('tabDashboardBtn'); if(tabDash) tabDash.addEventListener('click', () => setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard));
-  const tabInv = document.getElementById('tabInventoryBtn'); if(tabInv) tabInv.addEventListener('click', () => setTab('tabInventoryBtn', 'inventorySection'));
+  const tabInv = document.getElementById('tabInventoryBtn'); if(tabInv) tabInv.addEventListener('click', () => setTab('tabInventoryBtn', 'inventorySection', loadInventory));
   const tabMat = document.getElementById('tabMatrixBtn'); if(tabMat) tabMat.addEventListener('click', () => setTab('tabMatrixBtn', 'matrixSection', loadMatrix));
   const tabRis = document.getElementById('tabRisksBtn'); if(tabRis) tabRis.addEventListener('click', () => setTab('tabRisksBtn', 'risksSection', loadRisks));
   const tabDel = document.getElementById('tabDeliverablesBtn'); if(tabDel) tabDel.addEventListener('click', () => setTab('tabDeliverablesBtn', 'deliverablesSection', loadDeliverables));
-  const tabCom = document.getElementById('tabCompaniesBtn'); if(tabCom) tabCom.addEventListener('click', () => setTab('tabCompaniesBtn', 'companiesSection'));
+  const tabCom = document.getElementById('tabCompaniesBtn'); if(tabCom) tabCom.addEventListener('click', () => setTab('tabCompaniesBtn', 'companiesSection', loadCompanies));
   const tabPro = document.getElementById('tabProcessesBtn'); if(tabPro) tabPro.addEventListener('click', () => setTab('tabProcessesBtn', 'processesSection', loadProcesses));
   const tabLea = document.getElementById('tabLeadsBtn'); if(tabLea) tabLea.addEventListener('click', () => setTab('tabLeadsBtn', 'leadsSection', loadLeads));
   const tabAss = document.getElementById('tabAssessmentsBtn'); if(tabAss) tabAss.addEventListener('click', () => setTab('tabAssessmentsBtn', 'assessmentsSection', loadAssessments));
   const tabUse = document.getElementById('tabUsersBtn'); if(tabUse) tabUse.addEventListener('click', () => setTab('tabUsersBtn', 'usersSection', loadUsers));
-  const tabEvi = document.getElementById('tabEvidenceBtn'); if(tabEvi) tabEvi.addEventListener('click', () => setTab('tabEvidenceBtn', 'evidenceSection',loadEvidence));
+  const tabEvi = document.getElementById('tabEvidenceBtn'); if(tabEvi) tabEvi.addEventListener('click', () => setTab('tabEvidenceBtn', 'evidenceSection', loadEvidence));
 
-  // MODALES
+  // MODALES (Se mantienen igual)
   const modalModel = document.getElementById('newModelModal');
   const openModalBtn = document.getElementById('openModalBtn'); if(openModalBtn) openModalBtn.addEventListener('click', () => modalModel.classList.remove('hidden'));
   const closeModalBtn = document.getElementById('closeModalBtn'); if(closeModalBtn) closeModalBtn.addEventListener('click', () => modalModel.classList.add('hidden'));
@@ -72,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const openUserModalBtn = document.getElementById('openUserModalBtn'); if(openUserModalBtn) openUserModalBtn.addEventListener('click', async () => {
     const userOrgSelect = document.getElementById('userOrg');
     if (orgsCache.length === 0) { try { const res = await fetch(`${API_URL}/gov/orgs`, { headers }); if (res.ok) orgsCache = await res.json(); } catch(e){} }
-    userOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
+    userOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name || 'Org sin nombre'}</option>`).join('');
     modalUser.classList.remove('hidden');
   });
   const closeUserModalBtn = document.getElementById('closeUserModalBtn'); if(closeUserModalBtn) closeUserModalBtn.addEventListener('click', () => modalUser.classList.add('hidden'));
@@ -243,30 +249,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('userEmail').textContent = currentUser.email;
     currentOrgId = currentUser.orgId;
 
-    // --- LÓGICA RBAC (Filtro de pestañas por módulos) ---
     const userModules = currentUser.modules || ['gobernanza'];
     const isSuperAdmin = currentUser.role === 'superadmin';
 
-    // Ocultar todas las pestañas por defecto para luego mostrar las permitidas
     tabs.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
-
-    // Pestañas de Gobernanza
     const govTabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabProcessesBtn', 'tabLeadsBtn', 'tabEvidenceBtn'];
-    if (isSuperAdmin || userModules.includes('gobernanza')) {
-      govTabs.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'block'; });
-    }
-
-    // Pestaña de Automatización (Assessments)
-    if (isSuperAdmin || userModules.includes('automatizacion')) {
-      const el = document.getElementById('tabAssessmentsBtn'); if(el) el.style.display = 'block';
-    }
-
-    // Pestañas exclusivas de Superadmin
-    if (isSuperAdmin) {
-      const usersTab = document.getElementById('tabUsersBtn'); if(usersTab) usersTab.style.display = 'block';
-    }
-
-    // --- FIN LÓGICA RBAC ---
+    if (isSuperAdmin || userModules.includes('gobernanza')) { govTabs.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'block'; }); }
+    if (isSuperAdmin || userModules.includes('automatizacion')) { const el = document.getElementById('tabAssessmentsBtn'); if(el) el.style.display = 'block'; }
+    if (isSuperAdmin) { const usersTab = document.getElementById('tabUsersBtn'); if(usersTab) usersTab.style.display = 'block'; }
 
     if (isSuperAdmin) {
       const container = document.getElementById('orgSelectorContainer');
@@ -276,10 +266,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
           orgsCache = await res.json();
           const selector = document.getElementById('orgSelector');
-          selector.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name}</option>`).join('');
-          selector.addEventListener('change', (e) => {
+          selector.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name || 'Org sin nombre'}</option>`).join('');
+          
+          if (orgsCache.length > 0) {
+            currentOrgId = orgsCache[0]._id;
+          }
+
+          selector.addEventListener('change', async (e) => {
             currentOrgId = e.target.value; 
-            loadDashboardData();
+            await loadCompanies(); 
+            loadInventory();
             if(!document.getElementById('dashboardSection').classList.contains('hidden')) loadExecutiveDashboard();
             if(!document.getElementById('matrixSection').classList.contains('hidden')) loadMatrix();
             if(!document.getElementById('risksSection').classList.contains('hidden')) loadRisks();
@@ -293,29 +289,27 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('tabLeadsBtn').style.display = 'none';
     }
     
-    // Establecer la pestaña inicial según el rol/módulo
     if (isSuperAdmin || userModules.includes('gobernanza')) {
+      await loadCompanies(); 
       setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard);
-      loadDashboardData(); 
+      loadInventory(); 
     } else if (userModules.includes('automatizacion')) {
       setTab('tabAssessmentsBtn', 'assessmentsSection', loadAssessments);
     }
   }
 
-  async function loadDashboardData() { await loadCompanies(); await loadInventory(); }
-
   async function loadExecutiveDashboard() {
     try {
       const [risksRes, tasksRes, evalsRes, evidenceRes] = await Promise.all([
-        fetch(`${API_URL}/gov/risks`, { headers }),
-        fetch(`${API_URL}/gov/deliverables`, { headers }),
-        fetch(`${API_URL}/gov/evaluations`, { headers }),
-        fetch(`${API_URL}/gov/evidence`, { headers })
+        fetch(`${API_URL}/gov/risks?orgId=${currentOrgId}`, { headers }),
+        fetch(`${API_URL}/gov/deliverables?orgId=${currentOrgId}`, { headers }),
+        fetch(`${API_URL}/gov/evaluations?orgId=${currentOrgId}`, { headers }),
+        fetch(`${API_URL}/gov/evidence?orgId=${currentOrgId}`, { headers })
       ]);
 
-      const risks = (await risksRes.json()).filter(r => r.orgId === currentOrgId);
-      const tasks = (await tasksRes.json()).filter(d => d.orgId === currentOrgId);
-      const evaluations = (await evalsRes.json()).filter(e => e.orgId === currentOrgId);
+      const risks = (await risksRes.json()).filter(r => isSameOrg(r.orgId, currentOrgId));
+      const tasks = (await tasksRes.json()).filter(d => isSameOrg(d.orgId, currentOrgId));
+      const evaluations = (await evalsRes.json()).filter(e => isSameOrg(e.orgId, currentOrgId));
       const evidence = await evidenceRes.json(); 
 
       const latestEval = evaluations[0]; 
@@ -362,45 +356,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadCompanies() {
     try {
-      const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers }); if (!res.ok) throw new Error('Error');
+      const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers }); 
+      if (!res.ok) throw new Error('Error');
       companiesCache = await res.json();
-      document.getElementById('statCompanies').textContent = companiesCache.length;
+      
+      const statEl = document.getElementById('statCompanies');
+      if(statEl) statEl.textContent = companiesCache.length;
+
       const tbody = document.getElementById('companiesTableBody');
-      if (companiesCache.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">No hay filiales.</td></tr>`; } 
-      else {
-        tbody.innerHTML = companiesCache.map(c => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${c.name}</td><td class="py-3 px-4 text-slate-400 capitalize">${c.riskProfile.replace('_', ' ')}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-teal-950 text-teal-400 border border-teal-800">Activa</span></td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${c._id}</td></tr>`).join('');
+      if (tbody) {
+        if (companiesCache.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">No hay filiales.</td></tr>`; } 
+        else {
+          tbody.innerHTML = companiesCache.map(c => `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${c.name}</td><td class="py-3 px-4 text-slate-400 capitalize">${c.riskProfile.replace('_', ' ')}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-teal-950 text-teal-400 border border-teal-800">Activa</span></td><td class="py-3 px-4 text-slate-500 font-mono text-xs">${c._id}</td></tr>`).join('');
+        }
       }
+      
       const selectModel = document.getElementById('modelCompany');
-      selectModel.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+      if(selectModel) selectModel.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
       const selectDiag = document.getElementById('diagCompany');
-      selectDiag.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
-    } catch (error) {}
+      if(selectDiag) selectDiag.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+    } catch (error) { console.error("Error cargando empresas:", error); }
   }
 
   async function loadInventory() {
     try {
-      const res = await fetch(`${API_URL}/gov/ai-inventory`, { headers }); if (!res.ok) throw new Error('Error');
-      let inventory = await res.json(); inventory = inventory.filter(item => item.orgId === currentOrgId);
+      const res = await fetch(`${API_URL}/gov/ai-inventory?orgId=${currentOrgId}`, { headers }); if (!res.ok) throw new Error('Error');
+      let inventory = await res.json(); 
+      inventory = inventory.filter(item => isSameOrg(item.orgId, currentOrgId));
+      
       document.getElementById('statTotalModels').textContent = inventory.length;
       document.getElementById('statHighRisk').textContent = inventory.filter(i => i.risk_level === 'alto').length;
       const tbody = document.getElementById('inventoryTableBody');
       if (inventory.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay modelos.</td></tr>`; return; }
       tbody.innerHTML = inventory.map(item => {
         let riskColor = 'bg-slate-700 text-slate-300'; if (item.risk_level === 'alto') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800'; if(item.risk_level === 'medio') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800'; if (item.risk_level === 'bajo') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
-        const company = companiesCache.find(c => c._id === item.companyId); const companyName = company ? company.name : 'Desconocida';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status.replace('_', ' ')}</td></tr>`;
+        
+        // CORRECCIÓN AQUÍ: usamos isSameOrg para buscar el nombre de la compañía
+        const company = companiesCache.find(c => isSameOrg(c._id, item.companyId)); 
+        const companyName = company ? company.name : 'Desconocida';
+        
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status ? item.status.replace('_', ' ') : 'N/A'}</td></tr>`;
       }).join('');
-    } catch (error) {}
+    } catch (error) { console.error("Error cargando inventario:", error); }
   }
 
   async function loadMatrix() {
     try {
-      const res = await fetch(`${API_URL}/gov/evaluations`, { headers });
+      const res = await fetch(`${API_URL}/gov/evaluations?orgId=${currentOrgId}`, { headers });
       const evaluations = await res.json();
       const matrixGrid = document.getElementById('matrixGrid');
       const frameworks = ["ISO 42001", "NIST AI RMF", "EU AI Act", "LFPDPPP"];
       matrixGrid.innerHTML = frameworks.map(fw => {
-        const evalForFw = evaluations.find(e => e.framework === fw && e.orgId === currentOrgId);
+        // CORRECCIÓN AQUÍ: usamos isSameOrg
+        const evalForFw = evaluations.find(e => e.framework === fw && isSameOrg(e.orgId, currentOrgId));
         let score = "--"; let statusText = "No Evaluado"; let color = "text-slate-500"; let border = "border-slate-700"; let bg = "bg-slate-800/30";
         if (evalForFw) {
           score = `${evalForFw.score}%`;
@@ -418,8 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadDeliverables() {
     try {
-      const res = await fetch(`${API_URL}/gov/deliverables`, { headers });
-      let deliverables = await res.json(); deliverables = deliverables.filter(d => d.orgId === currentOrgId);
+      const res = await fetch(`${API_URL}/gov/deliverables?orgId=${currentOrgId}`, { headers });
+      let deliverables = await res.json(); 
+      deliverables = deliverables.filter(d => isSameOrg(d.orgId, currentOrgId));
       const tbody = document.getElementById('deliverablesTableBody');
       if (deliverables.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay tareas en el plan de trabajo.</td></tr>`; return; }
       tbody.innerHTML = deliverables.map(d => {
@@ -456,8 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadRisks() {
     try {
-      const res = await fetch(`${API_URL}/gov/risks`, { headers });
-      let risks = await res.json(); risks = risks.filter(r => r.orgId === currentOrgId);
+      const res = await fetch(`${API_URL}/gov/risks?orgId=${currentOrgId}`, { headers });
+      let risks = await res.json(); 
+      risks = risks.filter(r => isSameOrg(r.orgId, currentOrgId));
       const tbody = document.getElementById('risksTableBody');
       if (risks.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No hay riesgos registrados.</td></tr>`; return; }
       tbody.innerHTML = risks.map(r => {
@@ -489,11 +499,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) { alert('Error de red: ' + err.message); } finally { btn.textContent = 'Guardar Riesgo'; btn.disabled = false; }
   });
 
-  // 5. OPORTUNIDADES DE IA (PROCESOS)
   async function loadProcesses() {
     try {
-      const res = await fetch(`${API_URL}/gov/process-evals`, { headers });
-      let processes = await res.json(); processes = processes.filter(p => p.orgId === currentOrgId);
+      const res = await fetch(`${API_URL}/gov/process-evals?orgId=${currentOrgId}`, { headers });
+      let processes = await res.json(); 
+      processes = processes.filter(p => isSameOrg(p.orgId, currentOrgId));
       const tbody = document.getElementById('processesTableBody');
       if (processes.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">No hay procesos evaluados.</td></tr>`;return; }
       tbody.innerHTML = processes.map(p => {
@@ -558,7 +568,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) { alert('Error: ' + err.message); } finally { btn.textContent = 'Evaluar con IA'; btn.disabled = false; }
   });
 
-  // 6. RESTO DE FUNCIONES
   async function loadLeads() {
     try {
       const res = await fetch(`${API_URL}/leads`, { headers }); const leads = await res.json();
@@ -572,7 +581,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {}
   }
 
-  // NUEVA FUNCIÓN: CARGAR ASSESSMENTS DE AUTOMATIZACIÓN
   async function loadAssessments() {
     try {
       const res = await fetch(`${API_URL}/gov/assessments`, { headers }); 
@@ -621,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadEvidence() {
     try {
-      const res = await fetch(`${API_URL}/gov/evidence`, { headers }); if (!res.ok) throw new Error('Error');
+      const res = await fetch(`${API_URL}/gov/evidence?orgId=${currentOrgId}`, { headers }); if (!res.ok) throw new Error('Error');
       let evidence = await res.json(); const tbody = document.getElementById('evidenceTableBody');
       if (evidence.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay evidencias subidas aún.</td></tr>`; return; }
       tbody.innerHTML = evidence.map(e => {
@@ -667,11 +675,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const newUserForm = document.getElementById('newUserForm'); if(newUserForm) newUserForm.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Creando...'; btn.disabled = true;
     
-    // Capturar módulos seleccionados
     const modules = [];
     if(document.getElementById('userModuleGob')?.checked) modules.push('gobernanza');
     if(document.getElementById('userModuleAuto')?.checked) modules.push('automatizacion');
-    if(modules.length === 0) modules.push('gobernanza'); // fallback
+    if(modules.length === 0) modules.push('gobernanza');
 
     const payload = { 
       name: document.getElementById('userName').value, 
@@ -786,13 +793,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const scoreText = document.getElementById('kpiCompliance').textContent.replace('%', '');
         
         const [risksRes, evalsRes] = await Promise.all([
-          fetch(`${API_URL}/gov/risks`, { headers }),
-          fetch(`${API_URL}/gov/evaluations`, { headers })
+          fetch(`${API_URL}/gov/risks?orgId=${currentOrgId}`, { headers }),
+          fetch(`${API_URL}/gov/evaluations?orgId=${currentOrgId}`, { headers })
         ]);
 
         const allRisks = await risksRes.json();
-        const risks = allRisks.filter(r => r.orgId === currentOrgId).slice(0, 3); 
-        const evaluations = (await evalsRes.json()).filter(e => e.orgId === currentOrgId);
+        const risks = allRisks.filter(r => isSameOrg(r.orgId, currentOrgId)).slice(0, 3); 
+        const evaluations = (await evalsRes.json()).filter(e => isSameOrg(e.orgId, currentOrgId));
 
         let pillars = { p1: 0, p2: 0, p3: 0, p4: 0 };
         if (evaluations.length > 0 && evaluations[0].answers) {
