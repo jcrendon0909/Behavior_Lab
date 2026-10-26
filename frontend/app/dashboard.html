@@ -31,32 +31,35 @@
       <button id="btnGeneratePolicy" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2 px-6 rounded-lg transition shadow-lg shadow-blue-500/20 flex items-center gap-2"><span>📄</span> Generar Política</button>
     </div>
 
-    <!-- NAVEGACIÓN AGRUPADA -->
-    <div class="flex items-center space-x-6 border-b border-slate-800 pb-2 mb-6 overflow-x-auto">
+    <!-- NAVEGACIÓN AGRUPADA POR CAPAS -->
+    <div class="flex flex-wrap items-center gap-6 border-b border-slate-800 pb-2 mb-6">
+      
+      <!-- CAPA 1: OPERACIÓN -->
       <div class="flex items-center space-x-2">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2">Operación</span>
         <button type="button" id="tabDashboardBtn" class="text-teal-400 font-semibold pb-2 border-b-2 border-teal-400 transition whitespace-nowrap px-2">Dashboard</button>
-      </div>
-      <div class="h-5 w-px bg-slate-700"></div>
-      <div class="flex items-center space-x-2">
         <button type="button" id="tabInventoryBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Inventario</button>
         <button type="button" id="tabRisksBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Riesgos</button>
         <button type="button" id="tabMatrixBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Matriz</button>
         <button type="button" id="tabEvidenceBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Evidencia</button>
-      </div>
-      <div class="h-5 w-px bg-slate-700"></div>
-      <div class="flex items-center space-x-2">
         <button type="button" id="tabDeliverablesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Plan de Trabajo</button>
+      </div>
+      
+      <div class="h-5 w-px bg-slate-700"></div>
+
+      <!-- CAPA 2: COMERCIAL -->
+      <div class="flex items-center space-x-2">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2">Comercial</span>
+        <button type="button" id="tabLeadsBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Prospectos (Leads)</button>
+      </div>
+
+      <div class="h-5 w-px bg-slate-700"></div>
+
+      <!-- CAPA 3: ADMINISTRACIÓN -->
+      <div class="flex items-center space-x-2">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2">Admin</span>
         <button type="button" id="tabCompaniesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Filiales</button>
-      </div>
-      <div class="h-5 w-px bg-slate-700"></div>
-      <div class="flex items-center space-x-2">
-        <button type="button" id="tabProcessesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">💡 Oportunidades de IA</button>
-        <button type="button" id="tabAssessmentsBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">⚡ Automatización</button>
-      </div>
-      <div class="h-5 w-px bg-slate-700"></div>
-      <div class="flex items-center space-x-2">
         <button type="button" id="tabUsersBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Usuarios</button>
-        <button type="button" id="tabLeadsBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Prospectos</button>
       </div>
     </div>
 
@@ -203,42 +206,50 @@
       </div>
     </div>
 
-    <!-- 8. ASSESSMENT DE AUTOMATIZACIÓN (NUEVO) -->
-    <div id="assessmentsSection" class="hidden">
-      <div class="mb-6 flex justify-between items-end">
-        <div>
-          <h2 class="text-2xl font-bold text-white mb-2">Assessment de Automatización</h2>
-          <p class="text-slate-400 text-sm">Resultados del Wizard público.</p>
-        </div>
-      </div>
-      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl overflow-hidden">
-        <table class="w-full text-left border-collapse">
-          <thead class="bg-slate-950/50">
-            <tr class="border-b border-slate-700 text-sm text-slate-400">
-              <th class="py-3 px-4">Fecha</th>
-              <th class="py-3 px-4">Contacto</th>
-              <th class="py-3 px-4">Empresa</th>
-              <th class="py-3 px-4">Proceso</th>
-              <th class="py-3 px-4 text-center">Índice IA</th>
-              <th class="py-3 px-4">Agente / ROI</th>
-            </tr>
-          </thead>
-          <tbody id="assessmentsTableBody" class="text-sm divide-y divide-slate-800">
-            <tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 9. PROSPECTOS -->
+    <!-- 8. PROSPECTOS (LEADS UNIFICADOS) -->
     <div id="leadsSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-        <div class="mb-4"><h2 class="text-lg font-bold">Prospectos Capturados</h2></div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Fecha</th><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Email</th><th class="py-3 px-4">Empresa</th><th class="py-3 px-4">Riesgo</th></tr></thead><tbody id="leadsTableBody" class="text-sm"><tr><td colspan="5" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h2 class="text-lg font-bold">Prospectos Capturados</h2>
+            <p class="text-sm text-slate-400">Leads de riesgo y automatización. Conviértelos en clientes operativos.</p>
+          </div>
+          <div class="flex gap-2">
+            <select id="leadFilterSource" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm outline-none">
+              <option value="all">Todas las fuentes</option>
+              <option value="risk-calculator">Calculadora de Riesgo</option>
+              <option value="automation-assessment">Automatización</option>
+            </select>
+            <select id="leadFilterStatus" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm outline-none">
+              <option value="all">Todos los estados</option>
+              <option value="nuevo">Nuevos</option>
+              <option value="contactado">Contactados</option>
+              <option value="convertido">Convertidos</option>
+            </select>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-700 text-sm text-slate-400">
+                <th class="py-3 px-4">Fecha</th>
+                <th class="py-3 px-4">Contacto</th>
+                <th class="py-3 px-4">Empresa</th>
+                <th class="py-3 px-4">Fuente</th>
+                <th class="py-3 px-4">Resultado</th>
+                <th class="py-3 px-4">Estado</th>
+                <th class="py-3 px-4 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="leadsTableBody" class="text-sm divide-y divide-slate-800">
+              <tr><td colspan="7" class="py-4 text-center text-slate-500">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- 10. USUARIOS -->
+    <!-- 9. USUARIOS -->
     <div id="usersSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Gestión de Usuarios</h2></div><button id="openUserModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Invitar Usuario</button></div>
@@ -246,7 +257,7 @@
       </div>
     </div>
 
-    <!-- 11. EVIDENCIA -->
+    <!-- 10. EVIDENCIA -->
     <div id="evidenceSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="mb-6"><h2 class="text-lg font-bold">Expediente Digital de Evidencias</h2><p class="text-sm text-slate-400">Documentos validados por la IA y almacenados en R2.</p></div>
@@ -299,7 +310,6 @@
         </div>
         <div><label class="block text-sm font-semibold text-slate-300 mb-1">Organización</label><select id="userOrg" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
         
-        <!-- NUEVOS CHECKBOXES DE MÓDULOS -->
         <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
           <label class="text-sm font-semibold text-slate-300 mb-2 block">Módulos Permitidos:</label>
           <div class="flex gap-6">
@@ -405,6 +415,22 @@
         <div class="flex justify-end gap-3 mt-6">
           <button type="button" id="closeProcessModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button>
           <button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition flex items-center gap-2"><span>🧠</span> Evaluar con IA</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL CONVERTIR LEAD -->
+  <div id="convertLeadModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-2 text-white">Convertir a Cliente</h2>
+      <p class="text-sm text-slate-400 mb-6">Asigna este lead a una organización y crea su filial operativa.</p>
+      <form id="convertLeadForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Organización</label><select id="convertOrgId" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Filial / Empresa</label><input type="text" id="convertCompanyName" required placeholder="Ej. Oleofinos" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" id="closeConvertModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button>
+          <button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Convertir a Empresa</button>
         </div>
       </form>
     </div>

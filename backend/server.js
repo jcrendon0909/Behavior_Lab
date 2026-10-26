@@ -35,7 +35,7 @@ app.use(cors({
     if (!origin || ALLOWED_ORIGINS.includes(origin) || ALLOWED_PATTERNS.some(re => re.test(origin))) return callback(null, true);
     return callback(new Error('Origen no permitido por CORS'));
   },
-  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset', 'Retry-After'],
 }));
@@ -47,9 +47,11 @@ app.use(express.json({ limit: '100kb' }));
 // ==========================================
 const LeadSchema = new mongoose.Schema({
   tipo_lead: { type: String, default: 'gobernanza' },
+  status: { type: String, default: 'nuevo' }, // nuevo, contactado, convertido
   nombre: String, email: String, empresa: String, telefono: String,
   sector: String, shadow_ai: String, samd: Boolean, risk_level: String,
   proceso: mongoose.Schema.Types.Mixed, resultado: mongoose.Schema.Types.Mixed,
+  orgIdAsignado: mongoose.Schema.Types.ObjectId, companyIdAsignado: mongoose.Schema.Types.ObjectId,
   fuente: String, userAgent: String, ip: String, meta: mongoose.Schema.Types.Mixed,
   name: String, company: String, ts: Date,
 }, { timestamps: true, strict: false, collection: 'leads' });
@@ -68,49 +70,37 @@ const OrgSchema = new mongoose.Schema({ name: String }, { strict: false, collect
 const Org = mongoose.models.Org || mongoose.model('Org', OrgSchema);
 
 const CompanySchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed,
-  name: String, riskProfile: String, active: Boolean
+  orgId: mongoose.Schema.Types.Mixed, name: String, riskProfile: String, active: Boolean
 }, { strict: false, collection: 'companies' });
 const Company = mongoose.models.Company || mongoose.model('Company', CompanySchema);
 
 const InventorySchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed,
-  companyId: mongoose.Schema.Types.Mixed,
-  model_name: String, category: String, risk_level: String, status: String
+  orgId: mongoose.Schema.Types.Mixed, companyId: mongoose.Schema.Types.Mixed, model_name: String, category: String, risk_level: String, status: String
 }, { strict: false, collection: 'ai_inventory' });
 const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', InventorySchema);
 
 const EvaluationSchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed,
-  companyId: mongoose.Schema.Types.Mixed,
-  framework: String, answers: mongoose.Schema.Types.Mixed, score: Number, risk_level: String, recommendations: mongoose.Schema.Types.Mixed
+  orgId: mongoose.Schema.Types.Mixed, companyId: mongoose.Schema.Types.Mixed, framework: String, answers: mongoose.Schema.Types.Mixed, score: Number, risk_level: String, recommendations: mongoose.Schema.Types.Mixed
 }, { strict: false, collection: 'risk_evaluations' });
 const Evaluation = mongoose.models.Evaluation || mongoose.model('Evaluation', EvaluationSchema);
 
 const EvidenceSchema = new mongoose.Schema({
-  companyId: mongoose.Schema.Types.Mixed,
-  questionId: String, fileName: String, r2Url: String,
-  validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now }
+  companyId: mongoose.Schema.Types.Mixed, questionId: String, fileName: String, r2Url: String, validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now }
 }, { strict: false, collection: 'evidence' });
 const Evidence = mongoose.models.Evidence || mongoose.model('Evidence', EvidenceSchema);
 
 const RiskSchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed,
-  companyId: mongoose.Schema.Types.Mixed,
-  riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String
+  orgId: mongoose.Schema.Types.Mixed, companyId: mongoose.Schema.Types.Mixed, riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String
 }, { strict: false, collection: 'risks' });
 const Risk = mongoose.models.Risk || mongoose.model('Risk', RiskSchema);
 
 const DeliverableSchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed,
-  taskName: String, phase: String, assignedTo: String, status: String, dueDate: String
+  orgId: mongoose.Schema.Types.Mixed, taskName: String, phase: String, assignedTo: String, status: String, dueDate: String
 }, { strict: false, collection: 'deliverables' });
 const Deliverable = mongoose.models.Deliverable || mongoose.model('Deliverable', DeliverableSchema);
 
 const ProcessEvalSchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed,
-  companyId: mongoose.Schema.Types.Mixed,
-  processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String
+  orgId: mongoose.Schema.Types.Mixed, companyId: mongoose.Schema.Types.Mixed, processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String
 }, { strict: false, collection: 'processevals' });
 const ProcessEval = mongoose.models.ProcessEval || mongoose.model('ProcessEval', ProcessEvalSchema);
 
@@ -135,8 +125,6 @@ const getOrgQuery = (req) => {
 async function getEvidenceQuery(req) {
   const targetOrgId = req.user.role === 'superadmin' && req.query.orgId ? req.query.orgId : req.user.orgId;
   const companies = await Company.find({ orgId: targetOrgId });
-  // FIX B-2: evidence.companyId está guardado como STRING, no ObjectId.
-  // Comparar con .toString() para que matchee.
   return { companyId: { $in: companies.map(c => String(c._id)) } };
 }
 
@@ -177,39 +165,7 @@ function safeParseJSON(text) {
 }
 
 // ==========================================
-// RISK CALCULATOR (determinístico, sin Groq)
-// ==========================================
-function computeRiskLevel({ sector, shadow_ai, samd }) {
-  let score = 0;
-  const badges = [];
-
-  if (sector === 'salud') { score += 3; badges.push({ label: 'Sector Salud (SaMD)', level: 'alto' }); }
-  else if (sector === 'alimentos') { score += 2; badges.push({ label: 'Sector Alimentos', level: 'medio' }); }
-  else if (sector === 'servicios') { score += 1; badges.push({ label: 'Sector Servicios', level: 'bajo' }); }
-
-  if (shadow_ai === 'alto') { score += 3; badges.push({ label: 'Shadow AI sin control', level: 'alto' }); }
-  else if (shadow_ai === 'medio') { score += 2; badges.push({ label: 'Shadow AI con guías informales', level: 'medio' }); }
-  else if (shadow_ai === 'bajo') { score += 1; badges.push({ label: 'Shadow AI regulado', level: 'bajo' }); }
-
-  if (samd === true) { score += 3; badges.push({ label: 'Software como Dispositivo Médico', level: 'alto' }); }
-
-  let level = 'bajo';
-  if (score >= 8) level = 'crítico';
-  else if (score >= 5) level = 'alto';
-  else if (score >= 3) level = 'medio';
-
-  const summaryByLevel = {
-    'crítico': 'Tu exposición regulatoria es CRÍTICA. Requieres un programa formal de gobernanza de IA con urgencia: políticas, comité, inventario y auditorías. El riesgo de sanción y de incidentes operativos es alto.',
-    'alto': 'Tu exposición es ALTA. Hay controles aislados pero no un sistema de gobernanza formal. Prioriza una política de uso aceptable, un inventario de modelos y un oficial de IA en los próximos 60 días.',
-    'medio': 'Tu exposición es MEDIA. Tienes algunos controles informales. Formaliza políticas, crea un comité y establece un proceso de evaluación de riesgos antes de escalar tus iniciativas de IA.',
-    'bajo': 'Tu exposición es BAJA. Vas por buen camino. Consolida lo existente con auditorías periódicas y monitoreo continuo (MLOps) para mantenerlo así.',
-  };
-
-  return { score, level, badges, summary: summaryByLevel[level] };
-}
-
-// ==========================================
-// RATE LIMIT (in-memory) — endpoints públicos
+// RATE LIMIT
 // ==========================================
 const publicRateLimit = new Map();
 const PUBLIC_RATE_MAX = Math.max(1, parseInt(process.env.PUBLIC_RATE_MAX || '20', 10));
@@ -248,31 +204,41 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 function getClientIP(req) {
-  return (
-    req.headers['cf-connecting-ip'] ||
-    (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
-    req.ip ||
-    'unknown'
-  );
+  return (req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown');
 }
 
 // ==========================================
-// RESET (solo una vez)
+// RIESGO DETERMINÍSTICO
 // ==========================================
-app.get('/gov/debug/reset-db', async (req, res) => {
-  try {
-    await mongoose.connection.db.dropDatabase();
-    const org = await Org.create({ name: 'Gokulab Global' });
-    const comp1 = await Company.create({ orgId: org._id, name: 'Oleofinos', riskProfile: 'agroindustria', active: true });
-    const hashed = await bcrypt.hash('CambiarEstaClave2026!', 10);
-    await User.create({ name: 'Super Admin', email: 'jcrendon@gokulab.mx', password: hashed, hash: hashed, role: 'superadmin', orgId: org._id, modules: ['gobernanza', 'automatizacion'] });
-    await Risk.create({ orgId: org._id, companyId: comp1._id, riskName: 'Riesgo Demo', category: 'Seguridad', probability: 4, impact: 4, riskLevel: 'Alto', riskScore: 16, mitigationPlan: 'Mitigar' });
-    res.json({ ok: true, message: 'Base de datos reseteada.' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+function computeRiskLevel({ sector, shadow_ai, samd }) {
+  let score = 0;
+  const badges = [];
+  if (sector === 'salud') { score += 3; badges.push({ label: 'Sector Salud (SaMD)', level: 'alto' }); }
+  else if (sector === 'alimentos') { score += 2; badges.push({ label: 'Sector Alimentos', level: 'medio' }); }
+  else if (sector === 'servicios') { score += 1; badges.push({ label: 'Sector Servicios', level: 'bajo' }); }
+
+  if (shadow_ai === 'alto') { score += 3; badges.push({ label: 'Shadow AI sin control', level: 'alto' }); }
+  else if (shadow_ai === 'medio') { score += 2; badges.push({ label: 'Shadow AI con guías informales', level: 'medio' }); }
+  else if (shadow_ai === 'bajo') { score += 1; badges.push({ label: 'Shadow AI regulado', level: 'bajo' }); }
+
+  if (samd === true) { score += 3; badges.push({ label: 'Software como Dispositivo Médico', level: 'alto' }); }
+
+  let level = 'bajo';
+  if (score >= 8) level = 'crítico';
+  else if (score >= 5) level = 'alto';
+  else if (score >= 3) level = 'medio';
+
+  const summaryByLevel = {
+    'crítico': 'Tu exposición regulatoria es CRÍTICA. Requieres un programa formal de gobernanza de IA con urgencia: políticas, comité, inventario y auditorías. El riesgo de sanción y de incidentes operativos es alto.',
+    'alto': 'Tu exposición es ALTA. Hay controles aislados pero no un sistema de gobernanza formal. Prioriza una política de uso aceptable, un inventario de modelos y un oficial de IA en los próximos 60 días.',
+    'medio': 'Tu exposición es MEDIA. Tienes algunos controles informales. Formaliza políticas, crea un comité y establece un proceso de evaluación de riesgos antes de escalar tus iniciativas de IA.',
+    'bajo': 'Tu exposición es BAJA. Vas por buen camino. Consolida lo existente con auditorías periódicas y monitoreo continuo (MLOps) para mantenerlo así.',
+  };
+  return { score, level, badges, summary: summaryByLevel[level] };
+}
 
 // ==========================================
-// AUTH
+// RUTAS
 // ==========================================
 app.post('/gov/auth/login', async (req, res) => {
   try {
@@ -287,32 +253,18 @@ app.post('/gov/auth/login', async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// ==========================================
-// CRUD GOBERNANZA
-// ==========================================
-app.get('/gov/orgs', authenticateToken, async (req, res) => {
-  try { res.json(await Org.find()); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.get('/gov/users', authenticateToken, async (req, res) => {
-  try { res.json(await User.find().select('-password -hash')); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
+app.get('/gov/orgs', authenticateToken, async (req, res) => { try { res.json(await Org.find()); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.get('/gov/users', authenticateToken, async (req, res) => { try { res.json(await User.find().select('-password -hash')); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/users', authenticateToken, async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    const user = await User.create({ ...req.body, password: hashedPassword, hash: hashedPassword });
-    res.status(201).json(user);
+    res.status(201).json(await User.create({ ...req.body, password: hashedPassword, hash: hashedPassword }));
   } catch (error) { res.status(500).json({ error: 'Error al crear usuario' }); }
 });
 
 app.get('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
-  try {
-    const query = req.params.orgId === 'ALL' ? {} : { orgId: req.params.orgId };
-    res.json(await Company.find(query));
-  } catch (error) { res.status(500).json({ error: 'Error' }); }
+  try { res.json(await Company.find(req.params.orgId === 'ALL' ? {} : { orgId: req.params.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
-
 app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   try {
     const targetOrgId = req.params.orgId === 'ALL' ? req.user.orgId : req.params.orgId;
@@ -320,18 +272,10 @@ app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-app.get('/gov/ai-inventory', authenticateToken, async (req, res) => {
-  try { res.json(await Inventory.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
+app.get('/gov/ai-inventory', authenticateToken, async (req, res) => { try { res.json(await Inventory.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/ai-inventory', authenticateToken, async (req, res) => { try { res.status(201).json(await Inventory.create({ ...req.body, orgId: req.user.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
-app.post('/gov/ai-inventory', authenticateToken, async (req, res) => {
-  try { res.status(201).json(await Inventory.create({ ...req.body, orgId: req.user.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.get('/gov/risks', authenticateToken, async (req, res) => {
-  try { res.json(await Risk.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
+app.get('/gov/risks', authenticateToken, async (req, res) => { try { res.json(await Risk.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/risks', authenticateToken, async (req, res) => {
   try {
     const score = req.body.probability * req.body.impact;
@@ -339,105 +283,97 @@ app.post('/gov/risks', authenticateToken, async (req, res) => {
     res.status(201).json(await Risk.create({ ...req.body, orgId: req.user.orgId, riskScore: score, riskLevel }));
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
+app.delete('/gov/risks/:id', authenticateToken, async (req, res) => { try { await Risk.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
-app.delete('/gov/risks/:id', authenticateToken, async (req, res) => {
-  try { await Risk.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
+app.get('/gov/deliverables', authenticateToken, async (req, res) => { try { res.json(await Deliverable.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/deliverables', authenticateToken, async (req, res) => { try { res.status(201).json(await Deliverable.create({ ...req.body, orgId: req.user.orgId, status: 'Pendiente' })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.put('/gov/deliverables/:id', authenticateToken, async (req, res) => { try { res.json(await Deliverable.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.delete('/gov/deliverables/:id', authenticateToken, async (req, res) => { try { await Deliverable.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
-app.get('/gov/deliverables', authenticateToken, async (req, res) => {
-  try { res.json(await Deliverable.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
+app.get('/gov/evaluations', authenticateToken, async (req, res) => { try { res.json(await Evaluation.find(getOrgQuery(req)).sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/evaluations', authenticateToken, async (req, res) => { try { res.status(201).json(await Evaluation.create({ ...req.body, orgId: req.user.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
-app.post('/gov/deliverables', authenticateToken, async (req, res) => {
-  try { res.status(201).json(await Deliverable.create({ ...req.body, orgId: req.user.orgId, status: 'Pendiente' })); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.put('/gov/deliverables/:id', authenticateToken, async (req, res) => {
-  try { res.json(await Deliverable.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.delete('/gov/deliverables/:id', authenticateToken, async (req, res) => {
-  try { await Deliverable.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.get('/gov/evaluations', authenticateToken, async (req, res) => {
-  try { res.json(await Evaluation.find(getOrgQuery(req)).sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.post('/gov/evaluations', authenticateToken, async (req, res) => {
-  try { res.status(201).json(await Evaluation.create({ ...req.body, orgId: req.user.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.get('/gov/evidence', authenticateToken, async (req, res) => {
-  try { const query = await getEvidenceQuery(req); res.json(await Evidence.find(query).sort({ ts: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
+app.get('/gov/evidence', authenticateToken, async (req, res) => { try { const query = await getEvidenceQuery(req); res.json(await Evidence.find(query).sort({ ts: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async (req, res) => {
   try {
-    const ev = await Evidence.create({
-      companyId: String(req.body.companyId),
-      questionId: req.body.questionId,
-      fileName: req.file.originalname,
-      r2Url: 'https://media.gokulab.mx/demo.pdf',
-      validation: { valido: true, razon: 'Validado por IA' }
-    });
+    const ev = await Evidence.create({ companyId: String(req.body.companyId), questionId: req.body.questionId, fileName: req.file.originalname, r2Url: 'https://media.gokulab.mx/demo.pdf', validation: { valido: true, razon: 'Validado por IA' } });
     res.json({ ok: true, evidence: ev, validation: ev.validation });
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-app.get('/gov/process-evals', authenticateToken, async (req, res) => {
-  try { res.json(await ProcessEval.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
+app.get('/gov/process-evals', authenticateToken, async (req, res) => { try { res.json(await ProcessEval.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/process-evals', authenticateToken, async (req, res) => { try { res.status(201).json(await ProcessEval.create({ ...req.body, orgId: req.user.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.delete('/gov/process-evals/:id', authenticateToken, async (req, res) => { try { await ProcessEval.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
-app.post('/gov/process-evals', authenticateToken, async (req, res) => {
-  try { res.status(201).json(await ProcessEval.create({ ...req.body, orgId: req.user.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.delete('/gov/process-evals/:id', authenticateToken, async (req, res) => {
-  try { await ProcessEval.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.get('/leads', authenticateToken, async (req, res) => {
-  try { res.json(await Lead.find({ tipo_lead: { $ne: 'automatizacion' } }).sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.get('/gov/assessments', authenticateToken, async (req, res) => {
-  try { res.json(await Lead.find({ tipo_lead: 'automatizacion' }).sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
-app.post('/gov/suggest-risk', authenticateToken, async (req, res) => {
+// ==========================================
+// FASE 1.5: GESTIÓN DE LEADS (UNIFICADO)
+// ==========================================
+app.get('/gov/leads', authenticateToken, async (req, res) => {
   try {
-    const { content } = await callGroq({ messages: [{ role: 'system', content: 'Genera un riesgo de IA. JSON: riskName, category, probability, impact, mitigationPlan. ESPAÑOL.' }, { role: 'user', content: `Empresa: ${req.body.companyName}` }] });
-    res.json(safeParseJSON(content));
-  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
+    // Devuelve TODOS los leads (riesgo y automatización)
+    res.json(await Lead.find().sort({ createdAt: -1 }));
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-app.post('/gov/suggest-task', authenticateToken, async (req, res) => {
+app.patch('/gov/leads/:id/status', authenticateToken, async (req, res) => {
   try {
-    const { content } = await callGroq({ messages: [{ role: 'system', content: 'Genera una tarea. JSON: taskName, phase, assignedTo. ESPAÑOL.' }, { role: 'user', content: `Empresa: ${req.body.companyName}` }] });
-    res.json(safeParseJSON(content));
-  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
+    const { status } = req.body;
+    const lead = await Lead.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true });
+    res.json({ ok: true, lead });
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-app.post('/gov/generate-report', authenticateToken, async (req, res) => {
+app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
   try {
-    const { content } = await callGroq({ messages: [{ role: 'system', content: 'Consultor. Resumen ejecutivo. JSON: { "report": "texto" }' }, { role: 'user', content: JSON.stringify(req.body) }] });
-    res.json(safeParseJSON(content));
-  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
-});
+    const { orgId, companyName } = req.body;
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) return res.status(404).json({ error: 'Lead no encontrado' });
+    if (lead.status === 'convertido') return res.status(400).json({ error: 'El lead ya fue convertido' });
 
-app.post('/gov/generate-strategic-report', authenticateToken, async (req, res) => {
-  try {
-    const { content } = await callGroq({ messages: [{ role: 'system', content: 'Reporte estratégico. JSON: executiveSummary, gapAnalysis, roadmap: { phase1, phase2, phase3 }.' }, { role: 'user', content: JSON.stringify(req.body) }] });
-    res.json(safeParseJSON(content));
-  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
+    // 1. Verificar si la empresa existe en esa org o crearla
+    let company = await Company.findOne({ orgId, name: companyName });
+    if (!company) {
+      company = await Company.create({ orgId, name: companyName, riskProfile: 'operacional', active: true });
+    }
+
+    // 2. Mover data a las colecciones de operación según el tipo
+    if (lead.tipo_lead === 'riesgo' && lead.resultado) {
+      await Evaluation.create({
+        orgId, companyId: company._id,
+        framework: 'LFPDPPP / ISO 42001',
+        answers: {},
+        score: lead.resultado.score,
+        risk_level: lead.resultado.risk_level,
+        recommendations: { summary: lead.resultado.summary },
+        createdAt: new Date()
+      });
+    } else if (lead.tipo_lead === 'automatizacion' && lead.proceso && lead.resultado) {
+      await ProcessEval.create({
+        orgId, companyId: company._id,
+        processName: lead.proceso.processName,
+        volume: lead.proceso.volume,
+        complexity: lead.proceso.complexityLabel || lead.proceso.complexity,
+        dataType: lead.proceso.dataType,
+        hoursSpent: lead.proceso.hoursSpent,
+        score: lead.resultado.automationIndex,
+        agentType: lead.resultado.agentType,
+        recommendation: lead.resultado.agentDescription,
+        createdAt: new Date()
+      });
+    }
+
+    // 3. Actualizar el lead
+    lead.status = 'convertido';
+    lead.orgIdAsignado = orgId;
+    lead.companyIdAsignado = company._id;
+    await lead.save();
+
+    res.json({ ok: true, companyId: company._id, lead });
+  } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
 // ==========================================
-// 🌐 ENDPOINT PÚBLICO: RISK ASSESSMENT (determinístico)
-// Contrato con frontend/js/risk-calculator.js (nuevo)
-//   Request: { nombre, email, empresa, telefono?, sector, shadow_ai, samd }
-//   Response: { ok:true, assessment: { risk_level, score, badges[], summary }, leadId }
+// ENDPOINTS PÚBLICOS
 // ==========================================
 app.post('/api/public/risk-assessment', async (req, res) => {
   const t0 = Date.now();
@@ -452,60 +388,32 @@ app.post('/api/public/risk-assessment', async (req, res) => {
 
     const b = req.body || {};
     const errors = [];
-    if (!b.nombre || typeof b.nombre !== 'string' || b.nombre.trim().length < 2) errors.push('nombre');
-    if (!b.email || typeof b.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) errors.push('email válido');
-    if (!b.empresa || typeof b.empresa !== 'string' || b.empresa.trim().length < 2) errors.push('empresa');
-    if (!b.sector || !['servicios', 'alimentos', 'salud'].includes(b.sector)) errors.push('sector (servicios|alimentos|salud)');
-    if (!b.shadow_ai || !['bajo', 'medio', 'alto'].includes(b.shadow_ai)) errors.push('shadow_ai (bajo|medio|alto)');
+    if (!b.nombre || b.nombre.trim().length < 2) errors.push('nombre');
+    if (!b.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) errors.push('email válido');
+    if (!b.empresa || b.empresa.trim().length < 2) errors.push('empresa');
+    if (!b.sector || !['servicios', 'alimentos', 'salud'].includes(b.sector)) errors.push('sector');
+    if (!b.shadow_ai || !['bajo', 'medio', 'alto'].includes(b.shadow_ai)) errors.push('shadow_ai');
 
-    if (errors.length > 0) {
-      return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
-    }
+    if (errors.length > 0) return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
 
     const calc = computeRiskLevel({ sector: b.sector, shadow_ai: b.shadow_ai, samd: b.samd === true });
 
     const lead = await Lead.create({
-      // shape NUEVO
-      tipo_lead: 'riesgo',
-      nombre: String(b.nombre).slice(0, 120),
-      email: String(b.email).toLowerCase().slice(0, 160),
-      empresa: String(b.empresa).slice(0, 160),
-      telefono: b.telefono ? String(b.telefono).slice(0, 40) : '',
-      sector: b.sector,
-      shadow_ai: b.shadow_ai,
-      samd: b.samd === true,
-      risk_level: calc.level,
+      tipo_lead: 'riesgo', status: 'nuevo',
+      nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160), empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '',
+      sector: b.sector, shadow_ai: b.shadow_ai, samd: b.samd === true, risk_level: calc.level,
       resultado: { score: calc.score, risk_level: calc.level, badges: calc.badges, summary: calc.summary },
-      fuente: 'risk-calculator',
-      userAgent: String(req.headers['user-agent'] || '').slice(0, 500),
-      ip,
-      meta: { durationMs: Date.now() - t0, mode: 'deterministic' },
-      // shape LEGACY (compat loadLeads actual que usa l.name, l.company, l.risk_level)
-      name: String(b.nombre).slice(0, 120),
-      company: String(b.empresa).slice(0, 160),
-      ts: new Date()
+      fuente: 'risk-calculator', userAgent: req.headers['user-agent'], ip, meta: { durationMs: Date.now() - t0 },
+      name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date()
     });
 
-    return res.json({
-      ok: true,
-      assessment: {
-        risk_level: calc.level,
-        score: calc.score,
-        badges: calc.badges,
-        summary: calc.summary
-      },
-      leadId: lead._id.toString()
-    });
-
+    return res.json({ ok: true, assessment: { risk_level: calc.level, score: calc.score, badges: calc.badges, summary: calc.summary }, leadId: lead._id.toString() });
   } catch (err) {
     console.error('[risk-assessment] error:', err);
     return res.status(500).json({ ok: false, error: 'Error interno al procesar la evaluación.' });
   }
 });
 
-// ==========================================
-// 🌐 ENDPOINT PÚBLICO: AUTOMATION ASSESSMENT
-// ==========================================
 app.post('/api/public/automation-assessment', async (req, res) => {
   const t0 = Date.now();
   try {
@@ -519,80 +427,33 @@ app.post('/api/public/automation-assessment', async (req, res) => {
 
     const b = req.body || {};
     const errors = [];
-    if (!b.processName || typeof b.processName !== 'string' || b.processName.trim().length < 2) errors.push('processName (min 2)');
-    if (typeof b.volume !== 'number' || b.volume < 0 || b.volume > 1e7) errors.push('volume (número ≥ 0)');
-    if (typeof b.complexity !== 'number' || b.complexity < 1 || b.complexity > 5) errors.push('complexity (1-5)');
-    if (!b.dataType || typeof b.dataType !== 'string') errors.push('dataType');
-    if (typeof b.hoursSpent !== 'number' || b.hoursSpent < 0 || b.hoursSpent > 1e5) errors.push('hoursSpent (número ≥ 0)');
-    if (!b.nombre || typeof b.nombre !== 'string' || b.nombre.trim().length < 2) errors.push('nombre');
-    if (!b.empresa || typeof b.empresa !== 'string' || b.empresa.trim().length < 2) errors.push('empresa');
-    if (!b.email || typeof b.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) errors.push('email válido');
+    if (!b.processName || b.processName.trim().length < 2) errors.push('processName');
+    if (typeof b.volume !== 'number' || b.volume < 0) errors.push('volume');
+    if (typeof b.complexity !== 'number' || b.complexity < 1 || b.complexity > 5) errors.push('complexity');
+    if (!b.dataType) errors.push('dataType');
+    if (typeof b.hoursSpent !== 'number' || b.hoursSpent < 0) errors.push('hoursSpent');
+    if (!b.nombre || b.nombre.trim().length < 2) errors.push('nombre');
+    if (!b.empresa || b.empresa.trim().length < 2) errors.push('empresa');
+    if (!b.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) errors.push('email');
 
-    if (errors.length > 0) {
-      return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
-    }
+    if (errors.length > 0) return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
 
-    const systemPrompt = `Eres un consultor senior de automatización con IA.
-Analizas procesos empresariales y propones agentes de IA para automatizarlos.
-Responde ÚNICAMENTE con un JSON válido, sin markdown, sin texto adicional.
-Idioma: ESPAÑOL.
-
-Esquema obligatorio:
-{
-  "automationIndex": number,
-  "baselineHoursPerMonth": number,
-  "roiHoursPerMonth": number,
-  "agentType": string,
-  "agentDescription": string,
-  "roiExplanation": string,
-  "paybackMonths": number,
-  "implementationPhases": string[],
-  "confidence": string
-}
-
-Reglas:
-- automationIndex: 0-100. Alto (>70) si volumen alto + complejidad baja + datos estructurados. Bajo (<40) si volumen bajo + complejidad alta + datos no estructurados.
-- baselineHoursPerMonth: si hoursSpent=0, estímala como (volume * 3 / 60) redondeada.
-- roiHoursPerMonth: entre 40%-80% del baseline, según automationIndex.
-- paybackMonths: 3-12, según complejidad.
-- implementationPhases: 3-5 fases concisas, en español.
-- confidence: "baja" | "media" | "alta".
-- NO incluyas explicaciones fuera del JSON.`;
-
-    const userPrompt = `Proceso a evaluar:
-- Nombre: ${b.processName}
-- Volumen mensual: ${b.volume} transacciones
-- Complejidad: ${b.complexity}/5
-- Tipo de datos: ${b.dataType}
-- Horas hombre/mes actuales: ${b.hoursSpent}
-
-Genera el JSON de evaluación.`;
+    const systemPrompt = `Eres un consultor senior de automatización con IA. Responde ÚNICAMENTE con JSON válido. Esquema: { "automationIndex": number, "baselineHoursPerMonth": number, "roiHoursPerMonth": number, "agentType": string, "agentDescription": string, "roiExplanation": string, "paybackMonths": number, "implementationPhases": string[], "confidence": string }`;
+    const userPrompt = `Proceso: ${b.processName}. Volumen: ${b.volume}. Complejidad: ${b.complexity}/5. Datos: ${b.dataType}. Horas: ${b.hoursSpent}.`;
 
     let parsed = null;
     try {
-      const { content } = await callGroq({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.3, maxTokens: 800, timeoutMs: 25000
-      });
+      const { content } = await callGroq({ messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature: 0.3, maxTokens: 800, timeoutMs: 25000 });
       parsed = safeParseJSON(content);
     } catch (groqErr) {
-      if (groqErr.message === 'GROQ_UNAVAILABLE') {
-        return res.status(503).json({ ok: false, error: 'Servicio de IA temporalmente no disponible. Intenta en 1 minuto.' });
-      }
+      if (groqErr.message === 'GROQ_UNAVAILABLE') return res.status(503).json({ ok: false, error: 'Servicio de IA temporalmente no disponible.' });
       throw groqErr;
     }
 
-    if (!parsed || typeof parsed.automationIndex !== 'number') {
-      return res.status(502).json({ ok: false, error: 'La IA no devolvió un assessment válido. Intenta de nuevo.' });
-    }
+    if (!parsed || typeof parsed.automationIndex !== 'number') return res.status(502).json({ ok: false, error: 'La IA no devolvió un assessment válido.' });
 
     const complexityLabels = { 1: 'muy baja', 2: 'baja', 3: 'media', 4: 'alta', 5: 'muy alta' };
-    const baseline = Number(parsed.baselineHoursPerMonth) > 0
-      ? Math.round(Number(parsed.baselineHoursPerMonth))
-      : Math.max(Math.round(b.volume * 3 / 60), Math.round(b.hoursSpent) || 0);
+    const baseline = Number(parsed.baselineHoursPerMonth) > 0 ? Math.round(Number(parsed.baselineHoursPerMonth)) : Math.max(Math.round(b.volume * 3 / 60), Math.round(b.hoursSpent) || 0);
 
     const resultado = {
       automationIndex: Math.max(0, Math.min(100, Math.round(Number(parsed.automationIndex)))),
@@ -602,51 +463,22 @@ Genera el JSON de evaluación.`;
       baselineHoursPerMonth: baseline,
       roiExplanation: String(parsed.roiExplanation || '').slice(0, 600),
       paybackMonths: Math.max(1, Math.min(24, Math.round(Number(parsed.paybackMonths) || 6))),
-      implementationPhases: Array.isArray(parsed.implementationPhases)
-        ? parsed.implementationPhases.slice(0, 6).map(p => String(p).slice(0, 120))
-        : ['Análisis', 'Diseño', 'Implementación', 'Monitoreo'],
+      implementationPhases: Array.isArray(parsed.implementationPhases) ? parsed.implementationPhases.slice(0, 6).map(p => String(p).slice(0, 120)) : ['Análisis'],
       confidence: ['baja', 'media', 'alta'].includes(parsed.confidence) ? parsed.confidence : 'media',
       source: 'groq'
     };
 
     const proceso = {
-      processName: String(b.processName).slice(0, 200),
-      volume: b.volume,
-      complexity: b.complexity,
-      complexityLabel: complexityLabels[b.complexity] || 'media',
-      dataType: String(b.dataType).slice(0, 60),
-      hoursSpent: b.hoursSpent,
-      baselineHoursPerMonth: baseline
+      processName: String(b.processName).slice(0, 200), volume: b.volume, complexity: b.complexity, complexityLabel: complexityLabels[b.complexity] || 'media', dataType: String(b.dataType).slice(0, 60), hoursSpent: b.hoursSpent, baselineHoursPerMonth: baseline
     };
 
     const lead = await Lead.create({
-      tipo_lead: 'automatizacion',
-      nombre: String(b.nombre).slice(0, 120),
-      email: String(b.email).toLowerCase().slice(0, 160),
-      empresa: String(b.empresa).slice(0, 160),
-      telefono: b.telefono ? String(b.telefono).slice(0, 40) : '',
-      proceso, resultado,
-      fuente: 'automation-assessment',
-      userAgent: String(req.headers['user-agent'] || '').slice(0, 500),
-      ip,
-      meta: { durationMs: Date.now() - t0, model: GROQ_MODEL },
-      name: String(b.nombre).slice(0, 120),
-      company: String(b.empresa).slice(0, 160),
-      ts: new Date()
+      tipo_lead: 'automatizacion', status: 'nuevo', nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160), empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '',
+      proceso, resultado, fuente: 'automation-assessment', userAgent: req.headers['user-agent'], ip, meta: { durationMs: Date.now() - t0, model: GROQ_MODEL },
+      name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date()
     });
 
-    return res.json({
-      ok: true,
-      assessment: {
-        automationIndex: resultado.automationIndex,
-        roiHoursPerMonth: resultado.roiHoursPerMonth,
-        agentType: resultado.agentType,
-        agentDescription: resultado.agentDescription,
-        roiExplanation: resultado.roiExplanation
-      },
-      leadId: lead._id.toString()
-    });
-
+    return res.json({ ok: true, assessment: { automationIndex: resultado.automationIndex, roiHoursPerMonth: resultado.roiHoursPerMonth, agentType: resultado.agentType, agentDescription: resultado.agentDescription, roiExplanation: resultado.roiExplanation }, leadId: lead._id.toString() });
   } catch (err) {
     console.error('[automation-assessment] error:', err);
     return res.status(500).json({ ok: false, error: 'Error interno al procesar la evaluación.' });
