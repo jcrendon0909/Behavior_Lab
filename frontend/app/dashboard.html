@@ -46,6 +46,7 @@
         <button type="button" id="tabMatrixBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Controles (AIGOS)</button>
         <button type="button" id="tabEvidenceBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Evidencia</button>
         <button type="button" id="tabDeliverablesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">Plan de Trabajo</button>
+        <button type="button" id="tabProcessesBtn" class="text-slate-400 hover:text-slate-200 pb-2 transition whitespace-nowrap px-2">💡 Oportunidades de IA</button>
       </div>
       <div class="h-5 w-px bg-slate-700"></div>
       <div class="flex items-center space-x-2">
@@ -84,26 +85,41 @@
           </div>
           <div id="kpiAIGIGate" class="text-xs text-rose-400 font-semibold hidden"></div>
         </div>
+        
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden">
           <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl">⚠️</div>
           <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Riesgos Críticos / Altos</h3>
-          <div class="flex items-end gap-3"><p id="kpiRisks" class="text-5xl font-black text-rose-400">--</p><p class="text-sm text-slate-500 mb-1 pb-1">detectados</p></div>
+          <div class="flex items-end gap-3">
+            <p id="kpiRisks" class="text-5xl font-black text-rose-400">--</p>
+            <p class="text-sm text-slate-500 mb-1 pb-1">detectados</p>
+          </div>
         </div>
+        
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden">
           <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl">📋</div>
           <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Avance del Plan de Trabajo</h3>
-          <div class="flex items-end gap-3 mb-2"><p id="kpiTasks" class="text-4xl font-black text-blue-400">--%</p></div>
-          <div class="w-full bg-slate-900 rounded-full h-2.5"><div id="kpiTasksBar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div></div>
+          <div class="flex items-end gap-3 mb-2">
+            <p id="kpiTasks" class="text-4xl font-black text-blue-400">--%</p>
+          </div>
+          <div class="w-full bg-slate-900 rounded-full h-2.5">
+            <div id="kpiTasksBar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div>
+          </div>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-          <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Riesgos Recientes</h3><button onclick="document.getElementById('tabRisksBtn').click()" class="text-xs text-teal-400 hover:underline">Ver todos</button></div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-white">Riesgos Recientes</h3>
+            <button onclick="document.getElementById('tabRisksBtn').click()" class="text-xs text-teal-400 hover:underline">Ver todos</button>
+          </div>
           <div class="space-y-3" id="dashRecentRisks"><p class="text-sm text-slate-500">Cargando...</p></div>
         </div>
         <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-          <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Evidencias Recientes</h3><button onclick="document.getElementById('tabEvidenceBtn').click()" class="text-xs text-teal-400 hover:underline">Ver todas</button></div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-white">Evidencias Recientes</h3>
+            <button onclick="document.getElementById('tabEvidenceBtn').click()" class="text-xs text-teal-400 hover:underline">Ver todas</button>
+          </div>
           <div class="space-y-3" id="dashRecentEvidence"><p class="text-sm text-slate-500">Cargando...</p></div>
         </div>
       </div>
@@ -178,7 +194,26 @@
       </div>
     </div>
 
-    <!-- 6. FILIALES -->
+    <!-- 6. OPORTUNIDADES DE IA (PROCESOS) -->
+    <div id="processesSection" class="hidden">
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h2 class="text-lg font-bold">Evaluación de Procesos para Automatización</h2>
+            <p class="text-sm text-slate-400">Descubre qué agentes de IA pueden ahorrarte más tiempo y dinero.</p>
+          </div>
+          <button id="openProcessModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition shadow-lg shadow-teal-500/20">+ Evaluar Proceso</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Proceso</th><th class="py-3 px-4">Volumen</th><th class="py-3 px-4">Complejidad</th><th class="py-3 px-4">Horas/Mes</th><th class="py-3 px-4">Índice Auto.</th><th class="py-3 px-4 text-center">Acción</th></tr></thead>
+            <tbody id="processesTableBody" class="text-sm"><tr><td colspan="6" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. FILIALES -->
     <div id="companiesSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4">
@@ -192,7 +227,7 @@
       </div>
     </div>
 
-    <!-- 7. PROSPECTOS -->
+    <!-- 8. PROSPECTOS -->
     <div id="leadsSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-6">
@@ -206,7 +241,7 @@
       </div>
     </div>
 
-    <!-- 8. USUARIOS -->
+    <!-- 9. USUARIOS -->
     <div id="usersSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Gestión de Usuarios</h2></div><button id="openUserModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Invitar Usuario</button></div>
@@ -214,7 +249,7 @@
       </div>
     </div>
 
-    <!-- 9. EVIDENCIA -->
+    <!-- 10. EVIDENCIA -->
     <div id="evidenceSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
         <div class="mb-6"><h2 class="text-lg font-bold">Expediente Digital de Evidencias</h2><p class="text-sm text-slate-400">Documentos validados por la IA y almacenados en R2.</p></div>
@@ -285,10 +320,13 @@
     </div>
   </div>
 
-  <!-- OTROS MODALES (Riesgos manuales, Plan, Leads, Filiales, Usuarios) -->
+  <!-- MODAL: NUEVO RIESGO MANUAL -->
   <div id="newRiskModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
-      <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-white">Registrar Riesgo Manual</h2><button type="button" onclick="suggestRiskWithAI()" id="btnAI_Risk" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-1 px-3 rounded-lg transition">✨ Autocompletar con IA</button></div>
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-white">Registrar Riesgo</h2>
+        <button type="button" onclick="suggestRiskWithAI()" id="btnAI_Risk" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-1 px-3 rounded-lg transition">✨ Autocompletar con IA</button>
+      </div>
       <form id="newRiskForm" class="space-y-4">
         <div><label class="block text-sm font-semibold text-teal-400 mb-1">✨ Sugerencias rápidas</label><select id="commonRiskSelect" onchange="fillCommonRisk()" class="w-full bg-slate-900 border border-teal-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">-- Seleccionar sugerencia --</option><option value="fuga">Fuga de datos en IA Generativa</option><option value="alucinacion">Alucinaciones del modelo</option><option value="sesgo">Sesgo algorítmico</option><option value="trazabilidad">Falta de trazabilidad</option><option value="shadow">Shadow AI</option></select></div>
         <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Riesgo</label><input type="text" id="riskName" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
@@ -300,6 +338,7 @@
     </div>
   </div>
 
+  <!-- MODAL: NUEVA TAREA -->
   <div id="newDeliverableModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-white">Agregar Tarea</h2><button type="button" onclick="suggestTaskWithAI()" id="btnAI_Task" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-1 px-3 rounded-lg transition">✨ Autocompletar con IA</button></div>
@@ -313,6 +352,21 @@
     </div>
   </div>
 
+  <!-- MODAL: NUEVO PROCESO (Oportunidades de IA) -->
+  <div id="newProcessModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Evaluar Proceso para Automatizar</h2>
+      <form id="newProcessForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Proceso</label><input type="text" id="procName" required placeholder="Ej. Facturación de proveedores" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Volumen de Tareas</label><select id="procVolume" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="bajo">Bajo (Pocas al día)</option><option value="medio">Medio (Decenas al día)</option><option value="alto">Alto (Cientos/Miles al día)</option></select></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Complejidad de Decisión</label><select id="procComplexity" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="baja">Baja (Reglas simples)</option><option value="media">Media (Requiere análisis)</option><option value="alta">Alta (Criterio humano profundo)</option></select></div></div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-300 mb-1">Tipo de Datos</label><select id="procDataType" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="estructurado">Estructurado (Formularios, CRM)</option><option value="semi">Semiestructurado (Emails, PDFs)</option><option value="no_estructurado">No Estructurado (Imágenes, Audio)</option></select></div><div><label class="block text-sm font-semibold text-slate-300 mb-1">Horas Hombre / Mes</label><input type="number" id="procHours" required placeholder="Ej. 120" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div></div>
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label><select id="procCompany" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"><option value="">Global</option></select></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeProcessModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition flex items-center gap-2"><span>🧠</span> Evaluar con IA</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONVERTIR LEAD -->
   <div id="convertLeadModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-2 text-white">Convertir a Cliente</h2>
@@ -325,6 +379,7 @@
     </div>
   </div>
 
+  <!-- MODAL: NUEVO MODELO -->
   <div id="newModelModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nuevo Modelo de IA</h2>
@@ -337,6 +392,7 @@
     </div>
   </div>
 
+  <!-- MODAL: NUEVA ORG -->
   <div id="newOrgModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nueva Organización</h2>
@@ -344,6 +400,7 @@
     </div>
   </div>
 
+  <!-- MODAL: NUEVA FILIAL -->
   <div id="newCompanyModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nueva Filial</h2>
@@ -351,6 +408,7 @@
     </div>
   </div>
 
+  <!-- MODAL: NUEVO USUARIO -->
   <div id="newUserModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
       <h2 class="text-2xl font-bold mb-6 text-white">Invitar Nuevo Usuario</h2>
