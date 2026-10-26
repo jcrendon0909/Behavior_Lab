@@ -5,13 +5,14 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
+import { extractText, getDocumentProxy } from 'unpdf';
 import { calculateCriticality, calculateResidualRisk, calculateMaturity, calculateAIGI } from './aigos_engine.js';
 import { CONTROLS_DATA, RISKS_DATA, QUESTIONS_DATA } from './aigos_data.js';
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_gokulab_2026';
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 function resolveMongoUri() {
   const candidates = ['MONGODB_URI', 'MONGO_URI', 'MONGO_URL', 'DATABASE_URL', 'MONGODB_URL'];
@@ -92,7 +93,8 @@ const DeliverableSchema = new mongoose.Schema({
 const Deliverable = mongoose.models.Deliverable || mongoose.model('Deliverable', DeliverableSchema);
 
 const EvidenceSchema = new mongoose.Schema({
-  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, questionId: String, fileName: String, r2Url: String, validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now }
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, questionId: String, fileName: String, r2Url: String,
+  validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now }
 }, { strict: false, collection: 'evidence' });
 const Evidence = mongoose.models.Evidence || mongoose.model('Evidence', EvidenceSchema);
 
@@ -186,9 +188,7 @@ function safeParseJSON(text) {
   }
 }
 
-// ==========================================
-// RATE LIMIT (COMPLETO)
-// ==========================================
+// RATE LIMIT
 const publicRateLimit = new Map();
 const PUBLIC_RATE_MAX = Math.max(1, parseInt(process.env.PUBLIC_RATE_MAX || '20', 10));
 const PUBLIC_RATE_WINDOW_MS = Math.max(60000, parseInt(process.env.PUBLIC_RATE_WINDOW_MS || String(60 * 60 * 1000), 10));
@@ -229,9 +229,7 @@ function getClientIP(req) {
   return (req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown');
 }
 
-// ==========================================
-// RIESGO DETERMINÍSTICO (Público)
-// ==========================================
+// RIESGO DETERMINÍSTICO
 function computeRiskLevel({ sector, shadow_ai, samd }) {
   let score = 0;
   const badges = [];
@@ -247,16 +245,16 @@ function computeRiskLevel({ sector, shadow_ai, samd }) {
   else if (score >= 5) level = 'alto';
   else if (score >= 3) level = 'medio';
   const summaryByLevel = {
-    'crítico': 'Tu exposición regulatoria es CRÍTICA. Requieres un programa formal de gobernanza de IA con urgencia: políticas, comité, inventario y auditorías. El riesgo de sanción y de incidentes operativos es alto.',
-    'alto': 'Tu exposición es ALTA. Hay controles aislados pero no un sistema de gobernanza formal. Prioriza una política de uso aceptable, un inventario de modelos y un oficial de IA en los próximos 60 días.',
-    'medio': 'Tu exposición es MEDIA. Tienes algunos controles informales. Formaliza políticas, crea un comité y establece un proceso de evaluación de riesgos antes de escalar tus iniciativas de IA.',
-    'bajo': 'Tu exposición es BAJA. Vas por buen camino. Consolida lo existente con auditorías periódicas y monitoreo continuo (MLOps) para mantenerlo así.',
+    'crítico': 'Tu exposición regulatoria es CRÍTICA. Requieres un programa formal de gobernanza de IA con urgencia.',
+    'alto': 'Tu exposición es ALTA. Hay controles aislados pero no un sistema de gobernanza formal.',
+    'medio': 'Tu exposición es MEDIA. Tienes algunos controles informales.',
+    'bajo': 'Tu exposición es BAJA. Vas por buen camino.',
   };
   return { score, level, badges, summary: summaryByLevel[level] };
 }
 
 // ==========================================
-// RUTAS: AUTH, ADMIN
+// RUTAS AUTH Y ADMIN
 // ==========================================
 app.post('/gov/auth/login', async (req, res) => {
   try {
@@ -299,18 +297,39 @@ app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
 });
 
 // ==========================================
-// RUTAS: INVENTARIO, RIESGOS, PLAN, EVIDENCIA, EVALUACIONES, PROCESOS
+// FIX 2: CREACIÓN DE RECURSOS CON orgId DESDE FILIAL
 // ==========================================
 app.get('/gov/ai-inventory', authenticateToken, async (req, res) => { try { res.json(await Inventory.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
-app.post('/gov/ai-inventory', authenticateToken, async (req, res) => { try { res.status(201).json(await Inventory.create({ ...req.body, orgId: req.user.orgId, companyId: new mongoose.Types.ObjectId(req.body.companyId) })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+
+app.post('/gov/ai-inventory', authenticateToken, async (req, res) => {
+  try {
+    // FIX: Obtener orgId desde la filial, no del usuario
+    const company = await Company.findById(req.body.companyId);
+    if (!company) return res.status(404).json({ error: 'Filial no encontrada' });
+    const inventory = await Inventory.create({
+      ...req.body,
+      orgId: company.orgId, // ← orgId de la filial
+      companyId: new mongoose.Types.ObjectId(req.body.companyId)
+    });
+    res.status(201).json(inventory);
+  } catch (error) { res.status(500).json({ error: 'Error al crear modelo: ' + error.message }); }
+});
 
 app.get('/gov/risks', authenticateToken, async (req, res) => { try { res.json(await Risk.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+
 app.post('/gov/risks', authenticateToken, async (req, res) => {
   try {
     const score = req.body.probability * req.body.impact;
     let riskLevel = score >= 16 ? 'Crítico' : score >= 11 ? 'Alto' : score >= 6 ? 'Medio' : 'Bajo';
-    res.status(201).json(await Risk.create({ ...req.body, orgId: req.user.orgId, companyId: req.body.companyId ? new mongoose.Types.ObjectId(req.body.companyId) : null, riskScore: score, riskLevel }));
-  } catch (error) { res.status(500).json({ error: 'Error' }); }
+
+    let targetOrgId = req.user.orgId;
+    let targetCompanyId = null;
+    if (req.body.companyId) {
+      const company = await Company.findById(req.body.companyId);
+      if (company) { targetOrgId = company.orgId; targetCompanyId = company._id; }
+    }
+    res.status(201).json(await Risk.create({ ...req.body, orgId: targetOrgId, companyId: targetCompanyId, riskScore: score, riskLevel }));
+  } catch (error) { res.status(500).json({ error: 'Error: ' + error.message }); }
 });
 app.delete('/gov/risks/:id', authenticateToken, async (req, res) => { try { await Risk.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
@@ -320,23 +339,125 @@ app.put('/gov/deliverables/:id', authenticateToken, async (req, res) => { try { 
 app.delete('/gov/deliverables/:id', authenticateToken, async (req, res) => { try { await Deliverable.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
 app.get('/gov/evaluations', authenticateToken, async (req, res) => { try { res.json(await Evaluation.find(getOrgQuery(req)).sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
-app.post('/gov/evaluations', authenticateToken, async (req, res) => { try { res.status(201).json(await Evaluation.create({ ...req.body, orgId: req.user.orgId, companyId: new mongoose.Types.ObjectId(req.body.companyId) })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/evaluations', authenticateToken, async (req, res) => {
+  try {
+    let targetOrgId = req.user.orgId;
+    let targetCompanyId = null;
+    if (req.body.companyId) {
+      const company = await Company.findById(req.body.companyId);
+      if (company) { targetOrgId = company.orgId; targetCompanyId = company._id; }
+    }
+    res.status(201).json(await Evaluation.create({ ...req.body, orgId: targetOrgId, companyId: targetCompanyId }));
+  } catch (error) { res.status(500).json({ error: 'Error: ' + error.message }); }
+});
 
+// ==========================================
+// FIX 1: UPLOAD CON VALIDACIÓN IA REAL
+// ==========================================
 app.get('/gov/evidence', authenticateToken, async (req, res) => { try { const query = await getEvidenceQuery(req); res.json(await Evidence.find(query).sort({ ts: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+
 app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async (req, res) => {
   try {
-    const ev = await Evidence.create({ companyId: new mongoose.Types.ObjectId(req.body.companyId), questionId: req.body.questionId, fileName: req.file.originalname, r2Url: 'https://media.gokulab.mx/demo.pdf', validation: { valido: true, razon: 'Validado por IA' } });
-    res.json({ ok: true, evidence: ev, validation: ev.validation });
-  } catch (error) { res.status(500).json({ error: 'Error' }); }
+    const { companyId, questionId } = req.body;
+    if (!req.file) return res.status(400).json({ error: 'No se recibió archivo' });
+    if (!companyId || !questionId) return res.status(400).json({ error: 'Faltan companyId o questionId' });
+
+    // 1. Buscar la pregunta del catálogo AIGOS
+    const question = await AssessmentQuestion.findOne({ code: questionId });
+    if (!question) return res.status(404).json({ error: 'Pregunta no encontrada en el catálogo' });
+
+    // 2. Extraer texto del PDF
+    let pdfText = '';
+    try {
+      const pdf = await getDocumentProxy(new Uint8Array(req.file.buffer));
+      const extracted = await extractText(pdf, { mergePages: true });
+      pdfText = extracted.text || '';
+    } catch (pdfErr) {
+      console.error('[upload-evidence] Error extrayendo texto:', pdfErr.message);
+    }
+
+    // 3. Si no se pudo extraer texto, marcar como requiere revisión
+    if (!pdfText || pdfText.trim().length < 50) {
+      const ev = await Evidence.create({
+        companyId: new mongoose.Types.ObjectId(companyId),
+        questionId,
+        fileName: req.file.originalname,
+        r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`,
+        validation: { valido: false, razon: 'No se pudo extraer texto del PDF (puede ser imagen escaneada). Requiere revisión manual.' }
+      });
+      return res.json({ ok: true, evidence: ev, validation: ev.validation });
+    }
+
+    // 4. Validar con Groq
+    const systemPrompt = `Eres un auditor experto en gobernanza de IA (ISO 42001, NIST AI RMF).
+Evalúa si el DOCUMENTO proporcionado constituye EVIDENCIA VERIFICABLE para la siguiente PREGUNTA de assessment:
+
+PREGUNTA: ${question.question}
+EVIDENCIA REQUERIDA: ${question.evidenceRequested}
+DOMINIO: ${question.domain}
+CONTROL ASOCIADO: ${question.controlName}
+
+INSTRUCCIONES ESTRICTAS:
+- VÁLIDO: el documento contiene información específica de la organización que respalda la pregunta (políticas, procedimientos, actas, configuraciones, resultados de pruebas, etc.).
+- INVÁLIDO: el documento es de OTRA empresa, es genérico sin datos propios, es un borrador sin aprobar, es un artículo/presentación sin contexto corporativo, o no responde la pregunta.
+- Sé estricto: preferir rechazar un documento dudoso a aceptar basura.
+
+Responde ÚNICAMENTE con JSON válido:
+{ "valido": true|false, "razon": "explicación breve en español (max 200 caracteres)" }`;
+
+    const userPrompt = `DOCUMENTO A EVALUAR:\n\n${pdfText.slice(0, 6000)}`;
+
+    let validation = { valido: false, razon: 'No se pudo validar el documento con IA.' };
+    try {
+      const { content } = await callGroq({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.1,
+        maxTokens: 300,
+        timeoutMs: 25000
+      });
+      const parsed = safeParseJSON(content);
+      if (parsed && typeof parsed.valido === 'boolean') {
+        validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
+      }
+    } catch (groqErr) {
+      console.error('[upload-evidence] Groq error:', groqErr.message);
+      validation = { valido: false, razon: 'Servicio de IA temporalmente no disponible. Revisar manualmente.' };
+    }
+
+    // 5. Guardar evidencia
+    const ev = await Evidence.create({
+      companyId: new mongoose.Types.ObjectId(companyId),
+      questionId,
+      fileName: req.file.originalname,
+      r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`,
+      validation
+    });
+
+    res.json({ ok: true, evidence: ev, validation });
+  } catch (error) {
+    console.error('[upload-evidence] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.get('/gov/process-evals', authenticateToken, async (req, res) => { try { res.json(await ProcessEval.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
-app.post('/gov/process-evals', authenticateToken, async (req, res) => { try { res.status(201).json(await ProcessEval.create({ ...req.body, orgId: req.user.orgId, companyId: req.body.companyId ? new mongoose.Types.ObjectId(req.body.companyId) : null })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/process-evals', authenticateToken, async (req, res) => {
+  try {
+    let targetOrgId = req.user.orgId;
+    let targetCompanyId = null;
+    if (req.body.companyId) {
+      const company = await Company.findById(req.body.companyId);
+      if (company) { targetOrgId = company.orgId; targetCompanyId = company._id; }
+    }
+    res.status(201).json(await ProcessEval.create({ ...req.body, orgId: targetOrgId, companyId: targetCompanyId }));
+  } catch (error) { res.status(500).json({ error: 'Error: ' + error.message }); }
+});
 app.delete('/gov/process-evals/:id', authenticateToken, async (req, res) => { try { await ProcessEval.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
-// ==========================================
-// RUTAS: LEADS
-// ==========================================
+// LEADS
 app.get('/gov/leads', authenticateToken, async (req, res) => { try { res.json(await Lead.find().sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.patch('/gov/leads/:id/status', authenticateToken, async (req, res) => {
   try { const { status } = req.body; const lead = await Lead.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true }); res.json({ ok: true, lead }); } catch (error) { res.status(500).json({ error: 'Error' }); }
@@ -365,9 +486,7 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// ==========================================
-// RUTAS: IA GENERATIVA (Groq)
-// ==========================================
+// IA GENERATIVA
 app.post('/gov/suggest-risk', authenticateToken, async (req, res) => {
   try {
     const { content } = await callGroq({ messages: [
@@ -398,18 +517,8 @@ app.post('/gov/generate-report', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Error IA' }); }
 });
 
-app.post('/gov/generate-strategic-report', authenticateToken, async (req, res) => {
-  try {
-    const { content } = await callGroq({ messages: [
-      { role: 'system', content: 'Genera un reporte estratégico de gobernanza de IA en ESPAÑOL. JSON: { executiveSummary, gapAnalysis, roadmap: { phase1, phase2, phase3 } }' },
-      { role: 'user', content: JSON.stringify(req.body) }
-    ] });
-    res.json(safeParseJSON(content));
-  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
-});
-
 // ==========================================
-// RUTAS: AIGOS (Fase 2)
+// RUTAS AIGOS
 // ==========================================
 app.post('/gov/aigos/seed', authenticateToken, async (req, res) => {
   try {
@@ -473,7 +582,13 @@ app.post('/gov/aigos/assessments', authenticateToken, async (req, res) => {
     const G = 70, E = 80, C = 65, V = 100;
     const gates = { hasPolicy: true, hasActiveCommittee: false, hasUnmitigatedCriticalRisk: false };
     const aigiResult = calculateAIGI(maturityResult.overall, G, E, C, V, gates);
-    const result = await AssessmentResult.create({ orgId: req.user.orgId, companyId, answers, maturity: maturityResult, aigi: aigiResult });
+
+    let targetOrgId = req.user.orgId;
+    if (companyId) {
+      const company = await Company.findById(companyId);
+      if (company) targetOrgId = company.orgId;
+    }
+    const result = await AssessmentResult.create({ orgId: targetOrgId, companyId, answers, maturity: maturityResult, aigi: aigiResult });
     res.status(201).json(result);
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
@@ -487,7 +602,7 @@ app.get('/gov/aigos/companies/:companyId/latest', authenticateToken, async (req,
 });
 
 // ==========================================
-// ENDPOINTS PÚBLICOS (Landing)
+// ENDPOINTS PÚBLICOS
 // ==========================================
 app.post('/api/public/risk-assessment', async (req, res) => {
   const t0 = Date.now();
@@ -497,7 +612,7 @@ app.post('/api/public/risk-assessment', async (req, res) => {
     setRateLimitHeaders(res, rl);
     if (!rl.allowed) {
       res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000)));
-      return res.status(429).json({ ok: false, error: `Demasiadas solicitudes desde tu IP. Intenta de nuevo en ${formatRetryMessage(rl.resetMs)}.` });
+      return res.status(429).json({ ok: false, error: `Demasiadas solicitudes. Intenta en ${formatRetryMessage(rl.resetMs)}.` });
     }
     const b = req.body || {};
     const errors = [];
@@ -520,7 +635,7 @@ app.post('/api/public/risk-assessment', async (req, res) => {
     return res.json({ ok: true, assessment: { risk_level: calc.level, score: calc.score, badges: calc.badges, summary: calc.summary }, leadId: lead._id.toString() });
   } catch (err) {
     console.error('[risk-assessment] error:', err);
-    return res.status(500).json({ ok: false, error: 'Error interno al procesar la evaluación.' });
+    return res.status(500).json({ ok: false, error: 'Error interno.' });
   }
 });
 
@@ -532,7 +647,7 @@ app.post('/api/public/automation-assessment', async (req, res) => {
     setRateLimitHeaders(res, rl);
     if (!rl.allowed) {
       res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000)));
-      return res.status(429).json({ ok: false, error: `Demasiadas solicitudes desde tu IP. Intenta de nuevo en ${formatRetryMessage(rl.resetMs)}.` });
+      return res.status(429).json({ ok: false, error: `Demasiadas solicitudes. Intenta en ${formatRetryMessage(rl.resetMs)}.` });
     }
     const b = req.body || {};
     const errors = [];
@@ -578,18 +693,16 @@ app.post('/api/public/automation-assessment', async (req, res) => {
     return res.json({ ok: true, assessment: { automationIndex: resultado.automationIndex, roiHoursPerMonth: resultado.roiHoursPerMonth, agentType: resultado.agentType, agentDescription: resultado.agentDescription, roiExplanation: resultado.roiExplanation }, leadId: lead._id.toString() });
   } catch (err) {
     console.error('[automation-assessment] error:', err);
-    return res.status(500).json({ ok: false, error: 'Error interno al procesar la evaluación.' });
+    return res.status(500).json({ ok: false, error: 'Error interno.' });
   }
 });
 
-// ==========================================
 // CONEXIÓN
-// ==========================================
 let server;
 async function startServer() {
   try {
     await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
     server = app.listen(PORT, () => console.log(`[SERVER] Escuchando en puerto ${PORT}`));
-  } catch (err) { process.exit(1); }
+  } catch (err) { console.error('Error conectando Mongo:', err); process.exit(1); }
 }
 startServer();
