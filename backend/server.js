@@ -358,20 +358,32 @@ app.patch('/gov/leads/:id/status', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
+// ... (todo el código anterior es idéntico, hasta el endpoint de convert)
+
 app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
   try {
-    const { orgId, companyName } = req.body;
+    const { orgId, companyId, companyName } = req.body;
     const lead = await Lead.findById(req.params.id);
     if (!lead) return res.status(404).json({ error: 'Lead no encontrado' });
     if (lead.status === 'convertido') return res.status(400).json({ error: 'El lead ya fue convertido' });
 
     const targetOrgId = new mongoose.Types.ObjectId(orgId);
+    let company;
 
-    let company = await Company.findOne({ orgId: targetOrgId, name: companyName });
-    if (!company) {
-      company = await Company.create({ orgId: targetOrgId, name: companyName, riskProfile: 'operacional', active: true });
+    // Lógica: si viene companyId, usar esa filial. Si no, buscar o crear por nombre.
+    if (companyId) {
+      company = await Company.findById(companyId);
+      if (!company) return res.status(404).json({ error: 'Filial no encontrada' });
+    } else if (companyName) {
+      company = await Company.findOne({ orgId: targetOrgId, name: companyName });
+      if (!company) {
+        company = await Company.create({ orgId: targetOrgId, name: companyName, riskProfile: 'operacional', active: true });
+      }
+    } else {
+      return res.status(400).json({ error: 'Debes seleccionar una filial existente o indicar un nombre para crear una nueva' });
     }
 
+    // Mover data a las colecciones de operación según el tipo
     if (lead.tipo_lead === 'riesgo' && lead.resultado) {
       await Evaluation.create({
         orgId: targetOrgId, companyId: company._id,
@@ -405,6 +417,8 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
     res.json({ ok: true, companyId: company._id, lead });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
+
+// ... (el resto del código es idéntico)
 
 // ==========================================
 // ENDPOINTS PÚBLICOS

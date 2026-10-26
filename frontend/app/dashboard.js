@@ -539,6 +539,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
+  // ... (todo el código anterior es idéntico, hasta la sección de leads)
+
+  // ==========================================
   // 5. LÓGICA DE LEADS UNIFICADA
   // ==========================================
   async function loadLeads() {
@@ -605,15 +608,70 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('leadFilterSource')?.addEventListener('change', renderLeadsTable);
   document.getElementById('leadFilterStatus')?.addEventListener('change', renderLeadsTable);
 
+  // ==========================================
+  // MODAL CONVERTIR LEAD (con 2 opciones)
+  // ==========================================
+  const convertOrgSelect = document.getElementById('convertOrgId');
+  const convertCompanySelect = document.getElementById('convertCompanySelect');
+  const convertNewCompanyDiv = document.getElementById('convertNewCompanyDiv');
+  const convertNewCompanyName = document.getElementById('convertNewCompanyName');
+
+  async function loadCompaniesForConvert(orgId) {
+    convertCompanySelect.innerHTML = '<option value="">Cargando...</option>';
+    try {
+      const res = await fetch(`${API_URL}/gov/orgs/${orgId}/companies`, { headers });
+      if (!res.ok) throw new Error('Error');
+      const companies = await res.json();
+      
+      let options = '<option value="">-- Seleccionar filial --</option>';
+      options += companies.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+      options += '<option value="NEW" class="text-teal-400 font-bold">+ Crear nueva filial</option>';
+      
+      convertCompanySelect.innerHTML = options;
+    } catch (err) {
+      console.error(err);
+      convertCompanySelect.innerHTML = '<option value="">Error al cargar</option>';
+    }
+  }
+
+  convertOrgSelect?.addEventListener('change', (e) => {
+    const orgId = e.target.value;
+    if (orgId) loadCompaniesForConvert(orgId);
+  });
+
+  convertCompanySelect?.addEventListener('change', (e) => {
+    if (e.target.value === 'NEW') {
+      convertNewCompanyDiv.classList.remove('hidden');
+      convertNewCompanyName.required = true;
+      convertNewCompanyName.focus();
+    } else {
+      convertNewCompanyDiv.classList.add('hidden');
+      convertNewCompanyName.required = false;
+      convertNewCompanyName.value = '';
+    }
+  });
+
   window.openConvertModal = function(leadId) {
     const lead = leadsCache.find(l => l._id === leadId);
     if (!lead) return;
     
     currentLeadToConvert = leadId;
-    document.getElementById('convertCompanyName').value = lead.empresa || lead.company || '';
     
-    const orgSelect = document.getElementById('convertOrgId');
-    orgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name || 'Org sin nombre'}</option>`).join('');
+    // Poblar orgs
+    convertOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name || 'Org sin nombre'}</option>`).join('');
+    
+    // Precargar el nombre del lead en el input de nueva filial (por si elige crear)
+    convertNewCompanyName.value = lead.empresa || lead.company || '';
+    
+    // Resetear el select de filiales
+    convertCompanySelect.innerHTML = '<option value="">-- Seleccionar --</option>';
+    convertNewCompanyDiv.classList.add('hidden');
+    convertNewCompanyName.required = false;
+    
+    // Cargar filiales de la primera org
+    if (orgsCache.length > 0) {
+      loadCompaniesForConvert(orgsCache[0]._id);
+    }
     
     document.getElementById('convertLeadModal').classList.remove('hidden');
   }
@@ -624,10 +682,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalText = btn.textContent;
     btn.textContent = 'Convirtiendo...'; btn.disabled = true;
 
-    const payload = {
-      orgId: document.getElementById('convertOrgId').value,
-      companyName: document.getElementById('convertCompanyName').value
-    };
+    const orgId = convertOrgSelect.value;
+    const companyVal = convertCompanySelect.value;
+    
+    const payload = { orgId };
+    
+    if (companyVal === 'NEW') {
+      payload.companyName = convertNewCompanyName.value.trim();
+      if (!payload.companyName) {
+        alert('Escribe el nombre de la nueva filial.');
+        btn.textContent = originalText; btn.disabled = false;
+        return;
+      }
+    } else if (companyVal) {
+      payload.companyId = companyVal;
+    } else {
+      alert('Selecciona una filial existente o elige "Crear nueva".');
+      btn.textContent = originalText; btn.disabled = false;
+      return;
+    }
 
     try {
       const res = await fetch(`${API_URL}/gov/leads/${currentLeadToConvert}/convert`, {
@@ -637,8 +710,9 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (res.ok) {
         document.getElementById('convertLeadModal').classList.add('hidden');
-        alert("✅ Lead convertido exitosamente. Revisa la pestaña de Filiales o Inventario.");
-        loadLeads(); // Recargar la tabla
+        alert("✅ Lead convertido exitosamente.");
+        loadLeads();
+        loadCompanies(); // Refrescar la lista global de filiales
       } else {
         alert("Error: " + (data.error || "No se pudo convertir"));
       }
@@ -649,6 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+// ... (el resto del código es idéntico)
   // NUEVO: Submit para crear organización
   document.getElementById('newOrgForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
