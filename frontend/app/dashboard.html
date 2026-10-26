@@ -179,10 +179,16 @@
       </div>
     </div>
 
-    <!-- 6. FILIALES -->
+    <!-- 6. FILIALES (CON BOTÓN PARA NUEVA ORG) -->
     <div id="companiesSection" class="hidden">
       <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6">
-        <div class="flex justify-between items-center mb-4"><div><h2 class="text-lg font-bold">Directorio de Filiales</h2></div><button id="openCompanyModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nueva Filial</button></div>
+        <div class="flex justify-between items-center mb-4">
+          <div><h2 class="text-lg font-bold">Directorio de Filiales</h2></div>
+          <div class="flex gap-2">
+            <button id="openOrgModalBtn" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nueva Organización</button>
+            <button id="openCompanyModalBtn" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-lg transition">+ Nueva Filial</button>
+          </div>
+        </div>
         <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-slate-700 text-sm text-slate-400"><th class="py-3 px-4">Nombre</th><th class="py-3 px-4">Perfil</th><th class="py-3 px-4">Estado</th><th class="py-3 px-4">ID</th></tr></thead><tbody id="companiesTableBody" class="text-sm"><tr><td colspan="4" class="py-4 text-center text-slate-500">Cargando...</td></tr></tbody></table></div>
       </div>
     </div>
@@ -283,6 +289,17 @@
         </div>
         <div><label class="block text-sm font-semibold text-slate-300 mb-1">Filial / Empresa</label><select id="modelCompany" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></select></div>
         <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- NUEVO MODAL: ORGANIZACIÓN -->
+  <div id="newOrgModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+      <h2 class="text-2xl font-bold mb-6 text-white">Registrar Nueva Organización (Cliente)</h2>
+      <form id="newOrgForm" class="space-y-4">
+        <div><label class="block text-sm font-semibold text-slate-300 mb-1">Nombre de la Organización</label><input type="text" id="orgNameInput" required placeholder="Ej. Grupo Oleomex" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none"></div>
+        <div class="flex justify-end gap-3 mt-6"><button type="button" id="closeOrgModalBtn" class="px-6 py-2 rounded-xl text-slate-300 hover:bg-slate-700 transition">Cancelar</button><button type="submit" class="px-6 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-900 font-bold transition">Guardar Organización</button></div>
       </form>
     </div>
   </div>

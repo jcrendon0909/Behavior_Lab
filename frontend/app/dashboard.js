@@ -69,6 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('openModalBtn')?.addEventListener('click', () => modalModel.classList.remove('hidden'));
   document.getElementById('closeModalBtn')?.addEventListener('click', () => modalModel.classList.add('hidden'));
 
+  const modalOrg = document.getElementById('newOrgModal');
+  document.getElementById('openOrgModalBtn')?.addEventListener('click', () => modalOrg.classList.remove('hidden'));
+  document.getElementById('closeOrgModalBtn')?.addEventListener('click', () => modalOrg.classList.add('hidden'));
+
   const modalCompany = document.getElementById('newCompanyModal');
   document.getElementById('openCompanyModalBtn')?.addEventListener('click', () =>modalCompany.classList.remove('hidden'));
   document.getElementById('closeCompanyModalBtn')?.addEventListener('click', () => modalCompany.classList.add('hidden'));
@@ -643,6 +647,24 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally {
       btn.textContent = originalText; btn.disabled = false;
     }
+  });
+
+  // NUEVO: Submit para crear organización
+  document.getElementById('newOrgForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.textContent = 'Guardando...'; btn.disabled = true;
+    const name = document.getElementById('orgNameInput').value;
+    
+    try {
+      const res = await fetch(`${API_URL}/gov/orgs`, { method: 'POST', headers, body: JSON.stringify({ name }) });
+      if (res.ok) { 
+        document.getElementById('newOrgModal').classList.add('hidden'); 
+        e.target.reset(); 
+        alert('Organización creada. Recargando...');
+        window.location.reload(); 
+      } else alert('Error al crear organización');
+    } catch (err) { alert('Error de red'); } finally { btn.textContent = 'Guardar Organización'; btn.disabled = false; }
   });
 
   async function loadUsers() {

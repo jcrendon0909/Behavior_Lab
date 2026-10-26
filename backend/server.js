@@ -66,7 +66,7 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true, strict: false, collection: 'users' });
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
-const OrgSchema = new mongoose.Schema({ name: String }, { strict: false, collection: 'orgs' });
+const OrgSchema = new mongoose.Schema({ name: String, modules: [String] }, { strict: false, collection: 'orgs' });
 const Org = mongoose.models.Org || mongoose.model('Org', OrgSchema);
 
 const CompanySchema = new mongoose.Schema({
@@ -253,7 +253,16 @@ app.post('/gov/auth/login', async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// ADMIN: ORGANIZACIONES Y USUARIOS
 app.get('/gov/orgs', authenticateToken, async (req, res) => { try { res.json(await Org.find()); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/orgs', authenticateToken, async (req, res) => { 
+  try { 
+    if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Solo superadmin' });
+    const org = await Org.create({ name: req.body.name, modules: ['gobernanza', 'automatizacion'] });
+    res.status(201).json(org); 
+  } catch (error) { res.status(500).json({ error: 'Error' }); } 
+});
+
 app.get('/gov/users', authenticateToken, async (req, res) => { try { res.json(await User.find().select('-password -hash')); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/users', authenticateToken, async (req, res) => {
   try {
@@ -310,7 +319,6 @@ app.delete('/gov/process-evals/:id', authenticateToken, async (req, res) => { tr
 // ==========================================
 app.get('/gov/leads', authenticateToken, async (req, res) => {
   try {
-    // Devuelve TODOS los leads (riesgo y automatización)
     res.json(await Lead.find().sort({ createdAt: -1 }));
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
@@ -330,13 +338,11 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
     if (!lead) return res.status(404).json({ error: 'Lead no encontrado' });
     if (lead.status === 'convertido') return res.status(400).json({ error: 'El lead ya fue convertido' });
 
-    // 1. Verificar si la empresa existe en esa org o crearla
     let company = await Company.findOne({ orgId, name: companyName });
     if (!company) {
       company = await Company.create({ orgId, name: companyName, riskProfile: 'operacional', active: true });
     }
 
-    // 2. Mover data a las colecciones de operación según el tipo
     if (lead.tipo_lead === 'riesgo' && lead.resultado) {
       await Evaluation.create({
         orgId, companyId: company._id,
@@ -362,7 +368,6 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
       });
     }
 
-    // 3. Actualizar el lead
     lead.status = 'convertido';
     lead.orgIdAsignado = orgId;
     lead.companyIdAsignado = company._id;
