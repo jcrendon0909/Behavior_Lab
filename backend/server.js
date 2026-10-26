@@ -37,6 +37,7 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset', 'Retry-After'],
 }));
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '100kb' }));
@@ -174,32 +175,55 @@ function safeParseJSON(text) {
 
 // ==========================================
 // RATE LIMIT (in-memory) — para endpoints públicos
+// Configurable via env: PUBLIC_RATE_MAX (default 20), PUBLIC_RATE_WINDOW_MS (default 1h)
 // ==========================================
 const publicRateLimit = new Map();
-const PUBLIC_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hora
-const PUBLIC_RATE_MAX = 10; // 10 requests por IP por hora
+const PUBLIC_RATE_MAX = Math.max(1, parseInt(process.env.PUBLIC_RATE_MAX || '20', 10));
+const PUBLIC_RATE_WINDOW_MS = Math.max(60000, parseInt(process.env.PUBLIC_RATE_WINDOW_MS || String(60 * 60 * 1000), 10));
 
 function checkPublicRateLimit(ip) {
   const now = Date.now();
   const entry = publicRateLimit.get(ip);
   if (!entry || now - entry.first > PUBLIC_RATE_WINDOW_MS) {
     publicRateLimit.set(ip, { count: 1, first: now });
-    return { allowed: true, remaining: PUBLIC_RATE_MAX - 1 };
+    return {
+      allowed: true,
+      limit: PUBLIC_RATE_MAX,
+      remaining: PUBLIC_RATE_MAX - 1,
+      resetMs: PUBLIC_RATE_WINDOW_MS,
+    };
   }
   if (entry.count >= PUBLIC_RATE_MAX) {
-    return { allowed: false, remaining: 0, retryAfterMs: PUBLIC_RATE_WINDOW_MS - (now - entry.first) };
+    const resetMs = PUBLIC_RATE_WINDOW_MS - (now - entry.first);
+    return { allowed: false, limit: PUBLIC_RATE_MAX, remaining: 0, resetMs };
   }
   entry.count += 1;
-  return { allowed: true, remaining: PUBLIC_RATE_MAX - entry.count };
+  return {
+    allowed: true,
+    limit: PUBLIC_RATE_MAX,
+    remaining: PUBLIC_RATE_MAX - entry.count,
+    resetMs: PUBLIC_RATE_WINDOW_MS - (now - entry.first),
+  };
 }
 
-// Limpieza periódica del Map (evita leak de memoria)
+function setRateLimitHeaders(res, rl) {
+  res.set('X-RateLimit-Limit', String(rl.limit));
+  res.set('X-RateLimit-Remaining', String(rl.remaining));
+  res.set('X-RateLimit-Reset', String(Math.ceil(rl.resetMs / 1000)));
+}
+
+function formatRetryMessage(resetMs) {
+  if (resetMs < 60000) return `${Math.ceil(resetMs / 1000)} segundos`;
+  return `${Math.ceil(resetMs / 60000)} minuto(s)`;
+}
+
+// Limpieza periódica cada 5 min (evita leak de memoria)
 setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of publicRateLimit.entries()) {
     if (now - entry.first > PUBLIC_RATE_WINDOW_MS) publicRateLimit.delete(ip);
   }
-}, PUBLIC_RATE_WINDOW_MS);
+}, 5 * 60 * 1000);
 
 function getClientIP(req) {
   return (
@@ -405,10 +429,12 @@ app.post('/api/public/automation-assessment', async (req, res) => {
     // 1) Rate limit
     const ip = getClientIP(req);
     const rl = checkPublicRateLimit(ip);
+    setRateLimitHeaders(res, rl);
     if (!rl.allowed) {
+      res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000)));
       return res.status(429).json({
         ok: false,
-        error: `Demasiadas solicitudes desde tu IP. Intenta de nuevo en ~${Math.ceil(rl.retryAfterMs / 60000)} min.`
+        error: `Demasiadas solicitudes desde tu IP. Intenta de nuevo en ${formatRetryMessage(rl.resetMs)}.`
       });
     }
 
