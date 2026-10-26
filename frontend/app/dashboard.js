@@ -18,16 +18,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let orgsCache = [];
   let leadsCache = [];
   let currentLeadToConvert = null;
+  let aigosQuestionsCache = []; // NUEVO: Cache para las preguntas AIGOS
 
   const isSameOrg = (id1, id2) => {
     if (!id1 || !id2) return false;
     return id1.toString() === id2.toString();
   };
 
-  // 1. EVENTOS BÁSICOS Y NAVEGACIÓN
+  // ==========================================
+  // 1. NAVEGACIÓN Y EVENTOS BÁSICOS
+  // ==========================================
   const logoutBtn = document.getElementById('logoutBtn');
   if(logoutBtn) logoutBtn.addEventListener('click', () => {
-    localStorage.removeItem('gov_token'); localStorage.removeItem('gov_user'); window.location.href = 'index.html';
+    localStorage.removeItem('gov_token'); 
+    localStorage.removeItem('gov_user'); 
+    window.location.href = 'index.html';
   });
 
   const tabs = ['tabDashboardBtn', 'tabInventoryBtn', 'tabMatrixBtn', 'tabRisksBtn', 'tabDeliverablesBtn', 'tabCompaniesBtn', 'tabProcessesBtn', 'tabLeadsBtn', 'tabUsersBtn', 'tabEvidenceBtn'];
@@ -55,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('tabDashboardBtn')?.addEventListener('click', () => setTab('tabDashboardBtn', 'dashboardSection', loadExecutiveDashboard));
   document.getElementById('tabInventoryBtn')?.addEventListener('click', () => setTab('tabInventoryBtn', 'inventorySection', loadInventory));
-  document.getElementById('tabMatrixBtn')?.addEventListener('click', () => setTab('tabMatrixBtn', 'matrixSection', loadMatrix));
+  document.getElementById('tabMatrixBtn')?.addEventListener('click', () => setTab('tabMatrixBtn', 'matrixSection', loadControls)); // Cambiamos loadMatrix por loadControls
   document.getElementById('tabRisksBtn')?.addEventListener('click', () => setTab('tabRisksBtn', 'risksSection', loadRisks));
   document.getElementById('tabDeliverablesBtn')?.addEventListener('click', () => setTab('tabDeliverablesBtn', 'deliverablesSection', loadDeliverables));
   document.getElementById('tabCompaniesBtn')?.addEventListener('click', () => setTab('tabCompaniesBtn', 'companiesSection', loadCompanies));
@@ -113,7 +118,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalConvert = document.getElementById('convertLeadModal');
   document.getElementById('closeConvertModalBtn')?.addEventListener('click', () => modalConvert.classList.add('hidden'));
 
-  // 2. AUTOCOMPLETAR
+  // MODAL AIGOS ASSESSMENT
+  const modalAigos = document.getElementById('aigosAssessmentModal');
+  document.getElementById('openAigosAssessmentBtn')?.addEventListener('click', async () => {
+    const diagCompany = document.getElementById('diagCompany');
+    diagCompany.innerHTML = companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+    
+    modalAigos.classList.remove('hidden');
+    await loadAigosQuestions();
+  });
+  document.getElementById('closeAigosAssessmentBtn')?.addEventListener('click', () => modalAigos.classList.add('hidden'));
+  document.getElementById('cancelAigosBtn')?.addEventListener('click', () => modalAigos.classList.add('hidden'));
+
+  const modalAigosResult = document.getElementById('aigosResultModal');
+  document.getElementById('closeAigosResultBtn')?.addEventListener('click', () => modalAigosResult.classList.add('hidden'));
+
+  // ==========================================
+  // 2. AUTOCOMPLETAR Y SUGERENCIAS IA
+  // ==========================================
   window.fillCommonRisk = function() {
     const val = document.getElementById('commonRiskSelect').value;
     if(!val) return;
@@ -176,64 +198,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 3. SUGERENCIAS CON IA
   window.suggestRiskWithAI = async function() {
     const btn = document.getElementById('btnAI_Risk');
     const originalText = btn.textContent;
     btn.textContent = "🧠 Pensando..."; btn.disabled = true;
-    
     const companyName = document.getElementById('riskCompany').options[document.getElementById('riskCompany').selectedIndex]?.text || "la organización";
-    
     try {
-      const res = await fetch(`${API_URL}/gov/suggest-risk`, {
-        method: 'POST', headers, body: JSON.stringify({ companyName })
-      });
+      const res = await fetch(`${API_URL}/gov/suggest-risk`, { method: 'POST', headers, body: JSON.stringify({ companyName }) });
       const data = await res.json();
-      
       if (res.ok) {
         document.getElementById('riskName').value = data.riskName || "";
         document.getElementById('riskCategory').value = data.category || "Operacional";
         document.getElementById('riskProb').value = data.probability || 3;
         document.getElementById('riskImpact').value = data.impact || 3;
         document.getElementById('riskMitigation').value = data.mitigationPlan || "";
-      } else {
-        alert("No se pudo generar el riesgo con IA.");
-      }
-    } catch (error) {
-      alert("Error de conexión con la IA.");
-    } finally {
-      btn.textContent = originalText; btn.disabled = false;
-    }
+      } else { alert("No se pudo generar el riesgo con IA."); }
+    } catch (error) { alert("Error de conexión con la IA."); } finally { btn.textContent = originalText; btn.disabled = false; }
   }
 
   window.suggestTaskWithAI = async function() {
     const btn = document.getElementById('btnAI_Task');
     const originalText = btn.textContent;
     btn.textContent = "🧠 Pensando..."; btn.disabled = true;
-    
     const companyName = document.getElementById('orgSelector')?.selectedOptions[0]?.text || "la organización";
-
     try {
-      const res = await fetch(`${API_URL}/gov/suggest-task`, {
-        method: 'POST', headers, body: JSON.stringify({ companyName })
-      });
+      const res = await fetch(`${API_URL}/gov/suggest-task`, { method: 'POST', headers, body: JSON.stringify({ companyName }) });
       const data = await res.json();
-      
       if (res.ok) {
         document.getElementById('taskName').value = data.taskName || "";
         document.getElementById('taskPhase').value = data.phase || "Fase 1: Diagnóstico";
         document.getElementById('taskAssignee').value = data.assignedTo || "Ambos";
-      } else {
-        alert("No se pudo generar la tarea con IA.");
-      }
-    } catch (error) {
-      alert("Error de conexión con la IA.");
-    } finally {
-      btn.textContent = originalText; btn.disabled = false;
-    }
+      } else { alert("No se pudo generar la tarea con IA."); }
+    } catch (error) { alert("Error de conexión con la IA."); } finally { btn.textContent = originalText; btn.disabled = false; }
   }
 
-  // 4. INIT Y CARGA DE DATOS
+  // ==========================================
+  // 3. INIT Y CARGA DE DATOS
+  // ==========================================
   async function init() {
     currentUser = JSON.parse(localStorage.getItem('gov_user'));
     if (!currentUser) return window.location.href = 'index.html';
@@ -250,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById(id); if(el) el.style.display = 'block'; 
       }); 
     }
-    
     if (isSuperAdmin) { const usersTab = document.getElementById('tabUsersBtn'); if(usersTab) usersTab.style.display = 'block'; }
 
     if (isSuperAdmin) {
@@ -270,10 +270,9 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadCompanies(); 
             loadInventory();
             if(!document.getElementById('dashboardSection').classList.contains('hidden')) loadExecutiveDashboard();
-            if(!document.getElementById('matrixSection').classList.contains('hidden')) loadMatrix();
             if(!document.getElementById('risksSection').classList.contains('hidden')) loadRisks();
             if(!document.getElementById('deliverablesSection').classList.contains('hidden')) loadDeliverables();
-            if(!document.getElementById('processesSection').classList.contains('hidden')) loadProcesses();
+            if(!document.getElementById('matrixSection').classList.contains('hidden')) loadControls();
             if(!document.getElementById('evidenceSection').classList.contains('hidden')) loadEvidence();
           });
         }
@@ -287,62 +286,262 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ==========================================
+  // 4. LÓGICA AIGOS (PREGUNTAS Y EVALUACIÓN)
+  // ==========================================
+  async function loadAigosQuestions() {
+    const container = document.getElementById('aigosQuestionsContainer');
+    if (aigosQuestionsCache.length > 0) return; // Ya están cargadas en memoria
+
+    try {
+      const res = await fetch(`${API_URL}/gov/aigos/questions`, { headers });
+      if (!res.ok) throw new Error("Error al cargar catálogo");
+      aigosQuestionsCache = await res.json();
+      
+      if (aigosQuestionsCache.length === 0) {
+        container.innerHTML = `<p class="text-amber-500 text-center py-10">El catálogo AIGOS está vacío. Corre el endpoint /seed en el backend.</p>`;
+        return;
+      }
+
+      // Agrupar por dominio
+      const grouped = {};
+      aigosQuestionsCache.forEach(q => {
+        if (!grouped[q.domain]) grouped[q.domain] = [];
+        grouped[q.domain].push(q);
+      });
+
+      let html = '';
+      Object.keys(grouped).forEach(domain => {
+        html += `
+          <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 mb-4">
+            <h3 class="font-bold text-teal-400 mb-3 border-b border-slate-700 pb-2">${domain}</h3>
+            <div class="space-y-4">
+        `;
+        
+        grouped[domain].forEach(q => {
+          html += `
+            <div class="flex flex-col md:flex-row justify-between md:items-start gap-3 pb-3 border-b border-slate-800/50 last:border-0 last:pb-0">
+              <div class="w-full md:w-3/4">
+                <span class="text-xs font-bold text-slate-500 block mb-1">${q.code} | ${q.controlName}</span>
+                <p class="text-sm text-slate-200">${q.question}</p>
+                <p class="text-[10px] text-slate-400 mt-1 italic"><b>Evidencia requerida:</b> ${q.evidenceRequested}</p>
+              </div>
+              <div class="flex items-center gap-3 w-full md:w-1/4 justify-end mt-2 md:mt-0">
+                <div class="flex flex-col items-center">
+                  <label class="text-[10px] text-slate-400 mb-1" title="No Aplica">N/A</label>
+                  <input type="checkbox" class="aigos-na-checkbox w-4 h-4 accent-rose-500" data-code="${q.code}">
+                </div>
+                <div class="flex flex-col items-center">
+                  <label class="text-[10px] text-slate-400 mb-1" title="Evidencia Verificada">Ev.</label>
+                  <input type="checkbox" class="aigos-evidence-checkbox w-4 h-4 accent-teal-500" data-code="${q.code}">
+                </div>
+                <select class="aigos-level-select bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-sm text-white w-16 text-center outline-none" data-code="${q.code}">
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+    } catch (err) {
+      container.innerHTML = `<p class="text-rose-500 text-center py-10">Error al cargar preguntas: ${err.message}</p>`;
+    }
+  }
+
+  document.getElementById('aigosAssessmentForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.textContent = 'Calculando...'; btn.disabled = true;
+
+    const companyId = document.getElementById('diagCompany').value;
+    if (!companyId) { alert("Selecciona una filial"); btn.textContent = 'Calcular Madurez AIGOS'; btn.disabled = false; return; }
+
+    const answers = [];
+    const levelSelects = document.querySelectorAll('.aigos-level-select');
+    
+    levelSelects.forEach(sel => {
+      const code = sel.dataset.code;
+      const question = aigosQuestionsCache.find(q => q.code === code);
+      const level = parseInt(sel.value);
+      const isNA = document.querySelector(`.aigos-na-checkbox[data-code="${code}"]`).checked;
+      const hasEvidence = document.querySelector(`.aigos-evidence-checkbox[data-code="${code}"]`).checked;
+
+      answers.push({ questionCode: code, domain: question.domain, level, hasEvidence, isNA, observation: "" });
+    });
+
+    try {
+      const res = await fetch(`${API_URL}/gov/aigos/assessments`, {
+        method: 'POST', headers, body: JSON.stringify({ companyId, answers })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        document.getElementById('aigosAssessmentModal').classList.add('hidden');
+        
+        document.getElementById('resAigosMaturity').textContent = `${data.maturity.overall}%`;
+        document.getElementById('resAigosMaturityBand').textContent = data.maturity.band;
+        document.getElementById('resAigosAigi').textContent = `${data.aigi.published}`;
+        document.getElementById('resAigosAigiBand').textContent = data.aigi.band;
+
+        let domainsHtml = '';
+        Object.keys(data.maturity.domains).forEach(d => {
+          domainsHtml += `<div class="flex justify-between items-center text-xs mb-2">
+            <span class="text-slate-400 w-2/3 truncate">${d}</span>
+            <span class="text-slate-200 font-bold bg-slate-800 px-2 py-0.5 rounded">${data.maturity.domains[d].score}%</span>
+          </div>`;
+        });
+        document.getElementById('resAigosDomains').innerHTML = domainsHtml;
+
+        if (data.aigi.appliedGate) {
+          document.getElementById('resAigosGate').classList.remove('hidden');
+          document.getElementById('resAigosGateText').textContent = data.aigi.appliedGate;
+        } else {
+          document.getElementById('resAigosGate').classList.add('hidden');
+        }
+
+        document.getElementById('aigosResultModal').classList.remove('hidden');
+        
+        // Refrescar dashboard
+        if(!document.getElementById('dashboardSection').classList.contains('hidden')) {
+          document.getElementById('dashboardCompanySelector').value = companyId;
+          loadExecutiveDashboard();
+        }
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (err) {
+      alert("Error de red al calcular AIGOS");
+    } finally {
+      btn.textContent = 'Calcular Madurez AIGOS'; btn.disabled = false;
+    }
+  });
+
+  // ==========================================
+  // 5. DASHBOARD EJECUTIVO (AIGI + KPIs)
+  // ==========================================
   async function loadExecutiveDashboard() {
     try {
-      const [risksRes, tasksRes, evalsRes, evidenceRes] = await Promise.all([
+      // 1. Cargar selector de empresas en el dashboard
+      const dashCompanySelector = document.getElementById('dashboardCompanySelector');
+      if (dashCompanySelector.options.length <= 1) {
+        dashCompanySelector.innerHTML = companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+      }
+      const selectedCompanyId = dashCompanySelector.value || (companiesCache.length > 0 ? companiesCache[0]._id : null);
+
+      const [risksRes, tasksRes, aigosRes, evidenceRes] = await Promise.all([
         fetch(`${API_URL}/gov/risks?orgId=${currentOrgId}`, { headers }),
         fetch(`${API_URL}/gov/deliverables?orgId=${currentOrgId}`, { headers }),
-        fetch(`${API_URL}/gov/evaluations?orgId=${currentOrgId}`, { headers }),
+        selectedCompanyId ? fetch(`${API_URL}/gov/aigos/companies/${selectedCompanyId}/latest`, { headers }) : Promise.resolve({ ok: false }),
         fetch(`${API_URL}/gov/evidence?orgId=${currentOrgId}`, { headers })
       ]);
 
       const risks = (await risksRes.json()).filter(r => isSameOrg(r.orgId, currentOrgId));
       const tasks = (await tasksRes.json()).filter(d => isSameOrg(d.orgId, currentOrgId));
-      const evaluations = (await evalsRes.json()).filter(e => isSameOrg(e.orgId, currentOrgId));
       const evidence = await evidenceRes.json(); 
+      
+      // AIGI
+      if (aigosRes.ok) {
+        const aigosData = await aigosRes.json();
+        document.getElementById('kpiAIGI').textContent = aigosData.aigi.published;
+        document.getElementById('kpiAIGIBand').textContent = aigosData.aigi.band;
+        
+        const gateDiv = document.getElementById('kpiAIGIGate');
+        if (aigosData.aigi.appliedGate) {
+          gateDiv.textContent = `⚠️ Limitado por: ${aigosData.aigi.appliedGate}`;
+          gateDiv.classList.remove('hidden');
+        } else {
+          gateDiv.classList.add('hidden');
+        }
 
-      const latestEval = evaluations[0]; 
-      if (latestEval) {
-        document.getElementById('kpiCompliance').textContent = `${latestEval.score}%`;
-        document.getElementById('kpiCompliance').className = latestEval.score > 60 ? 'text-5xl font-black text-teal-400' : 'text-5xl font-black text-amber-400';
+        document.getElementById('statMaturity').textContent = `${aigosData.maturity.overall}%`;
       } else {
-        document.getElementById('kpiCompliance').textContent = `0%`;
-        document.getElementById('kpiCompliance').className = 'text-5xl font-black text-slate-500';
+        document.getElementById('kpiAIGI').textContent = "--";
+        document.getElementById('kpiAIGIBand').textContent = "Sin eval";
+        document.getElementById('kpiAIGIGate').classList.add('hidden');
       }
 
+      // Riesgos KPI
       const criticalRisks = risks.filter(r => r.riskLevel === 'Crítico' || r.riskLevel === 'Alto').length;
       document.getElementById('kpiRisks').textContent = criticalRisks;
       document.getElementById('kpiRisks').className = criticalRisks > 0 ? 'text-5xl font-black text-rose-400' : 'text-5xl font-black text-teal-400';
 
+      // Tareas KPI
       const totalTasks = tasks.length;
       const completedTasks = tasks.filter(t => t.status === 'Completado').length;
       const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
       document.getElementById('kpiTasks').textContent = `${progress}%`;
       document.getElementById('kpiTasksBar').style.width = `${progress}%`;
 
+      // Listas recientes
       const recentRisksDiv = document.getElementById('dashRecentRisks');
-      if (risks.length === 0) {
-        recentRisksDiv.innerHTML = `<p class="text-sm text-slate-500">No hay riesgos registrados.</p>`;
-      } else {
-        recentRisksDiv.innerHTML = risks.slice(0, 3).map(r => {
-          let badgeColor = r.riskLevel === 'Crítico' ? 'text-rose-400' : (r.riskLevel === 'Alto' ? 'text-orange-400' : 'text-amber-400');
-          return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><p class="text-sm text-slate-300 truncate w-3/4">${r.riskName}</p><span class="text-xs font-bold ${badgeColor}">${r.riskLevel}</span></div>`;
-        }).join('');
-      }
+      recentRisksDiv.innerHTML = risks.length === 0 ? `<p class="text-sm text-slate-500">No hay riesgos.</p>` : risks.slice(0, 3).map(r => {
+        let c = r.riskLevel === 'Crítico' ? 'text-rose-400' : (r.riskLevel === 'Alto' ? 'text-orange-400' : 'text-amber-400');
+        return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><p class="text-sm text-slate-300 truncate w-3/4">${r.riskName}</p><span class="text-xs font-bold ${c}">${r.riskLevel}</span></div>`;
+      }).join('');
 
       const recentEvidenceDiv = document.getElementById('dashRecentEvidence');
-      if (evidence.length === 0) {
-        recentEvidenceDiv.innerHTML = `<p class="text-sm text-slate-500">No hay evidencias subidas.</p>`;
-      } else {
-        recentEvidenceDiv.innerHTML = evidence.slice(0, 3).map(e => {
-          const date = new Date(e.ts).toLocaleDateString('es-MX');
-          return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><div><p class="text-sm text-slate-300 truncate w-48">${e.fileName.split('/').pop()}</p><p class="text-[10px] text-slate-500">${date} · ${e.questionId.replace('_',' ')}</p></div><a href="${e.r2Url}" target="_blank" class="text-xs text-teal-400 hover:underline">Ver</a></div>`;
-        }).join('');
-      }
+      recentEvidenceDiv.innerHTML = evidence.length === 0 ? `<p class="text-sm text-slate-500">No hay evidencias.</p>` : evidence.slice(0, 3).map(e => {
+        return `<div class="flex justify-between items-center py-2 border-b border-slate-700/50"><p class="text-sm text-slate-300 truncate w-48">${e.fileName.split('/').pop()}</p><a href="${e.r2Url}" target="_blank" class="text-xs text-teal-400 hover:underline">Ver</a></div>`;
+      }).join('');
 
     } catch (error) { console.error("Error cargando Dashboard Ejecutivo:", error); }
   }
 
+  document.getElementById('dashboardCompanySelector')?.addEventListener('change', () => {
+    loadExecutiveDashboard();
+  });
+
+  // ==========================================
+  // 6. CATÁLOGO DE CONTROLES (Antes Matriz)
+  // ==========================================
+  async function loadControls() {
+    const grid = document.getElementById('controlsGrid');
+    grid.innerHTML = `<p class="text-slate-500 col-span-3 text-center py-4">Cargando catálogo de controles...</p>`;
+    try {
+      // Usamos las preguntas que ya traen el nombre del control para pintar las tarjetas
+      if (aigosQuestionsCache.length === 0) {
+        const res = await fetch(`${API_URL}/gov/aigos/questions`, { headers });
+        aigosQuestionsCache = await res.json();
+      }
+      
+      // Extraer controles únicos
+      const uniqueControls = {};
+      aigosQuestionsCache.forEach(q => {
+        if(!uniqueControls[q.controlCode]) {
+          uniqueControls[q.controlCode] = { code: q.controlCode, name: q.controlName, domain: q.domain };
+        }
+      });
+
+      if (Object.keys(uniqueControls).length === 0) {
+        grid.innerHTML = `<p class="text-amber-500 col-span-3 text-center py-4">No hay controles cargados. Corre el /seed.</p>`;
+        return;
+      }
+
+      grid.innerHTML = Object.values(uniqueControls).map(c => `
+        <div class="p-4 rounded-xl border border-slate-700 bg-slate-800/50">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-bold text-teal-400">${c.code}</span>
+            <span class="text-[10px] text-slate-500 uppercase">${c.domain}</span>
+          </div>
+          <h3 class="text-sm font-bold text-slate-200 mb-2">${c.name}</h3>
+          <p class="text-xs text-slate-400">Para ver los detalles, revisa las preguntas asociadas en el Assessment AIGOS.</p>
+        </div>
+      `).join('');
+
+    } catch(e) { console.error(e); grid.innerHTML = `<p class="text-rose-500 text-center">Error al cargar controles.</p>`; }
+  }
+
+  // ==========================================
+  // 7. RESTO DE CRUDs (Empresas, Inventario, Riesgos, etc.)
+  // ==========================================
   async function loadCompanies() {
     try {
       const res = await fetch(`${API_URL}/gov/orgs/${currentOrgId}/companies`, { headers }); 
@@ -362,6 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const selectModel = document.getElementById('modelCompany');
       if(selectModel) selectModel.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+      
       const selectDiag = document.getElementById('diagCompany');
       if(selectDiag) selectDiag.innerHTML = companiesCache.length === 0 ? `<option value="">Crea una filial primero</option>` : companiesCache.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
     } catch (error) { console.error("Error cargando empresas:", error); }
@@ -374,40 +574,27 @@ document.addEventListener('DOMContentLoaded', () => {
       inventory = inventory.filter(item => isSameOrg(item.orgId, currentOrgId));
       
       document.getElementById('statTotalModels').textContent = inventory.length;
-      document.getElementById('statHighRisk').textContent = inventory.filter(i => i.risk_level === 'alto').length;
+      document.getElementById('statHighRisk').textContent = inventory.filter(i => i.risk_level === 'alto' || i.criticalityLevel === 'Crítica').length;
+      
       const tbody = document.getElementById('inventoryTableBody');
       if (inventory.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No hay modelos.</td></tr>`; return; }
+      
       tbody.innerHTML = inventory.map(item => {
-        let riskColor = 'bg-slate-700 text-slate-300'; if (item.risk_level === 'alto') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800'; if(item.risk_level === 'medio') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800'; if (item.risk_level === 'bajo') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+        let riskColor = 'bg-slate-700 text-slate-300'; 
+        let critLevel = item.criticalityLevel || item.risk_level || 'medio';
+        let critScore = item.criticalityScore ? `${item.criticalityScore}%` : '';
+
+        if (critLevel === 'alto' || critLevel === 'Crítica') riskColor = 'bg-rose-950 text-rose-400 border border-rose-800'; 
+        if (critLevel === 'medio' || critLevel === 'Media') riskColor = 'bg-amber-950 text-amber-400 border border-amber-800'; 
+        if (critLevel === 'bajo' || critLevel === 'Baja') riskColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+        
         const company = companiesCache.find(c => isSameOrg(c._id, item.companyId)); 
         const companyName = company ? company.name : 'Desconocida';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${item.risk_level}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status ? item.status.replace('_', ' ') : 'N/A'}</td></tr>`;
+        
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 font-semibold text-slate-200">${item.model_name}</td><td class="py-3 px-4 text-slate-400 capitalize">${item.category}</td><td class="py-3 px-4 text-slate-400">${companyName}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${riskColor}">${critLevel} ${critScore}</span></td><td class="py-3 px-4 text-slate-400 capitalize">${item.status ? item.status.replace('_', ' ') : 'N/A'}</td></tr>`;
       }).join('');
     } catch (error) { console.error("Error cargando inventario:", error); }
   }
-
-  async function loadMatrix() {
-    try {
-      const res = await fetch(`${API_URL}/gov/evaluations?orgId=${currentOrgId}`, { headers });
-      const evaluations = await res.json();
-      const matrixGrid = document.getElementById('matrixGrid');
-      const frameworks = ["ISO 42001", "NIST AI RMF", "EU AI Act", "LFPDPPP"];
-      matrixGrid.innerHTML = frameworks.map(fw => {
-        const evalForFw = evaluations.find(e => e.framework === fw && isSameOrg(e.orgId, currentOrgId));
-        let score = "--"; let statusText = "No Evaluado"; let color = "text-slate-500"; let border = "border-slate-700"; let bg = "bg-slate-800/30";
-        if (evalForFw) {
-          score = `${evalForFw.score}%`;
-          if (evalForFw.score > 85) { statusText = "Excelente"; color = "text-teal-400"; border = "border-teal-800"; bg = "bg-teal-950/20"; }
-          else if (evalForFw.score > 60) { statusText = "Maduro"; color = "text-blue-400"; border = "border-blue-800"; bg = "bg-blue-950/20"; }
-          else if (evalForFw.score > 30) { statusText = "En Desarrollo"; color = "text-amber-400"; border = "border-amber-800"; bg = "bg-amber-950/20"; }
-          else { statusText = "Crítico"; color = "text-rose-400"; border = "border-rose-800"; bg = "bg-rose-950/20"; }
-        }
-        return `<div class="p-6 rounded-2xl border ${border} ${bg}"><h3 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">${fw}</h3><div class="flex justify-between items-end"><div><p class="text-4xl font-black ${color} mb-1">${score}</p><p class="text-xs font-semibold ${color}">${statusText}</p></div><button onclick="openDiagnosticFor('${fw}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-500 transition">Evaluar</button></div></div>`;
-      }).join('');
-    } catch (error) { console.error("Error cargando matriz:", error); }
-  }
-
-  window.openDiagnosticFor = function(fw) { document.getElementById('tabInventoryBtn').click(); document.getElementById('openDiagnosticBtn').click(); document.getElementById('diagFramework').value = fw; }
 
   async function loadDeliverables() {
     try {
@@ -539,7 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // 5. LÓGICA DE LEADS UNIFICADA
+  // 8. LÓGICA DE LEADS UNIFICADA
   // ==========================================
   async function loadLeads() {
     try {
@@ -606,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('leadFilterStatus')?.addEventListener('change', renderLeadsTable);
 
   // ==========================================
-  // MODAL CONVERTIR LEAD (con 2 opciones)
+  // 9. MODAL CONVERTIR LEAD (con 2 opciones)
   // ==========================================
   const convertOrgSelect = document.getElementById('convertOrgId');
   const convertCompanySelect = document.getElementById('convertCompanySelect');
@@ -654,18 +841,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     currentLeadToConvert = leadId;
     
-    // Poblar orgs
     convertOrgSelect.innerHTML = orgsCache.map(o => `<option value="${o._id}">${o.name || 'Org sin nombre'}</option>`).join('');
-    
-    // Precargar el nombre del lead en el input de nueva filial (por si elige crear)
     convertNewCompanyName.value = lead.empresa || lead.company || '';
-    
-    // Resetear el select de filiales
     convertCompanySelect.innerHTML = '<option value="">-- Seleccionar --</option>';
     convertNewCompanyDiv.classList.add('hidden');
     convertNewCompanyName.required = false;
     
-    // Cargar filiales de la primera org
     if (orgsCache.length > 0) {
       loadCompaniesForConvert(orgsCache[0]._id);
     }
@@ -709,7 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('convertLeadModal').classList.add('hidden');
         alert("✅ Lead convertido exitosamente.");
         loadLeads();
-        loadCompanies(); // Refrescar la lista global de filiales
+        loadCompanies();
       } else {
         alert("Error: " + (data.error || "No se pudo convertir"));
       }
@@ -720,6 +901,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ==========================================
+  // 10. CRUD USUARIOS, EVIDENCIA, ORGS, MODELOS
+  // ==========================================
   document.getElementById('newOrgForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -762,25 +946,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) { document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error al cargar el expediente.</td></tr>`; }
   }
 
-  window.subirEvidencia = async function(event, qId) {
-    const file = event.target.files[0]; if (!file) return;
-    const btn = document.getElementById(`btn_${qId}`); const status = document.getElementById(`status_${qId}`); const select = document.getElementById(qId);
-    const companyId = document.getElementById('diagCompany').value;
-    if (!companyId) { alert("Por favor selecciona una filial primero."); event.target.value = ""; return; }
-    btn.textContent = "⏳ Analizando..."; btn.disabled = true; status.textContent = "";
-    const formData = new FormData(); formData.append("file", file); formData.append("companyId", companyId); formData.append("questionId", qId);
-    try {
-      const res = await fetch(`${API_URL}/gov/upload-evidence`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
-      const data = await res.json();
-      if (res.ok && data.validation && data.validation.valido) {
-        btn.textContent = "✅ Validado"; btn.classList.replace('bg-slate-700', 'bg-teal-900'); btn.classList.replace('hover:bg-slate-600', 'hover:bg-teal-800'); status.textContent = "Aprobado"; status.className = "text-[10px] mt-1 text-teal-400 font-bold text-right w-36 truncate"; select.value = "5"; select.dataset.hasEvidence = "true";
-      } else {
-        btn.textContent = "❌ Rechazado"; btn.classList.replace('bg-slate-700', 'bg-rose-900');
-        const errorMsg = data.error || (data.validation ? data.validation.razon : "No válido"); status.textContent = errorMsg; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate"; select.value = "0"; select.dataset.hasEvidence = "false";
-      }
-    } catch (err) { console.error(err); btn.textContent = "📎 Subir Evidencia"; status.textContent = "Error de conexión"; status.className = "text-[10px] mt-1 text-rose-400 text-right w-36 truncate"; select.dataset.hasEvidence = "false"; } finally { btn.disabled = false; event.target.value = ""; }
-  }
-
   document.getElementById('newModelForm')?.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
     const payload = { companyId: document.getElementById('modelCompany').value, model_name: document.getElementById('modelName').value, category: document.getElementById('modelCategory').value, risk_level: document.getElementById('modelRisk').value, vendor: 'Desconocido', status: 'en_uso' };
@@ -818,89 +983,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) { alert('Error de red.'); } finally { btn.textContent = 'Crear Usuario'; btn.disabled = false; }
   });
 
-  document.getElementById('diagnosticForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Calculando...'; btn.disabled = true;
-    const companySelect = document.getElementById('diagCompany'); const companyId = companySelect.value; const companyName = companySelect.options[companySelect.selectedIndex].text;
-    const framework = document.getElementById('diagFramework').value;
-    const qSelects = document.querySelectorAll('.diag-q');
-    let totalScore = 0; const answers = {}; let phase1 = [], phase2 = [], phase3 = [];
-    const recs = [ {p1:"Política IA.",p2:"Capacitar.",p3:"Auditar."}, {p1:"Oficial IA.",p2:"Comité.",p3:"Revisión."}, {p1:"Presupuesto.",p2:"Plan anual.",p3:"ROI."}, {p1:"Checklist AIA.",p2:"Automatizar.",p3:"Auditoría."}, {p1:"Modelos críticos.",p2:"Equidad.",p3:"Monitoreo."}, {p1:"Kill Switch.",p2:"Simulacros.",p3:"BCP."}, {p1:"Linaje.",p2:"Catálogo.",p3:"DPIA."}, {p1:"Métricas.",p2:"MLOps.",p3:"Reentrenar."}, {p1:"Backup prompts.",p2:"Git.",p3:"Trazabilidad."}, {p1:"Aviso IA.",p2:"Explicar.",p3:"XAI."}, {p1:"Caja negra.",p2:"Reportes.",p3:"Razones."}, {p1:"Buzón quejas.",p2:"Human-in-loop.",p3:"Métricas."} ];
-
-    qSelects.forEach((sel, index) => {
-      let val = parseInt(sel.value); const hasEvidence = sel.dataset.hasEvidence === "true";
-      if (val >= 4 && !hasEvidence) val = 2; 
-      totalScore += val; answers[`q${index+1}`] = { score: val, evidence: hasEvidence };
-      const rec = recs[index];
-      if (val <= 2) { phase1.push(rec.p1); phase2.push(rec.p2); phase3.push(rec.p3); }
-      else if (val === 3) { phase2.push(rec.p2); phase3.push(rec.p3); }
-      else if (val >= 4) { phase3.push(rec.p3); }
-    });
-
-    const percentage = Math.round((totalScore / 60) * 100);
-    
-    const p1 = (answers['q1']?.score||0) + (answers['q2']?.score||0) + (answers['q3']?.score||0);
-    const p2 = (answers['q4']?.score||0) + (answers['q5']?.score||0) + (answers['q6']?.score||0);
-    const p3 = (answers['q7']?.score||0) + (answers['q8']?.score||0) + (answers['q9']?.score||0);
-    const p4 = (answers['q10']?.score||0) + (answers['q11']?.score||0) + (answers['q12']?.score||0);
-    
-    const p1Pct = Math.round((p1 / 15) * 100);
-    const p2Pct = Math.round((p2 / 15) * 100);
-    const p3Pct = Math.round((p3 / 15) * 100);
-    const p4Pct = Math.round((p4 / 15) * 100);
-
-    document.getElementById('scorePillar1').textContent = `${p1Pct}%`;
-    document.getElementById('barPillar1').style.width = `${p1Pct}%`;
-    document.getElementById('scorePillar2').textContent = `${p2Pct}%`;
-    document.getElementById('barPillar2').style.width = `${p2Pct}%`;
-    document.getElementById('scorePillar3').textContent = `${p3Pct}%`;
-    document.getElementById('barPillar3').style.width = `${p3Pct}%`;
-    document.getElementById('scorePillar4').textContent = `${p4Pct}%`;
-    document.getElementById('barPillar4').style.width = `${p4Pct}%`;
-
-    let riskLevel = 'alto', label = 'Crítico', color = 'text-rose-400';
-    if (percentage > 30 && percentage <= 60) { riskLevel = 'medio'; label = 'En Desarrollo'; color = 'text-amber-400'; }
-    else if (percentage > 60 && percentage <= 85) { riskLevel = 'bajo'; label = 'Maduro'; color = 'text-blue-400'; }
-    else if (percentage > 85) { riskLevel = 'bajo'; label = 'Excelente'; color = 'text-teal-400'; }
-
-    const payload = { companyId, framework, answers, score: percentage, risk_level: riskLevel, recommendations: { phase1, phase2, phase3 } };
-
-    try {
-      const res = await fetch(`${API_URL}/gov/evaluations`, { method: 'POST', headers, body: JSON.stringify(payload) });
-      if (res.ok) {
-        document.getElementById('statMaturity').textContent = `${percentage}%`; document.getElementById('statMaturity').className = `text-4xl font-bold ${color}`;
-        document.getElementById('finalScore').textContent = `${percentage}%`; document.getElementById('finalScore').className = `text-6xl font-black mb-1${color}`;
-        document.getElementById('finalRiskLabel').textContent = label;
-        document.getElementById('resultFrameworkName').textContent = `Marco: ${framework}`;
-        document.getElementById('roadmapPhase1').textContent = phase1.join(" ") || "Nada pendiente.";
-        document.getElementById('roadmapPhase2').textContent = phase2.join(" ") || "Nada pendiente.";
-        document.getElementById('roadmapPhase3').textContent = phase3.join(" ") || "Nada pendiente.";
-
-        const btnAI = document.getElementById('btnGenerateAIReport');
-        btnAI.classList.remove('hidden'); btnAI.textContent = '🧠 Generando Reporte...'; btnAI.disabled = true;
-
-        const aiRes = await fetch(`${API_URL}/gov/generate-report`, { method: 'POST', headers, body: JSON.stringify({ companyName, score: percentage, riskLevel, answers, framework }) });
-        if (aiRes.ok) {
-          const aiData = await aiRes.json(); document.getElementById('aiReportText').innerText = aiData.report;
-          btnAI.textContent = '📄 Ver Reporte en PDF'; btnAI.disabled = false; btnAI.classList.replace('bg-slate-600', 'bg-blue-600');
-          btnAI.onclick = () => {
-            const w = window.open('', '_blank');
-            w.document.write(`<!DOCTYPE html><html><head><title>Reporte - ${companyName}</title><script src="https://cdn.tailwindcss.com"></script></head><body class="p-12"><div class="max-w-3xl mx-auto"><h1 class="text-3xl font-black border-b-4 border-blue-600 pb-4 mb-4">Reporte Ejecutivo (${framework})</h1><p class="text-xl"><b>Empresa:</b> ${companyName}</p><p class="mb-6"><b>Score:</b> ${percentage}% (${label})</p><div class="prose"><h3 class="font-boldtext-lg">Análisis IA:</h3><p class="whitespace-pre-wrap">${aiData.report}</p></div></div></body></html>`);
-            w.document.close();
-          };
-        } else { btnAI.textContent = '❌ Error de IA'; btnAI.disabled = false; }
-        diagFormCont.classList.add('hidden'); diagResultCont.classList.remove('hidden');
-      }
-    } catch (err) { alert('Error de conexión'); } finally { btn.textContent = 'Calcular Madurez'; btn.disabled = false; }
-  });
-
-  document.getElementById('btnGeneratePolicy')?.addEventListener('click', () => {
-    const orgName = document.getElementById('orgSelector')?.selectedOptions[0]?.text || "Organización";
-    const currentDate = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-    const policyWindow = window.open('', '_blank');
-    policyWindow.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Política de IA - ${orgName}</title><script src="https://cdn.tailwindcss.com"></script><style>@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display: none !important; } }</style></head><body class="bg-gray-100 font-sans text-gray-800 p-8"><div class="max-w-4xl mx-auto mb-4 no-print flex justify-end"><button onclick="window.print()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded shadow-lg transition">🖨️ Guardar como PDF / Imprimir</button></div><div class="max-w-4xl mx-auto bg-white p-12 shadow-xl border-t-8 border-teal-600 rounded-sm"><div class="text-center mb-12 border-b pb-8"><h1 class="text-3xl font-black text-gray-900 uppercase tracking-tight">Política Corporativa de Uso Aceptable de Inteligencia Artificial</h1><p class="text-gray-500 mt-2 font-semibold">${orgName}</p><p class="text-gray-400 text-sm mt-1">Versión 1.0 | Fecha de emisión: ${currentDate}</p></div><div class="space-y-6 text-sm text-justify leading-relaxed text-gray-700"><section><h2 class="text-lg font-bold text-gray-900 mb-2">1. Propósito y Alcance</h2><p>La presente política establece los lineamientos obligatorios para el uso, desarrollo, adquisición y despliegue de sistemas de Inteligencia Artificial (IA) dentro de <strong>${orgName}</strong>. Es aplicable a todos los colaboradores, contratistas y proveedores...</p></section><section><h2 class="text-lg font-bold text-gray-900 mb-2">2. Principios Rectores</h2><ul class="list-disc pl-5 space-y-1"><li><strong>Supervisión Humana:</strong> Todo sistema de IA debe mantener un nivel de control humano significativo en la toma de decisiones críticas.</li><li><strong>Privacidad por Diseño:</strong> Queda estrictamente prohibido ingresar datos personales o secretos comerciales en herramientas de IA Generativa públicas.</li></ul></section><div class="mt-16 pt-8 border-t border-gray-300"><div class="flex justify-between px-12"><div class="text-center"><div class="border-t border-gray-400 w-48 mt-8"></div><p class="font-bold mt-2 text-gray-800">Dirección General</p></div><div class="text-center"><div class="border-t border-gray-400 w-48 mt-8"></div><p class="font-bold mt-2 text-gray-800">Oficial de Cumplimiento de IA</p></div></div></div></div></div></body></html>`);
-    policyWindow.document.close();
-  });
-
+  // INIT
   init();
 });
