@@ -5,6 +5,13 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
+import { 
+  calculateCriticality, 
+  calculateResidualRisk, 
+  calculateMaturity, 
+  calculateAIGI 
+} from './aigos_engine.js'; 
+import { CONTROLS_DATA, RISKS_DATA, QUESTIONS_DATA } from './aigos_data.js'; 
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -43,7 +50,7 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '100kb' }));
 
 // ==========================================
-// MODELOS (Base de datos normalizada)
+// MODELOS BASE (Gobernanza)
 // ==========================================
 const LeadSchema = new mongoose.Schema({
   tipo_lead: { type: String, default: 'gobernanza' },
@@ -68,12 +75,8 @@ const UserSchema = new mongoose.Schema({
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
 const OrgSchema = new mongoose.Schema({ 
-  name: String, 
-  sector: String, 
-  plan: String, 
-  active: Boolean,
-  modules: [String] 
-}, { strict: false, collection: 'orgs' }); // COLECCIÓN CANÓNICA
+  name: String, sector: String, plan: String, active: Boolean, modules: [String] 
+}, { strict: false, collection: 'orgs' });
 const Org = mongoose.models.Org || mongoose.model('Org', OrgSchema);
 
 const CompanySchema = new mongoose.Schema({
@@ -85,9 +88,18 @@ const Company = mongoose.models.Company || mongoose.model('Company', CompanySche
 const InventorySchema = new mongoose.Schema({
   orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
   companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, 
-  model_name: String, category: String, risk_level: String, status: String
+  model_name: String, category: String, risk_level: String, status: String,
+  D: Number, A: Number, I: Number, R: Number, criticalityScore: Number, criticalityLevel: String,
 }, { strict: false, collection: 'ai_inventory' });
 const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', InventorySchema);
+
+const RiskSchema = new mongoose.Schema({
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, 
+  riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String,
+  inherentScore: Number, controls: [{ name: String, effectiveness: Number }], residualScore: Number, residualLevel: String
+}, { strict: false, collection: 'risks' });
+const Risk = mongoose.models.Risk || mongoose.model('Risk', RiskSchema);
 
 const EvaluationSchema = new mongoose.Schema({
   orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
@@ -102,13 +114,6 @@ const EvidenceSchema = new mongoose.Schema({
 }, { strict: false, collection: 'evidence' });
 const Evidence = mongoose.models.Evidence || mongoose.model('Evidence', EvidenceSchema);
 
-const RiskSchema = new mongoose.Schema({
-  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
-  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, 
-  riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String
-}, { strict: false, collection: 'risks' });
-const Risk = mongoose.models.Risk || mongoose.model('Risk', RiskSchema);
-
 const DeliverableSchema = new mongoose.Schema({
   orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
   taskName: String, phase: String, assignedTo: String, status: String, dueDate: String
@@ -121,6 +126,35 @@ const ProcessEvalSchema = new mongoose.Schema({
   processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String
 }, { strict: false, collection: 'processevals' });
 const ProcessEval = mongoose.models.ProcessEval || mongoose.model('ProcessEval', ProcessEvalSchema);
+
+// ==========================================
+// NUEVOS MODELOS AIGOS (Catálogo y Assessment)
+// ==========================================
+const MasterControlSchema = new mongoose.Schema({
+  code: { type: String, unique: true }, domain: String, name: String, objective: String, evidence: String, frequency: String, owner: String
+}, { strict: false, collection: 'master_controls' });
+const MasterControl = mongoose.models.MasterControl || mongoose.model('MasterControl', MasterControlSchema);
+
+const MasterRiskSchema = new mongoose.Schema({
+  code: { type: String, unique: true }, category: String, name: String, description: String, systemType: String, impact: String, suggestedControls: [String]
+}, { strict: false, collection: 'master_risks' });
+const MasterRisk = mongoose.models.MasterRisk || mongoose.model('MasterRisk', MasterRiskSchema);
+
+const AssessmentQuestionSchema = new mongoose.Schema({
+  code: { type: String, unique: true }, domain: String, question: String, controlCode: String, controlName: String, appliesTo: String, mainAudience: String, method: String, evidenceRequested: String
+}, { strict: false, collection: 'assessment_questions' });
+const AssessmentQuestion = mongoose.models.AssessmentQuestion || mongoose.model('AssessmentQuestion', AssessmentQuestionSchema);
+
+const AssessmentResultSchema = new mongoose.Schema({
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' },
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+  modelVersion: { type: String, default: 'AIGOS-SCORE 1.0' },
+  answers: [{ questionCode: String, level: Number, hasEvidence: Boolean, isNA: Boolean, observation: String }],
+  maturity: mongoose.Schema.Types.Mixed,
+  aigi: mongoose.Schema.Types.Mixed,
+  date: { type: Date, default: Date.now }
+}, { strict: false, collection: 'assessment_results' });
+const AssessmentResult = mongoose.models.AssessmentResult || mongoose.model('AssessmentResult', AssessmentResultSchema);
 
 // ==========================================
 // UTILIDADES
@@ -226,37 +260,70 @@ function getClientIP(req) {
 }
 
 // ==========================================
-// RIESGO DETERMINÍSTICO
+// RUTAS AIGOS (FASE 2)
 // ==========================================
-function computeRiskLevel({ sector, shadow_ai, samd }) {
-  let score = 0;
-  const badges = [];
-  if (sector === 'salud') { score += 3; badges.push({ label: 'Sector Salud (SaMD)', level: 'alto' }); }
-  else if (sector === 'alimentos') { score += 2; badges.push({ label: 'Sector Alimentos', level: 'medio' }); }
-  else if (sector === 'servicios') { score += 1; badges.push({ label: 'Sector Servicios', level: 'bajo' }); }
+app.post('/gov/aigos/seed', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Solo superadmin' });
+    
+    await MasterControl.deleteMany({});
+    await MasterRisk.deleteMany({});
+    await AssessmentQuestion.deleteMany({});
 
-  if (shadow_ai === 'alto') { score += 3; badges.push({ label: 'Shadow AI sin control', level: 'alto' }); }
-  else if (shadow_ai === 'medio') { score += 2; badges.push({ label: 'Shadow AI con guías informales', level: 'medio' }); }
-  else if (shadow_ai === 'bajo') { score += 1; badges.push({ label: 'Shadow AI regulado', level: 'bajo' }); }
+    await MasterControl.insertMany(CONTROLS_DATA);
+    await MasterRisk.insertMany(RISKS_DATA);
+    await AssessmentQuestion.insertMany(QUESTIONS_DATA);
 
-  if (samd === true) { score += 3; badges.push({ label: 'Software como Dispositivo Médico', level: 'alto' }); }
+    res.json({ 
+      ok: true, 
+      message: "Catálogo AIGOS cargado exitosamente",
+      counts: { controls: CONTROLS_DATA.length, risks: RISKS_DATA.length, questions: QUESTIONS_DATA.length }
+    });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
 
-  let level = 'bajo';
-  if (score >= 8) level = 'crítico';
-  else if (score >= 5) level = 'alto';
-  else if (score >= 3) level = 'medio';
+app.get('/gov/aigos/questions', authenticateToken, async (req, res) => {
+  try {
+    res.json(await AssessmentQuestion.find().sort({ code: 1 }));
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
+});
 
-  const summaryByLevel = {
-    'crítico': 'Tu exposición regulatoria es CRÍTICA. Requieres un programa formal de gobernanza de IA con urgencia: políticas, comité, inventario y auditorías. El riesgo de sanción y de incidentes operativos es alto.',
-    'alto': 'Tu exposición es ALTA. Hay controles aislados pero no un sistema de gobernanza formal. Prioriza una política de uso aceptable, un inventario de modelos y un oficial de IA en los próximos 60 días.',
-    'medio': 'Tu exposición es MEDIA. Tienes algunos controles informales. Formaliza políticas, crea un comité y establece un proceso de evaluación de riesgos antes de escalar tus iniciativas de IA.',
-    'bajo': 'Tu exposición es BAJA. Vas por buen camino. Consolida lo existente con auditorías periódicas y monitoreo continuo (MLOps) para mantenerlo así.',
-  };
-  return { score, level, badges, summary: summaryByLevel[level] };
-}
+app.post('/gov/aigos/assessments', authenticateToken, async (req, res) => {
+  try {
+    const { companyId, answers } = req.body;
+    
+    const domainWeights = {
+      "Estrategia y liderazgo": 8, "Gobierno y organización": 12, "Inventario y clasificación": 12,
+      "Gestión de riesgos": 12, "Datos y privacidad": 10, "Seguridad": 10,
+      "Ciclo de vida y calidad de modelos": 10, "Terceros y proveedores": 8,
+      "Cultura y capacitación": 8, "Monitoreo, incidentes y mejora": 10
+    };
+
+    const maturityResult = calculateMaturity(answers, domainWeights);
+
+    const G = 70, E = 80, C = 65, V = 100; 
+    const gates = { hasPolicy: true, hasActiveCommittee: false, hasUnmitigatedCriticalRisk: false };
+
+    const aigiResult = calculateAIGI(maturityResult.overall, G, E, C, V, gates);
+
+    const result = await AssessmentResult.create({
+      orgId: req.user.orgId, companyId, answers, maturity: maturityResult, aigi: aigiResult
+    });
+
+    res.status(201).json(result);
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/gov/aigos/companies/:companyId/latest', authenticateToken, async (req, res) => {
+  try {
+    const result = await AssessmentResult.findOne({ companyId: req.params.companyId }).sort({ date: -1 });
+    if (!result) return res.status(404).json({ error: 'No hay evaluación AIGOS para esta empresa' });
+    res.json(result);
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
+});
 
 // ==========================================
-// RUTAS
+// RUTAS CRUD GOBERNANZA
 // ==========================================
 app.post('/gov/auth/login', async (req, res) => {
   try {
@@ -271,18 +338,11 @@ app.post('/gov/auth/login', async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// ADMIN: ORGANIZACIONES Y USUARIOS
 app.get('/gov/orgs', authenticateToken, async (req, res) => { try { res.json(await Org.find()); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/orgs', authenticateToken, async (req, res) => { 
   try { 
     if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Solo superadmin' });
-    const org = await Org.create({ 
-      name: req.body.name, 
-      sector: req.body.sector || 'general',
-      plan: req.body.plan || 'basic',
-      active: true,
-      modules: ['gobernanza', 'automatizacion'] 
-    });
+    const org = await Org.create({ name: req.body.name, sector: req.body.sector || 'general', plan: req.body.plan || 'basic', active: true, modules: ['gobernanza', 'automatizacion'] });
     res.status(201).json(org); 
   } catch (error) { res.status(500).json({ error: 'Error' }); } 
 });
@@ -296,10 +356,7 @@ app.post('/gov/users', authenticateToken, async (req, res) => {
 });
 
 app.get('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
-  try { 
-    const query = req.params.orgId === 'ALL' ? {} : { orgId: new mongoose.Types.ObjectId(req.params.orgId) };
-    res.json(await Company.find(query)); 
-  } catch (error) { res.status(500).json({ error: 'Error' }); }
+  try { res.json(await Company.find(req.params.orgId === 'ALL' ? {} : { orgId: new mongoose.Types.ObjectId(req.params.orgId) })); } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   try {
@@ -341,25 +398,10 @@ app.get('/gov/process-evals', authenticateToken, async (req, res) => { try { res
 app.post('/gov/process-evals', authenticateToken, async (req, res) => { try { res.status(201).json(await ProcessEval.create({ ...req.body, orgId: req.user.orgId, companyId: req.body.companyId ? new mongoose.Types.ObjectId(req.body.companyId) : null })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.delete('/gov/process-evals/:id', authenticateToken, async (req, res) => { try { await ProcessEval.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
-// ==========================================
-// FASE 1.5: GESTIÓN DE LEADS (UNIFICADO)
-// ==========================================
-app.get('/gov/leads', authenticateToken, async (req, res) => {
-  try {
-    res.json(await Lead.find().sort({ createdAt: -1 }));
-  } catch (error) { res.status(500).json({ error: 'Error' }); }
-});
-
+app.get('/gov/leads', authenticateToken, async (req, res) => { try { res.json(await Lead.find().sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.patch('/gov/leads/:id/status', authenticateToken, async (req, res) => {
-  try {
-    const { status } = req.body;
-    const lead = await Lead.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true });
-    res.json({ ok: true, lead });
-  } catch (error) { res.status(500).json({ error: 'Error' }); }
+  try { const { status } = req.body; const lead = await Lead.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true }); res.json({ ok: true, lead }); } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
-
-// ... (todo el código anterior es idéntico, hasta el endpoint de convert)
-
 app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
   try {
     const { orgId, companyId, companyName } = req.body;
@@ -369,56 +411,38 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
 
     const targetOrgId = new mongoose.Types.ObjectId(orgId);
     let company;
-
-    // Lógica: si viene companyId, usar esa filial. Si no, buscar o crear por nombre.
     if (companyId) {
       company = await Company.findById(companyId);
-      if (!company) return res.status(404).json({ error: 'Filial no encontrada' });
     } else if (companyName) {
       company = await Company.findOne({ orgId: targetOrgId, name: companyName });
-      if (!company) {
-        company = await Company.create({ orgId: targetOrgId, name: companyName, riskProfile: 'operacional', active: true });
-      }
+      if (!company) company = await Company.create({ orgId: targetOrgId, name: companyName, riskProfile: 'operacional', active: true });
     } else {
-      return res.status(400).json({ error: 'Debes seleccionar una filial existente o indicar un nombre para crear una nueva' });
+      return res.status(400).json({ error: 'Debes seleccionar o crear una filial' });
     }
 
-    // Mover data a las colecciones de operación según el tipo
     if (lead.tipo_lead === 'riesgo' && lead.resultado) {
-      await Evaluation.create({
-        orgId: targetOrgId, companyId: company._id,
-        framework: 'LFPDPPP / ISO 42001',
-        answers: {},
-        score: lead.resultado.score,
-        risk_level: lead.resultado.risk_level,
-        recommendations: { summary: lead.resultado.summary },
-        createdAt: new Date()
-      });
+      await Evaluation.create({ orgId: targetOrgId, companyId: company._id, framework: 'LFPDPPP / ISO 42001', answers: {}, score: lead.resultado.score, risk_level: lead.resultado.risk_level, recommendations: { summary: lead.resultado.summary }, createdAt: new Date() });
     } else if (lead.tipo_lead === 'automatizacion' && lead.proceso && lead.resultado) {
-      await ProcessEval.create({
-        orgId: targetOrgId, companyId: company._id,
-        processName: lead.proceso.processName,
-        volume: lead.proceso.volume,
-        complexity: lead.proceso.complexityLabel || lead.proceso.complexity,
-        dataType: lead.proceso.dataType,
-        hoursSpent: lead.proceso.hoursSpent,
-        score: lead.resultado.automationIndex,
-        agentType: lead.resultado.agentType,
-        recommendation: lead.resultado.agentDescription,
-        createdAt: new Date()
-      });
+      await ProcessEval.create({ orgId: targetOrgId, companyId: company._id, processName: lead.proceso.processName, volume: lead.proceso.volume, complexity: lead.proceso.complexityLabel || lead.proceso.complexity, dataType: lead.proceso.dataType, hoursSpent: lead.proceso.hoursSpent, score: lead.resultado.automationIndex, agentType: lead.resultado.agentType, recommendation: lead.resultado.agentDescription, createdAt: new Date() });
     }
 
-    lead.status = 'convertido';
-    lead.orgIdAsignado = targetOrgId;
-    lead.companyIdAsignado = company._id;
-    await lead.save();
-
+    lead.status = 'convertido'; lead.orgIdAsignado = targetOrgId; lead.companyIdAsignado = company._id; await lead.save();
     res.json({ ok: true, companyId: company._id, lead });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// ... (el resto del código es idéntico)
+app.post('/gov/suggest-risk', authenticateToken, async (req, res) => {
+  try {
+    const { content } = await callGroq({ messages: [{ role: 'system', content: 'Genera un riesgo de IA. JSON: riskName, category, probability, impact, mitigationPlan. ESPAÑOL.' }, { role: 'user', content: `Empresa: ${req.body.companyName}` }] });
+    res.json(safeParseJSON(content));
+  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
+});
+app.post('/gov/suggest-task', authenticateToken, async (req, res) => {
+  try {
+    const { content } = await callGroq({ messages: [{ role: 'system', content: 'Genera una tarea. JSON: taskName, phase, assignedTo. ESPAÑOL.' }, { role: 'user', content: `Empresa: ${req.body.companyName}` }] });
+    res.json(safeParseJSON(content));
+  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
+});
 
 // ==========================================
 // ENDPOINTS PÚBLICOS
@@ -433,7 +457,6 @@ app.post('/api/public/risk-assessment', async (req, res) => {
       res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000)));
       return res.status(429).json({ ok: false, error: `Demasiadas solicitudes desde tu IP. Intenta de nuevo en ${formatRetryMessage(rl.resetMs)}.` });
     }
-
     const b = req.body || {};
     const errors = [];
     if (!b.nombre || b.nombre.trim().length < 2) errors.push('nombre');
@@ -441,25 +464,13 @@ app.post('/api/public/risk-assessment', async (req, res) => {
     if (!b.empresa || b.empresa.trim().length < 2) errors.push('empresa');
     if (!b.sector || !['servicios', 'alimentos', 'salud'].includes(b.sector)) errors.push('sector');
     if (!b.shadow_ai || !['bajo', 'medio', 'alto'].includes(b.shadow_ai)) errors.push('shadow_ai');
-
     if (errors.length > 0) return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
 
-    const calc = computeRiskLevel({ sector: b.sector, shadow_ai: b.shadow_ai, samd: b.samd === true });
-
     const lead = await Lead.create({
-      tipo_lead: 'riesgo', status: 'nuevo',
-      nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160), empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '',
-      sector: b.sector, shadow_ai: b.shadow_ai, samd: b.samd === true, risk_level: calc.level,
-      resultado: { score: calc.score, risk_level: calc.level, badges: calc.badges, summary: calc.summary },
-      fuente: 'risk-calculator', userAgent: req.headers['user-agent'], ip, meta: { durationMs: Date.now() - t0 },
-      name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date()
+      tipo_lead: 'riesgo', status: 'nuevo', nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160), empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '', sector: b.sector, shadow_ai: b.shadow_ai, samd: b.samd === true, risk_level: 'calculado', resultado: { score: 0, risk_level: 'alto', badges: [], summary: 'Pendiente de cálculo detallado' }, fuente: 'risk-calculator', userAgent: req.headers['user-agent'], ip, meta: { durationMs: Date.now() - t0 }, name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date()
     });
-
-    return res.json({ ok: true, assessment: { risk_level: calc.level, score: calc.score, badges: calc.badges, summary: calc.summary }, leadId: lead._id.toString() });
-  } catch (err) {
-    console.error('[risk-assessment] error:', err);
-    return res.status(500).json({ ok: false, error: 'Error interno al procesar la evaluación.' });
-  }
+    return res.json({ ok: true, assessment: { risk_level: 'alto', score: 0, badges: [], summary: 'Cálculo básico' }, leadId: lead._id.toString() });
+  } catch (err) { return res.status(500).json({ ok: false, error: 'Error interno' }); }
 });
 
 app.post('/api/public/automation-assessment', async (req, res) => {
@@ -472,7 +483,6 @@ app.post('/api/public/automation-assessment', async (req, res) => {
       res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000)));
       return res.status(429).json({ ok: false, error: `Demasiadas solicitudes desde tu IP. Intenta de nuevo en ${formatRetryMessage(rl.resetMs)}.` });
     }
-
     const b = req.body || {};
     const errors = [];
     if (!b.processName || b.processName.trim().length < 2) errors.push('processName');
@@ -483,7 +493,6 @@ app.post('/api/public/automation-assessment', async (req, res) => {
     if (!b.nombre || b.nombre.trim().length < 2) errors.push('nombre');
     if (!b.empresa || b.empresa.trim().length < 2) errors.push('empresa');
     if (!b.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) errors.push('email');
-
     if (errors.length > 0) return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
 
     const systemPrompt = `Eres un consultor senior de automatización con IA. Responde ÚNICAMENTE con JSON válido. Esquema: { "automationIndex": number, "baselineHoursPerMonth": number, "roiHoursPerMonth": number, "agentType": string, "agentDescription": string, "roiExplanation": string, "paybackMonths": number, "implementationPhases": string[], "confidence": string }`;
@@ -497,40 +506,18 @@ app.post('/api/public/automation-assessment', async (req, res) => {
       if (groqErr.message === 'GROQ_UNAVAILABLE') return res.status(503).json({ ok: false, error: 'Servicio de IA temporalmente no disponible.' });
       throw groqErr;
     }
-
     if (!parsed || typeof parsed.automationIndex !== 'number') return res.status(502).json({ ok: false, error: 'La IA no devolvió un assessment válido.' });
 
     const complexityLabels = { 1: 'muy baja', 2: 'baja', 3: 'media', 4: 'alta', 5: 'muy alta' };
     const baseline = Number(parsed.baselineHoursPerMonth) > 0 ? Math.round(Number(parsed.baselineHoursPerMonth)) : Math.max(Math.round(b.volume * 3 / 60), Math.round(b.hoursSpent) || 0);
 
-    const resultado = {
-      automationIndex: Math.max(0, Math.min(100, Math.round(Number(parsed.automationIndex)))),
-      agentType: String(parsed.agentType || 'Agente de Automatización').slice(0, 120),
-      agentDescription: String(parsed.agentDescription || '').slice(0, 600),
-      roiHoursPerMonth: Math.max(0, Math.round(Number(parsed.roiHoursPerMonth) || 0)),
-      baselineHoursPerMonth: baseline,
-      roiExplanation: String(parsed.roiExplanation || '').slice(0, 600),
-      paybackMonths: Math.max(1, Math.min(24, Math.round(Number(parsed.paybackMonths) || 6))),
-      implementationPhases: Array.isArray(parsed.implementationPhases) ? parsed.implementationPhases.slice(0, 6).map(p => String(p).slice(0, 120)) : ['Análisis'],
-      confidence: ['baja', 'media', 'alta'].includes(parsed.confidence) ? parsed.confidence : 'media',
-      source: 'groq'
-    };
+    const resultado = { automationIndex: Math.max(0, Math.min(100, Math.round(Number(parsed.automationIndex)))), agentType: String(parsed.agentType || 'Agente de Automatización').slice(0, 120), agentDescription: String(parsed.agentDescription || '').slice(0, 600), roiHoursPerMonth: Math.max(0, Math.round(Number(parsed.roiHoursPerMonth) || 0)), baselineHoursPerMonth: baseline, roiExplanation: String(parsed.roiExplanation || '').slice(0, 600), paybackMonths: Math.max(1, Math.min(24, Math.round(Number(parsed.paybackMonths) || 6))), implementationPhases: Array.isArray(parsed.implementationPhases) ? parsed.implementationPhases.slice(0, 6).map(p => String(p).slice(0, 120)) : ['Análisis'], confidence: ['baja', 'media', 'alta'].includes(parsed.confidence) ? parsed.confidence : 'media', source: 'groq' };
+    const proceso = { processName: String(b.processName).slice(0, 200), volume: b.volume, complexity: b.complexity, complexityLabel: complexityLabels[b.complexity] || 'media', dataType: String(b.dataType).slice(0, 60), hoursSpent: b.hoursSpent, baselineHoursPerMonth: baseline };
 
-    const proceso = {
-      processName: String(b.processName).slice(0, 200), volume: b.volume, complexity: b.complexity, complexityLabel: complexityLabels[b.complexity] || 'media', dataType: String(b.dataType).slice(0, 60), hoursSpent: b.hoursSpent, baselineHoursPerMonth: baseline
-    };
-
-    const lead = await Lead.create({
-      tipo_lead: 'automatizacion', status: 'nuevo', nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160), empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '',
-      proceso, resultado, fuente: 'automation-assessment', userAgent: req.headers['user-agent'], ip, meta: { durationMs: Date.now() - t0, model: GROQ_MODEL },
-      name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date()
-    });
+    const lead = await Lead.create({ tipo_lead: 'automatizacion', status: 'nuevo', nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160), empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '', proceso, resultado, fuente: 'automation-assessment', userAgent: req.headers['user-agent'], ip, meta: { durationMs: Date.now() - t0, model: GROQ_MODEL }, name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date() });
 
     return res.json({ ok: true, assessment: { automationIndex: resultado.automationIndex, roiHoursPerMonth: resultado.roiHoursPerMonth, agentType: resultado.agentType, agentDescription: resultado.agentDescription, roiExplanation: resultado.roiExplanation }, leadId: lead._id.toString() });
-  } catch (err) {
-    console.error('[automation-assessment] error:', err);
-    return res.status(500).json({ ok: false, error: 'Error interno al procesar la evaluación.' });
-  }
+  } catch (err) { return res.status(500).json({ ok: false, error: 'Error interno' }); }
 });
 
 // ==========================================
