@@ -539,9 +539,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // ... (todo el código anterior es idéntico, hasta la sección de leads)
-
-  // ==========================================
   // 5. LÓGICA DE LEADS UNIFICADA
   // ==========================================
   async function loadLeads() {
@@ -723,8 +720,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-// ... (el resto del código es idéntico)
-  // NUEVO: Submit para crear organización
   document.getElementById('newOrgForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
