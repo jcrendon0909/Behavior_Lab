@@ -43,15 +43,16 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '100kb' }));
 
 // ==========================================
-// MODELOS
+// MODELOS (Base de datos normalizada)
 // ==========================================
 const LeadSchema = new mongoose.Schema({
   tipo_lead: { type: String, default: 'gobernanza' },
-  status: { type: String, default: 'nuevo' }, // nuevo, contactado, convertido
+  status: { type: String, default: 'nuevo' },
   nombre: String, email: String, empresa: String, telefono: String,
   sector: String, shadow_ai: String, samd: Boolean, risk_level: String,
   proceso: mongoose.Schema.Types.Mixed, resultado: mongoose.Schema.Types.Mixed,
-  orgIdAsignado: mongoose.Schema.Types.ObjectId, companyIdAsignado: mongoose.Schema.Types.ObjectId,
+  orgIdAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
+  companyIdAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
   fuente: String, userAgent: String, ip: String, meta: mongoose.Schema.Types.Mixed,
   name: String, company: String, ts: Date,
 }, { timestamps: true, strict: false, collection: 'leads' });
@@ -61,46 +62,63 @@ const UserSchema = new mongoose.Schema({
   name: String, email: { type: String, unique: true },
   password: String, hash: String,
   role: { type: String, enum: ['superadmin', 'admin', 'auditor'], default: 'admin' },
-  orgId: mongoose.Schema.Types.Mixed,
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' },
   modules: { type: [String], default: ['gobernanza'] }
 }, { timestamps: true, strict: false, collection: 'users' });
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
-const OrgSchema = new mongoose.Schema({ name: String, modules: [String] }, { strict: false, collection: 'orgs' });
+const OrgSchema = new mongoose.Schema({ 
+  name: String, 
+  sector: String, 
+  plan: String, 
+  active: Boolean,
+  modules: [String] 
+}, { strict: false, collection: 'orgs' }); // COLECCIÓN CANÓNICA
 const Org = mongoose.models.Org || mongoose.model('Org', OrgSchema);
 
 const CompanySchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed, name: String, riskProfile: String, active: Boolean
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
+  name: String, riskProfile: String, active: Boolean
 }, { strict: false, collection: 'companies' });
 const Company = mongoose.models.Company || mongoose.model('Company', CompanySchema);
 
 const InventorySchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed, companyId: mongoose.Schema.Types.Mixed, model_name: String, category: String, risk_level: String, status: String
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, 
+  model_name: String, category: String, risk_level: String, status: String
 }, { strict: false, collection: 'ai_inventory' });
 const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', InventorySchema);
 
 const EvaluationSchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed, companyId: mongoose.Schema.Types.Mixed, framework: String, answers: mongoose.Schema.Types.Mixed, score: Number, risk_level: String, recommendations: mongoose.Schema.Types.Mixed
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, 
+  framework: String, answers: mongoose.Schema.Types.Mixed, score: Number, risk_level: String, recommendations: mongoose.Schema.Types.Mixed
 }, { strict: false, collection: 'risk_evaluations' });
 const Evaluation = mongoose.models.Evaluation || mongoose.model('Evaluation', EvaluationSchema);
 
 const EvidenceSchema = new mongoose.Schema({
-  companyId: mongoose.Schema.Types.Mixed, questionId: String, fileName: String, r2Url: String, validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now }
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, 
+  questionId: String, fileName: String, r2Url: String, validation: mongoose.Schema.Types.Mixed, ts: { type: Date, default: Date.now }
 }, { strict: false, collection: 'evidence' });
 const Evidence = mongoose.models.Evidence || mongoose.model('Evidence', EvidenceSchema);
 
 const RiskSchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed, companyId: mongoose.Schema.Types.Mixed, riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, 
+  riskName: String, category: String, probability: Number, impact: Number, riskLevel: String, riskScore: Number, mitigationPlan: String
 }, { strict: false, collection: 'risks' });
 const Risk = mongoose.models.Risk || mongoose.model('Risk', RiskSchema);
 
 const DeliverableSchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed, taskName: String, phase: String, assignedTo: String, status: String, dueDate: String
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
+  taskName: String, phase: String, assignedTo: String, status: String, dueDate: String
 }, { strict: false, collection: 'deliverables' });
 const Deliverable = mongoose.models.Deliverable || mongoose.model('Deliverable', DeliverableSchema);
 
 const ProcessEvalSchema = new mongoose.Schema({
-  orgId: mongoose.Schema.Types.Mixed, companyId: mongoose.Schema.Types.Mixed, processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, 
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, 
+  processName: String, volume: String, complexity: String, dataType: String, hoursSpent: Number, score: Number, agentType: String, recommendation: String
 }, { strict: false, collection: 'processevals' });
 const ProcessEval = mongoose.models.ProcessEval || mongoose.model('ProcessEval', ProcessEvalSchema);
 
@@ -118,14 +136,14 @@ const authenticateToken = (req, res, next) => {
 };
 
 const getOrgQuery = (req) => {
-  if (req.user.role === 'superadmin' && req.query.orgId) return { orgId: req.query.orgId };
-  return { orgId: req.user.orgId };
+  if (req.user.role === 'superadmin' && req.query.orgId) return { orgId: new mongoose.Types.ObjectId(req.query.orgId) };
+  return { orgId: new mongoose.Types.ObjectId(req.user.orgId) };
 };
 
 async function getEvidenceQuery(req) {
   const targetOrgId = req.user.role === 'superadmin' && req.query.orgId ? req.query.orgId : req.user.orgId;
-  const companies = await Company.find({ orgId: targetOrgId });
-  return { companyId: { $in: companies.map(c => String(c._id)) } };
+  const companies = await Company.find({ orgId: new mongoose.Types.ObjectId(targetOrgId) });
+  return { companyId: { $in: companies.map(c => c._id) } };
 }
 
 let keyCursor = 0;
@@ -258,7 +276,13 @@ app.get('/gov/orgs', authenticateToken, async (req, res) => { try { res.json(awa
 app.post('/gov/orgs', authenticateToken, async (req, res) => { 
   try { 
     if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Solo superadmin' });
-    const org = await Org.create({ name: req.body.name, modules: ['gobernanza', 'automatizacion'] });
+    const org = await Org.create({ 
+      name: req.body.name, 
+      sector: req.body.sector || 'general',
+      plan: req.body.plan || 'basic',
+      active: true,
+      modules: ['gobernanza', 'automatizacion'] 
+    });
     res.status(201).json(org); 
   } catch (error) { res.status(500).json({ error: 'Error' }); } 
 });
@@ -272,24 +296,27 @@ app.post('/gov/users', authenticateToken, async (req, res) => {
 });
 
 app.get('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
-  try { res.json(await Company.find(req.params.orgId === 'ALL' ? {} : { orgId: req.params.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); }
+  try { 
+    const query = req.params.orgId === 'ALL' ? {} : { orgId: new mongoose.Types.ObjectId(req.params.orgId) };
+    res.json(await Company.find(query)); 
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   try {
     const targetOrgId = req.params.orgId === 'ALL' ? req.user.orgId : req.params.orgId;
-    res.status(201).json(await Company.create({ ...req.body, orgId: targetOrgId }));
+    res.status(201).json(await Company.create({ ...req.body, orgId: new mongoose.Types.ObjectId(targetOrgId) }));
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
 app.get('/gov/ai-inventory', authenticateToken, async (req, res) => { try { res.json(await Inventory.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
-app.post('/gov/ai-inventory', authenticateToken, async (req, res) => { try { res.status(201).json(await Inventory.create({ ...req.body, orgId: req.user.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/ai-inventory', authenticateToken, async (req, res) => { try { res.status(201).json(await Inventory.create({ ...req.body, orgId: req.user.orgId, companyId: new mongoose.Types.ObjectId(req.body.companyId) })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
 app.get('/gov/risks', authenticateToken, async (req, res) => { try { res.json(await Risk.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/risks', authenticateToken, async (req, res) => {
   try {
     const score = req.body.probability * req.body.impact;
     let riskLevel = score >= 15 ? 'Crítico' : score >= 10 ? 'Alto' : score >= 5 ? 'Medio' : 'Bajo';
-    res.status(201).json(await Risk.create({ ...req.body, orgId: req.user.orgId, riskScore: score, riskLevel }));
+    res.status(201).json(await Risk.create({ ...req.body, orgId: req.user.orgId, companyId: req.body.companyId ? new mongoose.Types.ObjectId(req.body.companyId) : null, riskScore: score, riskLevel }));
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 app.delete('/gov/risks/:id', authenticateToken, async (req, res) => { try { await Risk.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
@@ -300,18 +327,18 @@ app.put('/gov/deliverables/:id', authenticateToken, async (req, res) => { try { 
 app.delete('/gov/deliverables/:id', authenticateToken, async (req, res) => { try { await Deliverable.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
 app.get('/gov/evaluations', authenticateToken, async (req, res) => { try { res.json(await Evaluation.find(getOrgQuery(req)).sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
-app.post('/gov/evaluations', authenticateToken, async (req, res) => { try { res.status(201).json(await Evaluation.create({ ...req.body, orgId: req.user.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/evaluations', authenticateToken, async (req, res) => { try { res.status(201).json(await Evaluation.create({ ...req.body, orgId: req.user.orgId, companyId: new mongoose.Types.ObjectId(req.body.companyId) })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
 app.get('/gov/evidence', authenticateToken, async (req, res) => { try { const query = await getEvidenceQuery(req); res.json(await Evidence.find(query).sort({ ts: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async (req, res) => {
   try {
-    const ev = await Evidence.create({ companyId: String(req.body.companyId), questionId: req.body.questionId, fileName: req.file.originalname, r2Url: 'https://media.gokulab.mx/demo.pdf', validation: { valido: true, razon: 'Validado por IA' } });
+    const ev = await Evidence.create({ companyId: new mongoose.Types.ObjectId(req.body.companyId), questionId: req.body.questionId, fileName: req.file.originalname, r2Url: 'https://media.gokulab.mx/demo.pdf', validation: { valido: true, razon: 'Validado por IA' } });
     res.json({ ok: true, evidence: ev, validation: ev.validation });
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
 app.get('/gov/process-evals', authenticateToken, async (req, res) => { try { res.json(await ProcessEval.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
-app.post('/gov/process-evals', authenticateToken, async (req, res) => { try { res.status(201).json(await ProcessEval.create({ ...req.body, orgId: req.user.orgId })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.post('/gov/process-evals', authenticateToken, async (req, res) => { try { res.status(201).json(await ProcessEval.create({ ...req.body, orgId: req.user.orgId, companyId: req.body.companyId ? new mongoose.Types.ObjectId(req.body.companyId) : null })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.delete('/gov/process-evals/:id', authenticateToken, async (req, res) => { try { await ProcessEval.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
 // ==========================================
@@ -338,14 +365,16 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
     if (!lead) return res.status(404).json({ error: 'Lead no encontrado' });
     if (lead.status === 'convertido') return res.status(400).json({ error: 'El lead ya fue convertido' });
 
-    let company = await Company.findOne({ orgId, name: companyName });
+    const targetOrgId = new mongoose.Types.ObjectId(orgId);
+
+    let company = await Company.findOne({ orgId: targetOrgId, name: companyName });
     if (!company) {
-      company = await Company.create({ orgId, name: companyName, riskProfile: 'operacional', active: true });
+      company = await Company.create({ orgId: targetOrgId, name: companyName, riskProfile: 'operacional', active: true });
     }
 
     if (lead.tipo_lead === 'riesgo' && lead.resultado) {
       await Evaluation.create({
-        orgId, companyId: company._id,
+        orgId: targetOrgId, companyId: company._id,
         framework: 'LFPDPPP / ISO 42001',
         answers: {},
         score: lead.resultado.score,
@@ -355,7 +384,7 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
       });
     } else if (lead.tipo_lead === 'automatizacion' && lead.proceso && lead.resultado) {
       await ProcessEval.create({
-        orgId, companyId: company._id,
+        orgId: targetOrgId, companyId: company._id,
         processName: lead.proceso.processName,
         volume: lead.proceso.volume,
         complexity: lead.proceso.complexityLabel || lead.proceso.complexity,
@@ -369,7 +398,7 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
     }
 
     lead.status = 'convertido';
-    lead.orgIdAsignado = orgId;
+    lead.orgIdAsignado = targetOrgId;
     lead.companyIdAsignado = company._id;
     await lead.save();
 
