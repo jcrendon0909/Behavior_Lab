@@ -110,7 +110,6 @@ const ProcessEvalSchema = new mongoose.Schema({
 }, { strict: false, collection: 'processevals' });
 const ProcessEval = mongoose.models.ProcessEval || mongoose.model('ProcessEval', ProcessEvalSchema);
 
-// AIGOS
 const MasterControlSchema = new mongoose.Schema({ code: { type: String, unique: true }, domain: String, name: String, objective: String, evidence: String, frequency: String, owner: String }, { strict: false, collection: 'master_controls' });
 const MasterControl = mongoose.models.MasterControl || mongoose.model('MasterControl', MasterControlSchema);
 
@@ -130,7 +129,6 @@ const AssessmentResultSchema = new mongoose.Schema({
 }, { strict: false, collection: 'assessment_results' });
 const AssessmentResult = mongoose.models.AssessmentResult || mongoose.model('AssessmentResult', AssessmentResultSchema);
 
-// NUEVO: Borradores de assessment
 const AssessmentDraftSchema = new mongoose.Schema({
   orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', unique: true },
   answers: [{ questionCode: String, level: Number, hasEvidence: Boolean, isNA: Boolean, observation: String }],
@@ -198,7 +196,6 @@ function safeParseJSON(text) {
   }
 }
 
-// RATE LIMIT
 const publicRateLimit = new Map();
 const PUBLIC_RATE_MAX = Math.max(1, parseInt(process.env.PUBLIC_RATE_MAX || '20', 10));
 const PUBLIC_RATE_WINDOW_MS = Math.max(60000, parseInt(process.env.PUBLIC_RATE_WINDOW_MS || String(60 * 60 * 1000), 10));
@@ -215,7 +212,6 @@ function formatRetryMessage(resetMs) { return resetMs < 60000 ? `${Math.ceil(res
 setInterval(() => { const now = Date.now(); for (const [ip, entry] of publicRateLimit.entries()) { if (now - entry.first > PUBLIC_RATE_WINDOW_MS) publicRateLimit.delete(ip); } }, 5 * 60 * 1000);
 function getClientIP(req) { return (req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown'); }
 
-// COMPUTE RISK LEVEL (público)
 function computeRiskLevel({ sector, shadow_ai, samd }) {
   let score = 0; const badges = [];
   if (sector === 'salud') { score += 3; badges.push({ label: 'Sector Salud (SaMD)', level: 'alto' }); }
@@ -227,20 +223,31 @@ function computeRiskLevel({ sector, shadow_ai, samd }) {
   if (samd === true) { score += 3; badges.push({ label: 'Software como Dispositivo Médico', level: 'alto' }); }
   let level = 'bajo';
   if (score >= 8) level = 'crítico'; else if (score >= 5) level = 'alto'; else if (score >= 3) level = 'medio';
-  const summaryByLevel = { 'crítico': 'Exposición CRÍTICA. Requieres programa formal urgente.', 'alto': 'Exposición ALTA. Controles aislados, sin sistema formal.', 'medio': 'Exposición MEDIA. Controles informales.', 'bajo': 'Exposición BAJA. Buen camino.' };
+  const summaryByLevel = { 'crítico': 'Exposición CRÍTICA.', 'alto': 'Exposición ALTA.', 'medio': 'Exposición MEDIA.', 'bajo': 'Exposición BAJA.' };
   return { score, level, badges, summary: summaryByLevel[level] };
 }
 
-// HELPER: reconstruye maturity + aigi al agregar/editar evidencia
+// ==========================================
+// 🆕 FIX C: HELPERS PARA REEMPLAZO DE EVIDENCIA
+// ==========================================
+async function replaceRejectedEvidence(companyId, questionId) {
+  const result = await Evidence.deleteMany({
+    companyId: new mongoose.Types.ObjectId(companyId),
+    questionId,
+    'validation.valido': false
+  });
+  if (result.deletedCount > 0) {
+    console.log(`[replaceRejected] Eliminadas ${result.deletedCount} evidencias rechazadas de ${questionId}`);
+  }
+  return result.deletedCount;
+}
+
 async function recomputeAigiFromAnswers(companyId, answers) {
   const domainWeights = { "Estrategia y liderazgo": 8, "Gobierno y organización": 12, "Inventario y clasificación": 12, "Gestión de riesgos": 12, "Datos y privacidad": 10, "Seguridad": 10, "Ciclo de vida y calidad de modelos": 10, "Terceros y proveedores": 8, "Cultura y capacitación": 8, "Monitoreo, incidentes y mejora": 10 };
   const maturityResult = calculateMaturity(answers, domainWeights);
-
-  // TODO FASE B: G, C, V reales. Por ahora E se calcula con evidencias reales
   const evidenceCount = await Evidence.countDocuments({ companyId: new mongoose.Types.ObjectId(companyId), 'validation.valido': true });
   const questionsRequiringEvidence = answers.filter(a => !a.isNA && a.level >= 3).length;
   const E = questionsRequiringEvidence > 0 ? Math.min(100, Math.round((evidenceCount / questionsRequiringEvidence) * 100)) : 100;
-
   const G = 70, C = 65, V = 100;
   const gates = { hasPolicy: true, hasActiveCommittee: false, hasUnmitigatedCriticalRisk: false };
   const aigiResult = calculateAIGI(maturityResult.overall, G, E, C, V, gates);
@@ -284,7 +291,6 @@ app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   try { const targetOrgId = req.params.orgId === 'ALL' ? req.user.orgId : req.params.orgId; res.status(201).json(await Company.create({ ...req.body, orgId: new mongoose.Types.ObjectId(targetOrgId) })); } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// CRUDS con fix de orgId desde filial
 app.get('/gov/ai-inventory', authenticateToken, async (req, res) => { try { res.json(await Inventory.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/ai-inventory', authenticateToken, async (req, res) => {
   try {
@@ -321,9 +327,58 @@ app.post('/gov/evaluations', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// Evidencia
+// ==========================================
+// EVIDENCIA
+// ==========================================
 app.get('/gov/evidence', authenticateToken, async (req, res) => { try { const query = await getEvidenceQuery(req); res.json(await Evidence.find(query).sort({ ts: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
+// 🆕 FIX C: Listar evidencias por pregunta (para saber si hay rechazadas en el modal)
+app.get('/gov/evidence/by-question/:companyId/:questionId', authenticateToken, async (req, res) => {
+  try {
+    const evidences = await Evidence.find({
+      companyId: new mongoose.Types.ObjectId(req.params.companyId),
+      questionId: req.params.questionId
+    }).sort({ ts: -1 });
+    res.json(evidences);
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// 🆕 FIX C: Eliminar una evidencia
+app.delete('/gov/evidence/:id', authenticateToken, async (req, res) => {
+  try {
+    const evidence = await Evidence.findById(req.params.id);
+    if (!evidence) return res.status(404).json({ error: 'Evidencia no encontrada' });
+
+    const company = await Company.findById(evidence.companyId);
+    if (!company) return res.status(404).json({ error: 'Empresa no encontrada' });
+
+    if (req.user.role !== 'superadmin' && company.orgId.toString() !== req.user.orgId.toString()) {
+      return res.status(403).json({ error: 'Sin permisos' });
+    }
+
+    await Evidence.findByIdAndDelete(req.params.id);
+
+    // Si era válida, quitar el flag hasEvidence del último assessment y recalcular AIGI
+    if (evidence.validation?.valido) {
+      const lastAssessment = await AssessmentResult.findOne({ companyId: evidence.companyId }).sort({ date: -1 });
+      if (lastAssessment) {
+        const updatedAnswers = lastAssessment.answers.map(a =>
+          a.questionCode === evidence.questionId ? { ...a.toObject(), hasEvidence: false } : a
+        );
+        const recomputed = await recomputeAigiFromAnswers(evidence.companyId.toString(), updatedAnswers);
+        await AssessmentResult.findByIdAndUpdate(lastAssessment._id, {
+          answers: updatedAnswers,
+          maturity: recomputed.maturity,
+          aigi: recomputed.aigi
+        });
+      }
+    }
+
+    res.json({ ok: true, message: 'Evidencia eliminada' });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// 🆕 FIX C: Upload con reemplazo automático
 app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     const { companyId, questionId } = req.body;
@@ -340,16 +395,11 @@ app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async
       pdfText = extracted.text || '';
     } catch (pdfErr) { console.error('[upload-evidence] Error extrayendo texto:', pdfErr.message); }
 
+    let validation;
     if (!pdfText || pdfText.trim().length < 50) {
-      const ev = await Evidence.create({
-        companyId: new mongoose.Types.ObjectId(companyId), questionId, fileName: req.file.originalname,
-        r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`,
-        validation: { valido: false, razon: 'No se pudo extraer texto (posible PDF escaneado). Revisión manual.' }
-      });
-      return res.json({ ok: true, evidence: ev, validation: ev.validation });
-    }
-
-    const systemPrompt = `Eres un auditor experto en gobernanza de IA (ISO 42001, NIST AI RMF).
+      validation = { valido: false, razon: 'No se pudo extraer texto (posible PDF escaneado). Revisión manual.' };
+    } else {
+      const systemPrompt = `Eres un auditor experto en gobernanza de IA (ISO 42001, NIST AI RMF).
 Evalúa si el DOCUMENTO proporcionado constituye EVIDENCIA VERIFICABLE para la siguiente PREGUNTA:
 
 PREGUNTA: ${question.question}
@@ -363,22 +413,40 @@ Reglas:
 
 JSON: { "valido": true|false, "razon": "explicación breve en español" }`;
 
-    let validation = { valido: false, razon: 'No se pudo validar.' };
-    try {
-      const { content } = await callGroq({ messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `DOCUMENTO:\n\n${pdfText.slice(0, 6000)}` }
-      ], temperature: 0.1, maxTokens: 300, timeoutMs: 25000 });
-      const parsed = safeParseJSON(content);
-      if (parsed && typeof parsed.valido === 'boolean') validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
-    } catch (groqErr) { console.error('[upload-evidence] Groq error:', groqErr.message); validation = { valido: false, razon: 'IA no disponible.' }; }
+      validation = { valido: false, razon: 'No se pudo validar.' };
+      try {
+        const { content } = await callGroq({ messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `DOCUMENTO:\n\n${pdfText.slice(0, 6000)}` }
+        ], temperature: 0.1, maxTokens: 300, timeoutMs: 25000 });
+        const parsed = safeParseJSON(content);
+        if (parsed && typeof parsed.valido === 'boolean') validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
+      } catch (groqErr) { console.error('[upload-evidence] Groq error:', groqErr.message); validation = { valido: false, razon: 'IA no disponible.' }; }
+    }
+
+    // 🆕 FIX C: Si el nuevo es válido, eliminar TODAS las rechazadas previas de esta pregunta
+    // Si el nuevo es rechazado, eliminar solo la rechazada más antigua (para no acumular basura)
+    if (validation.valido) {
+      await replaceRejectedEvidence(companyId, questionId);
+    } else {
+      // Eliminar el rechazado anterior más antiguo si ya había uno (solo mantener 1 rechazado visible)
+      const existingRejected = await Evidence.find({
+        companyId: new mongoose.Types.ObjectId(companyId),
+        questionId,
+        'validation.valido': false
+      }).sort({ ts: 1 });
+      if (existingRejected.length >= 1) {
+        // Borrar los anteriores, dejar solo el actual
+        await Evidence.deleteMany({ _id: { $in: existingRejected.map(e => e._id) } });
+      }
+    }
 
     const ev = await Evidence.create({
       companyId: new mongoose.Types.ObjectId(companyId), questionId, fileName: req.file.originalname,
       r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`, validation
     });
 
-    // NUEVO: recalcular el AIGI del último assessment de esta empresa
+    // Recalcular AIGI si es válido
     if (validation.valido) {
       const lastAssessment = await AssessmentResult.findOne({ companyId: new mongoose.Types.ObjectId(companyId) }).sort({ date: -1 });
       if (lastAssessment) {
@@ -487,7 +555,7 @@ app.post('/gov/aigos/load-base-plan', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// === FASE A: BORRADORES ===
+// BORRADORES
 app.get('/gov/aigos/drafts/:companyId', authenticateToken, async (req, res) => {
   try {
     const draft = await AssessmentDraft.findOne({ companyId: req.params.companyId });
@@ -514,15 +582,11 @@ app.delete('/gov/aigos/drafts/:companyId', authenticateToken, async (req, res) =
   try { await AssessmentDraft.deleteOne({ companyId: req.params.companyId }); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// === FASE A: HISTORIAL ===
+// HISTORIAL Y PENDIENTES
 app.get('/gov/aigos/assessments/:companyId/history', authenticateToken, async (req, res) => {
-  try {
-    const results = await AssessmentResult.find({ companyId: req.params.companyId }).sort({ date: -1 }).limit(20);
-    res.json(results);
-  } catch (error) { res.status(500).json({ error: error.message }); }
+  try { res.json(await AssessmentResult.find({ companyId: req.params.companyId }).sort({ date: -1 }).limit(20)); } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// === FASE A: PENDIENTES DE EVIDENCIA ===
 app.get('/gov/aigos/pending-evidence/:companyId', authenticateToken, async (req, res) => {
   try {
     const lastAssessment = await AssessmentResult.findOne({ companyId: req.params.companyId }).sort({ date: -1 });
@@ -532,7 +596,6 @@ app.get('/gov/aigos/pending-evidence/:companyId', authenticateToken, async (req,
     for (const ans of lastAssessment.answers) {
       if (ans.isNA) continue;
       if (ans.level < 3) continue;
-      // Nivel >= 3: necesita evidencia
       const hasEvidence = await Evidence.findOne({ companyId: req.params.companyId, questionId: ans.questionCode, 'validation.valido': true });
       if (!hasEvidence) {
         const question = await AssessmentQuestion.findOne({ code: ans.questionCode });
@@ -543,7 +606,7 @@ app.get('/gov/aigos/pending-evidence/:companyId', authenticateToken, async (req,
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// === POST assessment (con recompute y eliminar draft) ===
+// ASSESSMENTS
 app.post('/gov/aigos/assessments', authenticateToken, async (req, res) => {
   try {
     const { companyId, answers } = req.body;
@@ -551,8 +614,6 @@ app.post('/gov/aigos/assessments', authenticateToken, async (req, res) => {
     if (!company) return res.status(404).json({ error: 'Empresa no encontrada' });
 
     const recomputed = await recomputeAigiFromAnswers(companyId, answers);
-
-    // Version: cuenta cuántos ya existen
     const existingCount = await AssessmentResult.countDocuments({ companyId });
     const version = existingCount + 1;
 
@@ -562,19 +623,16 @@ app.post('/gov/aigos/assessments', authenticateToken, async (req, res) => {
       version, status: 'enviado'
     });
 
-    // Limpiar el borrador
     await AssessmentDraft.deleteOne({ companyId });
-
     res.status(201).json(result);
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// === FASE A: PATCH assessment (editar y crear nueva versión) ===
 app.patch('/gov/aigos/assessments/:id', authenticateToken, async (req, res) => {
   try {
     const { answers } = req.body;
     const original = await AssessmentResult.findById(req.params.id);
-    if (!original) return res.status(404).json({ error: 'Assessment no encontrado' });
+    if (!original) return res.status(404).json({ error: 'No encontrado' });
 
     const recomputed = await recomputeAigiFromAnswers(original.companyId, answers);
     const version = original.version + 1;
@@ -589,7 +647,6 @@ app.patch('/gov/aigos/assessments/:id', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// === GET último assessment ===
 app.get('/gov/aigos/companies/:companyId/latest', authenticateToken, async (req, res) => {
   try {
     const result = await AssessmentResult.findOne({ companyId: req.params.companyId }).sort({ date: -1 });
@@ -598,7 +655,7 @@ app.get('/gov/aigos/companies/:companyId/latest', authenticateToken, async (req,
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// === POST evidencia directa a un assessment (post-envío) ===
+// 🆕 FIX C: Upload de evidencia directa al assessment (con reemplazo)
 app.post('/gov/aigos/assessments/:id/evidence', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     const { questionCode } = req.body;
@@ -624,6 +681,18 @@ app.post('/gov/aigos/assessments/:id/evidence', authenticateToken, upload.single
       if (parsed && typeof parsed.valido === 'boolean') validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
     } catch (e) { }
 
+    // 🆕 FIX C: Aplicar la misma lógica de reemplazo
+    if (validation.valido) {
+      await replaceRejectedEvidence(assessment.companyId.toString(), questionCode);
+    } else {
+      const existingRejected = await Evidence.find({
+        companyId: assessment.companyId, questionId: questionCode, 'validation.valido': false
+      }).sort({ ts: 1 });
+      if (existingRejected.length >= 1) {
+        await Evidence.deleteMany({ _id: { $in: existingRejected.map(e => e._id) } });
+      }
+    }
+
     const ev = await Evidence.create({
       companyId: assessment.companyId, questionId: questionCode, fileName: req.file.originalname,
       r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`, validation
@@ -631,7 +700,7 @@ app.post('/gov/aigos/assessments/:id/evidence', authenticateToken, upload.single
 
     if (validation.valido) {
       const updatedAnswers = assessment.answers.map(a => a.questionCode === questionCode ? { ...a.toObject(), hasEvidence: true } : a);
-      const recomputed = await recomputeAigiFromAnswers(assessment.companyId, updatedAnswers);
+      const recomputed = await recomputeAigiFromAnswers(assessment.companyId.toString(), updatedAnswers);
       await AssessmentResult.findByIdAndUpdate(assessment._id, { answers: updatedAnswers, maturity: recomputed.maturity, aigi: recomputed.aigi });
     }
 

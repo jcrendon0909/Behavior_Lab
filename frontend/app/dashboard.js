@@ -16,10 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let aigosQuestionsCache = [];
   let masterRisksCache = [];
 
-  // Estado del assessment activo
-  let assessmentMode = 'new'; // 'new' | 'draft' | 'edit'
-  let assessmentEditingId = null; // ID del assessment que se está editando (cuando mode=edit)
+  let assessmentMode = 'new';
+  let assessmentEditingId = null;
   let assessmentAutosaveTimer = null;
+  let isSavingDraft = false;
+
+  // 🆕 FASE C: cache de evidencias por pregunta { questionCode: [ev1, ev2] }
+  let evidencesByQuestion = {};
 
   const isSameOrg = (id1, id2) => (!id1 || !id2) ? false : id1.toString() === id2.toString();
 
@@ -317,7 +320,100 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================
-  // 6. ASSESSMENT TAB (NUEVO)
+  // 🆕 6. FASE C: HELPERS DE EVIDENCIA
+  // ==========================================
+  async function loadEvidencesForModal(companyId) {
+    evidencesByQuestion = {};
+    try {
+      const res = await fetch(`${API_URL}/gov/evidence?orgId=${currentOrgId}`, { headers });
+      if (!res.ok) return;
+      const all = await res.json();
+      const filtered = all.filter(e => isSameOrg(e.companyId, companyId));
+      filtered.forEach(e => {
+        if (!evidencesByQuestion[e.questionId]) evidencesByQuestion[e.questionId] = [];
+        evidencesByQuestion[e.questionId].push(e);
+      });
+      console.log(`[evidences] Cargadas ${filtered.length} evidencias para ${companyId}`);
+    } catch (e) { console.error('[evidences] Error:', e); }
+  }
+
+  function getQuestionEvidenceState(questionCode) {
+    const evs = evidencesByQuestion[questionCode] || [];
+    const valid = evs.find(e => e.validation?.valido === true);
+    const rejected = evs.find(e => e.validation?.valido === false);
+    return { valid: valid || null, rejected: rejected || null, hasAny: evs.length > 0 };
+  }
+
+  function renderPdfCellContent(questionCode) {
+    const state = getQuestionEvidenceState(questionCode);
+    const label = `<label class="text-[10px] text-slate-400 mb-1">PDF</label>`;
+
+    if (state.valid) {
+      // Evidencia válida → solo badge verde, no se puede eliminar desde aquí
+      return label + `<div class="flex items-center" title="Evidencia válida: ${(state.valid.fileName || '').replace(/"/g, '&quot;')}">
+        <span class="text-xs bg-teal-900 text-teal-400 px-2 py-1.5 rounded-lg border border-teal-600 font-bold">✅</span>
+      </div>`;
+    }
+
+    if (state.rejected) {
+      // Evidencia rechazada → mostrar ❌ + 🗑️ + 📎 (para reintentar)
+      return label + `<div class="flex gap-1 items-center">
+        <span class="text-xs bg-rose-900 text-rose-300 px-1.5 py-1.5 rounded-lg border border-rose-700 font-bold" title="Rechazada: ${(state.rejected.validation?.razon || '').replace(/"/g, '&quot;').slice(0, 100)}">❌</span>
+        <button type="button" onclick="deleteEvidenceFromModal('${state.rejected._id}', '${questionCode}')" class="text-xs bg-rose-700 hover:bg-rose-600 text-white px-1.5 py-1.5 rounded-lg border border-rose-500 transition" title="Eliminar rechazado">🗑️</button>
+        <input type="file" id="file_${questionCode}" class="hidden" accept=".pdf" onchange="uploadEvidenceAigos(event, '${questionCode}')">
+        <button type="button" onclick="document.getElementById('file_${questionCode}').click()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1.5 rounded-lg border border-slate-500 transition" title="Subir otro PDF">📎</button>
+      </div>`;
+    }
+
+    // Sin evidencia
+    return label + `<div class="flex items-center">
+      <input type="file" id="file_${questionCode}" class="hidden" accept=".pdf" onchange="uploadEvidenceAigos(event, '${questionCode}')">
+      <button type="button" onclick="document.getElementById('file_${questionCode}').click()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1.5 rounded-lg border border-slate-500 transition">📎</button>
+    </div>`;
+  }
+
+  function refreshPdfCell(questionCode) {
+    const cell = document.getElementById(`pdf-cell-${questionCode}`);
+    if (!cell) return;
+    cell.innerHTML = renderPdfCellContent(questionCode);
+  }
+
+  // 🆕 FASE C: eliminar evidencia desde el modal del Assessment
+  window.deleteEvidenceFromModal = async function (evidenceId, questionCode) {
+    if (!confirm("¿Eliminar esta evidencia rechazada? Podrás subir otra después.")) return;
+    try {
+      const res = await fetch(`${API_URL}/gov/evidence/${evidenceId}`, { method: 'DELETE', headers });
+      const data = await res.json();
+      if (res.ok) {
+        // Refrescar cache y solo esa celda
+        await loadEvidencesForModal(document.getElementById('diagCompany').value);
+        refreshPdfCell(questionCode);
+        // Si el assessment ya existe y esta pregunta tenía evidencia válida, el backend ya recalculó
+      } else {
+        alert("Error: " + (data.error || "No se pudo eliminar"));
+      }
+    } catch (e) { alert("Error de red al eliminar evidencia"); }
+  };
+
+  // 🆕 FASE C: eliminar evidencia desde el tab Evidencia
+  window.deleteEvidenceFromTab = async function (evidenceId) {
+    if (!confirm("¿Eliminar esta evidencia? Si era válida, se recalculará el AIGI.")) return;
+    try {
+      const res = await fetch(`${API_URL}/gov/evidence/${evidenceId}`, { method: 'DELETE', headers });
+      const data = await res.json();
+      if (res.ok) {
+        loadEvidence();
+        // Si el assessment dependía de esta evidencia, el AIGI cambió → refrescar dashboard
+        loadExecutiveDashboard();
+        if (!document.getElementById('assessmentSection').classList.contains('hidden')) loadAssessmentTab();
+      } else {
+        alert("Error: " + (data.error || "No se pudo eliminar"));
+      }
+    } catch (e) { alert("Error de red"); }
+  };
+
+  // ==========================================
+  // 7. ASSESSMENT TAB
   // ==========================================
   async function loadAssessmentTab() {
     if (!currentCompanyId) {
@@ -325,13 +421,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Resetear UI
     document.getElementById('assessmentEditBtn').classList.add('hidden');
     document.getElementById('assessmentContinueDraftBtn').classList.add('hidden');
     document.getElementById('pendingEvidenceCard').classList.add('hidden');
 
     try {
-      // 1. Último assessment
       const lastRes = await fetch(`${API_URL}/gov/aigos/companies/${currentCompanyId}/latest`, { headers });
       if (lastRes.ok) {
         const data = await lastRes.json();
@@ -343,10 +437,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('assessmentAigi').textContent = data.aigi.published;
         document.getElementById('assessmentAigiBand').textContent = data.aigi.band;
 
-        // Habilitar "Editar Último"
         document.getElementById('assessmentEditBtn').classList.remove('hidden');
 
-        // Desglose por dominio
         const breakdown = document.getElementById('assessmentDomainsBreakdown');
         let html = '';
         Object.keys(data.maturity.domains).forEach(d => {
@@ -359,7 +451,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         breakdown.innerHTML = html || '<p class="text-slate-500 text-sm">Sin datos</p>';
 
-        // 2. Pendientes de evidencia
         await loadPendingEvidence();
       } else {
         document.getElementById('assessmentLastDate').textContent = 'Sin evaluar';
@@ -371,7 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('assessmentDomainsBreakdown').innerHTML = '<p class="text-sm text-slate-500">Sin evaluación</p>';
       }
 
-      // 3. Borrador
       const draftRes = await fetch(`${API_URL}/gov/aigos/drafts/${currentCompanyId}`, { headers });
       if (draftRes.ok) {
         document.getElementById('assessmentContinueDraftBtn').classList.remove('hidden');
@@ -411,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!file) return;
 
     const lastRes = await fetch(`${API_URL}/gov/aigos/companies/${currentCompanyId}/latest`, { headers });
-    if (!lastRes.ok) { alert("No hay assessment. Crea uno primero."); return; }
+    if (!lastRes.ok) { alert("No hay assessment."); return; }
     const lastAssessment = await lastRes.json();
 
     const btn = event.target.previousElementSibling;
@@ -440,30 +530,58 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ==========================================
-  // 7. MODAL ASSESSMENT (con auto-guardado)
+  // 8. MODAL ASSESSMENT
   // ==========================================
   const modalAigos = document.getElementById('aigosAssessmentModal');
-  document.getElementById('closeAigosAssessmentBtn')?.addEventListener('click', () => closeAssessmentWithDraft());
-  document.getElementById('cancelAigosBtn')?.addEventListener('click', () => closeAssessmentWithDraft());
 
-  async function closeAssessmentWithDraft() {
-    // Guardar borrador si hay datos
+  document.getElementById('closeAigosAssessmentBtn')?.addEventListener('click', async () => { await closeAssessmentWithDraft('x'); });
+  document.getElementById('cancelAigosBtn')?.addEventListener('click', async () => { await closeAssessmentWithDraft('cancel'); });
+
+  async function closeAssessmentWithDraft(source = 'unknown') {
+    if (isSavingDraft) return;
+    isSavingDraft = true;
+
     const companyId = document.getElementById('diagCompany').value;
+    console.log(`[close draft] source=${source}, companyId=${companyId}`);
+
+    if (assessmentAutosaveTimer) { clearInterval(assessmentAutosaveTimer); assessmentAutosaveTimer = null; }
+
     if (companyId) {
       const answers = collectAnswers();
       if (answers.length > 0) {
+        const xBtn = document.getElementById('closeAigosAssessmentBtn');
+        const cancelBtn = document.getElementById('cancelAigosBtn');
+        const originalX = xBtn.textContent;
+        const originalCancel = cancelBtn.textContent;
+        xBtn.textContent = '⏳';
+        cancelBtn.textContent = 'Guardando...';
+        cancelBtn.disabled = true;
+
         try {
-          await fetch(`${API_URL}/gov/aigos/drafts/${companyId}`, {
-            method: 'PUT', headers,
-            body: JSON.stringify({ answers })
+          const res = await fetch(`${API_URL}/gov/aigos/drafts/${companyId}`, {
+            method: 'PUT', headers, body: JSON.stringify({ answers })
           });
-          console.log('[draft] Guardado automático');
-        } catch (e) { console.error('Error guardando draft:', e); }
+          const data = await res.json();
+          console.log(`[close draft] PUT response:`, res.status, data);
+          if (!res.ok) throw new Error('Error guardando borrador: ' + (data.error || res.status));
+        } catch (e) {
+          console.error('[close draft] Error:', e);
+          alert("⚠️ No se pudo guardar el borrador automáticamente.");
+        } finally {
+          xBtn.textContent = originalX;
+          cancelBtn.textContent = originalCancel;
+          cancelBtn.disabled = false;
+        }
       }
     }
-    if (assessmentAutosaveTimer) { clearInterval(assessmentAutosaveTimer); assessmentAutosaveTimer = null; }
+
     modalAigos.classList.add('hidden');
-    if (!document.getElementById('assessmentSection').classList.contains('hidden')) loadAssessmentTab();
+
+    if (!document.getElementById('assessmentSection').classList.contains('hidden')) {
+      await loadAssessmentTab();
+    }
+
+    isSavingDraft = false;
   }
 
   function collectAnswers() {
@@ -488,11 +606,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const answers = collectAnswers();
       try {
         await fetch(`${API_URL}/gov/aigos/drafts/${companyId}`, {
-          method: 'PUT', headers,
-          body: JSON.stringify({ answers })
+          method: 'PUT', headers, body: JSON.stringify({ answers })
         });
-      } catch (e) { }
-    }, 30000); // cada 30s
+        console.log('[autosave] Borrador guardado');
+      } catch (e) { console.error('[autosave] Error:', e); }
+    }, 30000);
   }
 
   document.getElementById('assessmentNewBtn')?.addEventListener('click', () => openAssessmentModal('new'));
@@ -518,36 +636,67 @@ document.addEventListener('DOMContentLoaded', () => {
     diagCompany.innerHTML = companiesCache.map(c => `<option value="${c._id}" ${isSameOrg(c._id, currentCompanyId) ? 'selected' : ''}>${c.name}</option>`).join('');
 
     modalAigos.classList.remove('hidden');
+
+    // 🆕 FASE C: cargar evidencias ANTES de renderizar preguntas
+    await loadEvidencesForModal(currentCompanyId);
+
+    // Forzar recarga del catálogo
+    aigosQuestionsCache = [];
     await loadAigosQuestions();
 
-    // Cargar datos según modo
-    if (mode === 'draft') {
-      const res = await fetch(`${API_URL}/gov/aigos/drafts/${currentCompanyId}`, { headers });
-      if (res.ok) {
-        const draft = await res.json();
-        applyAnswersToForm(draft.answers);
+    // Reset form a defaults
+    resetAssessmentForm();
+
+    // Aplicar respuestas con delay
+    setTimeout(async () => {
+      if (mode === 'draft') {
+        try {
+          const res = await fetch(`${API_URL}/gov/aigos/drafts/${currentCompanyId}`, { headers });
+          if (res.ok) {
+            const draft = await res.json();
+            console.log(`[open draft] Aplicando ${draft.answers?.length || 0} respuestas`);
+            applyAnswersToForm(draft.answers);
+          }
+        } catch (e) { console.error('[open draft] Error:', e); }
+      } else if (mode === 'edit' && lastAssessment) {
+        console.log(`[open edit] Aplicando ${lastAssessment.answers?.length || 0} respuestas`);
+        applyAnswersToForm(lastAssessment.answers);
       }
-    } else if (mode === 'edit' && lastAssessment) {
-      applyAnswersToForm(lastAssessment.answers);
-    }
+    }, 100);
 
     startAutosave();
   }
 
+  function resetAssessmentForm() {
+    document.querySelectorAll('.aigos-level-select').forEach(sel => { sel.value = '0'; });
+    document.querySelectorAll('.aigos-na-checkbox').forEach(cb => { cb.checked = false; });
+    document.querySelectorAll('.aigos-evidence-checkbox').forEach(cb => { cb.checked = false; cb.disabled = true; });
+  }
+
   function applyAnswersToForm(answers) {
-    if (!answers) return;
+    if (!answers || !Array.isArray(answers)) return;
+
+    let applied = 0;
+    let notFound = 0;
+
     answers.forEach(a => {
       const sel = document.querySelector(`.aigos-level-select[data-code="${a.questionCode}"]`);
-      if (sel) sel.value = String(a.level || 0);
+      if (!sel) { notFound++; return; }
+      sel.value = String(a.level || 0);
+      applied++;
+
       const na = document.querySelector(`.aigos-na-checkbox[data-code="${a.questionCode}"]`);
       if (na) na.checked = !!a.isNA;
+
       const ev = document.querySelector(`.aigos-evidence-checkbox[data-code="${a.questionCode}"]`);
-      if (ev) ev.checked = !!a.hasEvidence;
+      if (ev) { ev.checked = !!a.hasEvidence; if (a.hasEvidence) ev.disabled = false; }
     });
+
+    console.log(`[applyAnswers] Aplicadas: ${applied}, no encontradas: ${notFound}, total: ${answers.length}`);
   }
 
   // ==========================================
-  // 8. HISTÓRICO
+  // 9. HISTÓRICO
   // ==========================================
   const modalHistory = document.getElementById('aigosHistoryModal');
   document.getElementById('closeAigosHistoryBtn')?.addEventListener('click', () => modalHistory.classList.add('hidden'));
@@ -555,11 +704,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('assessmentHistoryBtn')?.addEventListener('click', async () => {
     modalHistory.classList.remove('hidden');
     const list = document.getElementById('historyList');
-    list.innerHTML = '<p class="text-slate-500 text-center py-10">Cargando histórico...</p>';
+    list.innerHTML = '<p class="text-slate-500 text-center py-10">Cargando...</p>';
     try {
       const res = await fetch(`${API_URL}/gov/aigos/assessments/${currentCompanyId}/history`, { headers });
       const data = await res.json();
-      if (!res.ok || data.length === 0) { list.innerHTML = '<p class="text-slate-500 text-center py-10">Sin histórico todavía.</p>'; return; }
+      if (!res.ok || data.length === 0) { list.innerHTML = '<p class="text-slate-500 text-center py-10">Sin histórico.</p>'; return; }
 
       list.innerHTML = data.map((a, i) => {
         const date = new Date(a.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -583,11 +732,11 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>`;
       }).join('');
-    } catch (e) { list.innerHTML = '<p class="text-rose-500 text-center">Error al cargar.</p>'; }
+    } catch (e) { list.innerHTML = '<p class="text-rose-500 text-center">Error.</p>'; }
   });
 
   // ==========================================
-  // 9. AIGOS: PREGUNTAS Y ENVÍO
+  // 10. AIGOS: PREGUNTAS
   // ==========================================
   async function loadMasterRisks() {
     const container = document.getElementById('masterRisksList');
@@ -617,7 +766,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadAigosQuestions() {
     const container = document.getElementById('aigosQuestionsContainer');
-    if (aigosQuestionsCache.length > 0) return;
     try {
       const res = await fetch(`${API_URL}/gov/aigos/questions`, { headers });
       if (!res.ok) throw new Error("Error al cargar catálogo");
@@ -642,7 +790,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="flex flex-col items-center"><label class="text-[10px] text-slate-400 mb-1">N/A</label><input type="checkbox" class="aigos-na-checkbox w-4 h-4 accent-rose-500" data-code="${q.code}"></div>
                 <div class="flex flex-col items-center"><label class="text-[10px] text-slate-400 mb-1" title="Evidencia Verificada">Ev.</label><input type="checkbox" class="aigos-evidence-checkbox w-4 h-4 accent-teal-500" data-code="${q.code}" disabled></div>
                 <div class="flex flex-col items-center"><label class="text-[10px] text-slate-400 mb-1">Nivel</label><select class="aigos-level-select bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-sm text-white w-16 text-center outline-none" data-code="${q.code}"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-                <div class="flex flex-col items-center"><label class="text-[10px] text-slate-400 mb-1">PDF</label><input type="file" id="file_${q.code}" class="hidden" accept=".pdf" onchange="uploadEvidenceAigos(event, '${q.code}')"><button type="button" id="btn_${q.code}" onclick="document.getElementById('file_${q.code}').click()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1.5 rounded-lg border border-slate-500 transition whitespace-nowrap">📎</button></div>
+                <div class="flex flex-col items-center" id="pdf-cell-${q.code}">
+                  ${renderPdfCellContent(q.code)}
+                </div>
               </div>
             </div>
           `;
@@ -659,9 +809,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const companyId = document.getElementById('diagCompany').value;
     if (!companyId) { alert("Selecciona una filial."); event.target.value = ""; return; }
 
-    const btn = document.getElementById(`btn_${questionCode}`);
-    const originalText = btn.textContent;
-    btn.textContent = "⏳"; btn.disabled = true;
+    // Feedback visual en la celda
+    const cell = document.getElementById(`pdf-cell-${questionCode}`);
+    const originalHTML = cell ? cell.innerHTML : '';
+    if (cell) cell.innerHTML = `<label class="text-[10px] text-slate-400 mb-1">PDF</label><div class="text-xs bg-slate-700 text-white px-2 py-1.5 rounded-lg border border-slate-500">⏳</div>`;
 
     const formData = new FormData();
     formData.append("file", file);
@@ -675,16 +826,29 @@ document.addEventListener('DOMContentLoaded', () => {
         body: formData
       });
       const data = await res.json();
+
       if (res.ok && data.validation && data.validation.valido) {
-        btn.textContent = "✅"; btn.classList.replace('bg-slate-700', 'bg-teal-900'); btn.classList.replace('border-slate-500', 'border-teal-600');
+        // Marcar checkbox de evidencia
         const evCheckbox = document.querySelector(`.aigos-evidence-checkbox[data-code="${questionCode}"]`);
         if (evCheckbox) { evCheckbox.checked = true; evCheckbox.disabled = false; }
+      } else if (res.ok) {
+        const razon = data.validation?.razon || data.error || "No válido";
+        alert("❌ Rechazada: " + razon);
       } else {
-        btn.textContent = "❌"; btn.classList.replace('bg-slate-700', 'bg-rose-900');
-        alert("Rechazada: " + (data.error || (data.validation ? data.validation.razon : "No válido")));
+        alert("Error: " + (data.error || "No se pudo subir"));
       }
-    } catch (err) { console.error(err); btn.textContent = originalText; alert("Error al subir."); }
-    finally { btn.disabled = false; event.target.value = ""; }
+
+      // Refrescar cache y solo esa celda
+      await loadEvidencesForModal(companyId);
+      refreshPdfCell(questionCode);
+
+    } catch (err) {
+      console.error(err);
+      if (cell) cell.innerHTML = originalHTML;
+      alert("Error de red al subir.");
+    } finally {
+      event.target.value = "";
+    }
   };
 
   document.getElementById('aigosAssessmentForm')?.addEventListener('submit', async (e) => {
@@ -693,24 +857,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const companyId = document.getElementById('diagCompany').value;
     if (!companyId) { alert("Selecciona una filial"); btn.textContent = 'Calcular'; btn.disabled = false; return; }
 
+    if (assessmentAutosaveTimer) { clearInterval(assessmentAutosaveTimer); assessmentAutosaveTimer = null; }
+
     const answers = collectAnswers();
 
     try {
       let res;
       if (assessmentMode === 'edit' && assessmentEditingId) {
-        // PATCH: crea nueva versión
         res = await fetch(`${API_URL}/gov/aigos/assessments/${assessmentEditingId}`, { method: 'PATCH', headers, body: JSON.stringify({ answers }) });
       } else {
-        // POST: nuevo assessment
         res = await fetch(`${API_URL}/gov/aigos/assessments`, { method: 'POST', headers, body: JSON.stringify({ companyId, answers }) });
       }
       const data = await res.json();
       if (res.ok) {
-        // El backend ya borró el borrador
-        if (assessmentAutosaveTimer) { clearInterval(assessmentAutosaveTimer); assessmentAutosaveTimer = null; }
         document.getElementById('aigosAssessmentModal').classList.add('hidden');
 
-        // Mostrar resultado
         document.getElementById('resAigosMaturity').textContent = `${data.maturity.overall}%`;
         document.getElementById('resAigosMaturityBand').textContent = data.maturity.band;
         document.getElementById('resAigosAigi').textContent = `${data.aigi.published}`;
@@ -727,7 +888,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('aigosResultModal').classList.remove('hidden');
 
-        // Refrescar pestaña assessment y dashboard
         if (!document.getElementById('assessmentSection').classList.contains('hidden')) loadAssessmentTab();
         loadExecutiveDashboard();
       } else { alert("Error: " + data.error); }
@@ -739,7 +899,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // 10. DASHBOARD EJECUTIVO
+  // 11. DASHBOARD EJECUTIVO
   // ==========================================
   function computePillars(maturityDomains) {
     if (!maturityDomains) return null;
@@ -815,7 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================
-  // 11. CONTROLES
+  // 12. CONTROLES
   // ==========================================
   async function loadControls() {
     const grid = document.getElementById('controlsGrid');
@@ -835,7 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================
-  // 12. INVENTARIO
+  // 13. INVENTARIO
   // ==========================================
   async function loadInventory() {
     try {
@@ -860,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================
-  // 13. RIESGOS
+  // 14. RIESGOS
   // ==========================================
   async function loadRisks() {
     try {
@@ -893,7 +1053,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // 14. PLAN
+  // 15. PLAN
   // ==========================================
   async function loadDeliverables() {
     try {
@@ -921,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // 15. PROCESOS
+  // 16. PROCESOS
   // ==========================================
   async function loadProcesses() {
     try {
@@ -950,7 +1110,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // 16. LEADS
+  // 17. LEADS
   // ==========================================
   async function loadLeads() {
     try {
@@ -1032,7 +1192,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // 17. USUARIOS, EVIDENCIA, ORGS
+  // 18. USUARIOS, EVIDENCIA, ORGS
   // ==========================================
   document.getElementById('newOrgForm')?.addEventListener('submit', async (e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Guardando...'; btn.disabled = true;
@@ -1054,8 +1214,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('evidenceTableBody');
       if (evidence.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Sin evidencias.</td></tr>`; return; }
       tbody.innerHTML = evidence.map(e => {
-        const date = new Date(e.ts).toLocaleDateString('es-MX'); let statusColor = 'bg-teal-950 text-teal-400 border border-teal-800'; if (!e.validation.valido) statusColor = 'bg-rose-950 text-rose-400 border border-rose-800';
-        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition"><td class="py-3 px-4 text-slate-500">${date}</td><td class="py-3 px-4 text-slate-300 font-mono text-xs">${e.fileName.split('/').pop()}</td><td class="py-3 px-4 text-slate-200 font-semibold uppercase">${e.questionId}</td><td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${statusColor}">${e.validation.valido ? 'Válido' : 'Rechazado'}</span><div class="text-[10px] text-slate-500 mt-1 max-w-xs truncate" title="${e.validation.razon}">${e.validation.razon}</div></td><td class="py-3 px-4"><a href="${e.r2Url}" target="_blank" class="text-teal-400 hover:text-teal-300 underline text-xs font-bold">Ver PDF</a></td></tr>`;
+        const date = new Date(e.ts).toLocaleDateString('es-MX');
+        let statusColor = 'bg-teal-950 text-teal-400 border border-teal-800';
+        if (!e.validation.valido) statusColor = 'bg-rose-950 text-rose-400 border border-rose-800';
+        return `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+          <td class="py-3 px-4 text-slate-500">${date}</td>
+          <td class="py-3 px-4 text-slate-300 font-mono text-xs">${e.fileName.split('/').pop()}</td>
+          <td class="py-3 px-4 text-slate-200 font-semibold uppercase">${e.questionId}</td>
+          <td class="py-3 px-4">
+            <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${statusColor}">${e.validation.valido ? 'Válido' : 'Rechazado'}</span>
+            <div class="text-[10px] text-slate-500 mt-1 max-w-xs truncate" title="${e.validation.razon}">${e.validation.razon}</div>
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex items-center gap-3">
+              <a href="${e.r2Url}" target="_blank" class="text-teal-400 hover:text-teal-300 underline text-xs font-bold">Ver</a>
+              <button onclick="deleteEvidenceFromTab('${e._id}')" class="text-rose-500 hover:text-rose-400 text-sm" title="Eliminar evidencia">🗑️</button>
+            </div>
+          </td>
+        </tr>`;
       }).join('');
     } catch (e) { document.getElementById('evidenceTableBody').innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-500">Error.</td></tr>`; }
   }
