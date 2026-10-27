@@ -66,7 +66,7 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true, strict: false, collection: 'users' });
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
-const OrgSchema = new mongoose.Schema({ name: String, sector: String, plan: String, active: Boolean, modules: [String] }, { strict: false, collection: 'orgs' });
+const OrgSchema = new mongoose.Schema({ name: String, sector: String, plan: String, active: Boolean, modules: [String], estimated_models: { type: Number, default: 0 } }, { strict: false, collection: 'orgs' });
 const Org = mongoose.models.Org || mongoose.model('Org', OrgSchema);
 
 const CompanySchema = new mongoose.Schema({ orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, name: String, riskProfile: String, active: Boolean }, { strict: false, collection: 'companies' });
@@ -123,10 +123,20 @@ const AssessmentQuestion = mongoose.models.AssessmentQuestion || mongoose.model(
 const AssessmentResultSchema = new mongoose.Schema({
   orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
   modelVersion: { type: String, default: 'AIGOS-SCORE 1.0' },
+  status: { type: String, enum: ['enviado', 'validado'], default: 'enviado' },
+  version: { type: Number, default: 1 },
   answers: [{ questionCode: String, level: Number, hasEvidence: Boolean, isNA: Boolean, observation: String }],
   maturity: mongoose.Schema.Types.Mixed, aigi: mongoose.Schema.Types.Mixed, date: { type: Date, default: Date.now }
 }, { strict: false, collection: 'assessment_results' });
 const AssessmentResult = mongoose.models.AssessmentResult || mongoose.model('AssessmentResult', AssessmentResultSchema);
+
+// NUEVO: Borradores de assessment
+const AssessmentDraftSchema = new mongoose.Schema({
+  orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', unique: true },
+  answers: [{ questionCode: String, level: Number, hasEvidence: Boolean, isNA: Boolean, observation: String }],
+  updatedAt: { type: Date, default: Date.now }, createdBy: String
+}, { strict: false, collection: 'assessment_drafts' });
+const AssessmentDraft = mongoose.models.AssessmentDraft || mongoose.model('AssessmentDraft', AssessmentDraftSchema);
 
 // ==========================================
 // UTILIDADES
@@ -192,47 +202,22 @@ function safeParseJSON(text) {
 const publicRateLimit = new Map();
 const PUBLIC_RATE_MAX = Math.max(1, parseInt(process.env.PUBLIC_RATE_MAX || '20', 10));
 const PUBLIC_RATE_WINDOW_MS = Math.max(60000, parseInt(process.env.PUBLIC_RATE_WINDOW_MS || String(60 * 60 * 1000), 10));
-
 function checkPublicRateLimit(ip) {
   const now = Date.now();
   const entry = publicRateLimit.get(ip);
-  if (!entry || now - entry.first > PUBLIC_RATE_WINDOW_MS) {
-    publicRateLimit.set(ip, { count: 1, first: now });
-    return { allowed: true, limit: PUBLIC_RATE_MAX, remaining: PUBLIC_RATE_MAX - 1, resetMs: PUBLIC_RATE_WINDOW_MS };
-  }
-  if (entry.count >= PUBLIC_RATE_MAX) {
-    return { allowed: false, limit: PUBLIC_RATE_MAX, remaining: 0, resetMs: PUBLIC_RATE_WINDOW_MS - (now - entry.first) };
-  }
+  if (!entry || now - entry.first > PUBLIC_RATE_WINDOW_MS) { publicRateLimit.set(ip, { count: 1, first: now }); return { allowed: true, limit: PUBLIC_RATE_MAX, remaining: PUBLIC_RATE_MAX - 1, resetMs: PUBLIC_RATE_WINDOW_MS }; }
+  if (entry.count >= PUBLIC_RATE_MAX) return { allowed: false, limit: PUBLIC_RATE_MAX, remaining: 0, resetMs: PUBLIC_RATE_WINDOW_MS - (now - entry.first) };
   entry.count += 1;
   return { allowed: true, limit: PUBLIC_RATE_MAX, remaining: PUBLIC_RATE_MAX - entry.count, resetMs: PUBLIC_RATE_WINDOW_MS - (now - entry.first) };
 }
+function setRateLimitHeaders(res, rl) { res.set('X-RateLimit-Limit', String(rl.limit)); res.set('X-RateLimit-Remaining', String(rl.remaining)); res.set('X-RateLimit-Reset', String(Math.ceil(rl.resetMs / 1000))); }
+function formatRetryMessage(resetMs) { return resetMs < 60000 ? `${Math.ceil(resetMs / 1000)} segundos` : `${Math.ceil(resetMs / 60000)} minuto(s)`; }
+setInterval(() => { const now = Date.now(); for (const [ip, entry] of publicRateLimit.entries()) { if (now - entry.first > PUBLIC_RATE_WINDOW_MS) publicRateLimit.delete(ip); } }, 5 * 60 * 1000);
+function getClientIP(req) { return (req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown'); }
 
-function setRateLimitHeaders(res, rl) {
-  res.set('X-RateLimit-Limit', String(rl.limit));
-  res.set('X-RateLimit-Remaining', String(rl.remaining));
-  res.set('X-RateLimit-Reset', String(Math.ceil(rl.resetMs / 1000)));
-}
-
-function formatRetryMessage(resetMs) {
-  if (resetMs < 60000) return `${Math.ceil(resetMs / 1000)} segundos`;
-  return `${Math.ceil(resetMs / 60000)} minuto(s)`;
-}
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of publicRateLimit.entries()) {
-    if (now - entry.first > PUBLIC_RATE_WINDOW_MS) publicRateLimit.delete(ip);
-  }
-}, 5 * 60 * 1000);
-
-function getClientIP(req) {
-  return (req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown');
-}
-
-// RIESGO DETERMINÍSTICO
+// COMPUTE RISK LEVEL (público)
 function computeRiskLevel({ sector, shadow_ai, samd }) {
-  let score = 0;
-  const badges = [];
+  let score = 0; const badges = [];
   if (sector === 'salud') { score += 3; badges.push({ label: 'Sector Salud (SaMD)', level: 'alto' }); }
   else if (sector === 'alimentos') { score += 2; badges.push({ label: 'Sector Alimentos', level: 'medio' }); }
   else if (sector === 'servicios') { score += 1; badges.push({ label: 'Sector Servicios', level: 'bajo' }); }
@@ -241,20 +226,29 @@ function computeRiskLevel({ sector, shadow_ai, samd }) {
   else if (shadow_ai === 'bajo') { score += 1; badges.push({ label: 'Shadow AI regulado', level: 'bajo' }); }
   if (samd === true) { score += 3; badges.push({ label: 'Software como Dispositivo Médico', level: 'alto' }); }
   let level = 'bajo';
-  if (score >= 8) level = 'crítico';
-  else if (score >= 5) level = 'alto';
-  else if (score >= 3) level = 'medio';
-  const summaryByLevel = {
-    'crítico': 'Tu exposición regulatoria es CRÍTICA. Requieres un programa formal de gobernanza de IA con urgencia.',
-    'alto': 'Tu exposición es ALTA. Hay controles aislados pero no un sistema de gobernanza formal.',
-    'medio': 'Tu exposición es MEDIA. Tienes algunos controles informales.',
-    'bajo': 'Tu exposición es BAJA. Vas por buen camino.',
-  };
+  if (score >= 8) level = 'crítico'; else if (score >= 5) level = 'alto'; else if (score >= 3) level = 'medio';
+  const summaryByLevel = { 'crítico': 'Exposición CRÍTICA. Requieres programa formal urgente.', 'alto': 'Exposición ALTA. Controles aislados, sin sistema formal.', 'medio': 'Exposición MEDIA. Controles informales.', 'bajo': 'Exposición BAJA. Buen camino.' };
   return { score, level, badges, summary: summaryByLevel[level] };
 }
 
+// HELPER: reconstruye maturity + aigi al agregar/editar evidencia
+async function recomputeAigiFromAnswers(companyId, answers) {
+  const domainWeights = { "Estrategia y liderazgo": 8, "Gobierno y organización": 12, "Inventario y clasificación": 12, "Gestión de riesgos": 12, "Datos y privacidad": 10, "Seguridad": 10, "Ciclo de vida y calidad de modelos": 10, "Terceros y proveedores": 8, "Cultura y capacitación": 8, "Monitoreo, incidentes y mejora": 10 };
+  const maturityResult = calculateMaturity(answers, domainWeights);
+
+  // TODO FASE B: G, C, V reales. Por ahora E se calcula con evidencias reales
+  const evidenceCount = await Evidence.countDocuments({ companyId: new mongoose.Types.ObjectId(companyId), 'validation.valido': true });
+  const questionsRequiringEvidence = answers.filter(a => !a.isNA && a.level >= 3).length;
+  const E = questionsRequiringEvidence > 0 ? Math.min(100, Math.round((evidenceCount / questionsRequiringEvidence) * 100)) : 100;
+
+  const G = 70, C = 65, V = 100;
+  const gates = { hasPolicy: true, hasActiveCommittee: false, hasUnmitigatedCriticalRisk: false };
+  const aigiResult = calculateAIGI(maturityResult.overall, G, E, C, V, gates);
+  return { maturity: maturityResult, aigi: aigiResult };
+}
+
 // ==========================================
-// RUTAS AUTH Y ADMIN
+// AUTH Y ADMIN
 // ==========================================
 app.post('/gov/auth/login', async (req, res) => {
   try {
@@ -273,63 +267,43 @@ app.get('/gov/orgs', authenticateToken, async (req, res) => { try { res.json(awa
 app.post('/gov/orgs', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Solo superadmin' });
-    const org = await Org.create({ name: req.body.name, sector: req.body.sector || 'general', plan: req.body.plan || 'basic', active: true, modules: ['gobernanza', 'automatizacion'] });
+    const org = await Org.create({ name: req.body.name, sector: req.body.sector || 'general', plan: req.body.plan || 'basic', active: true, modules: ['gobernanza', 'automatizacion'], estimated_models: req.body.estimated_models || 0 });
     res.status(201).json(org);
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
 app.get('/gov/users', authenticateToken, async (req, res) => { try { res.json(await User.find().select('-password -hash')); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/users', authenticateToken, async (req, res) => {
-  try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    res.status(201).json(await User.create({ ...req.body, password: hashedPassword, hash: hashedPassword }));
-  } catch (error) { res.status(500).json({ error: 'Error al crear usuario' }); }
+  try { const hashedPassword = await bcrypt.hash(req.body.password, 10); res.status(201).json(await User.create({ ...req.body, password: hashedPassword, hash: hashedPassword })); } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
 app.get('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
   try { res.json(await Company.find(req.params.orgId === 'ALL' ? {} : { orgId: new mongoose.Types.ObjectId(req.params.orgId) })); } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 app.post('/gov/orgs/:orgId/companies', authenticateToken, async (req, res) => {
-  try {
-    const targetOrgId = req.params.orgId === 'ALL' ? req.user.orgId : req.params.orgId;
-    res.status(201).json(await Company.create({ ...req.body, orgId: new mongoose.Types.ObjectId(targetOrgId) }));
-  } catch (error) { res.status(500).json({ error: 'Error' }); }
+  try { const targetOrgId = req.params.orgId === 'ALL' ? req.user.orgId : req.params.orgId; res.status(201).json(await Company.create({ ...req.body, orgId: new mongoose.Types.ObjectId(targetOrgId) })); } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// ==========================================
-// FIX 2: CREACIÓN DE RECURSOS CON orgId DESDE FILIAL
-// ==========================================
+// CRUDS con fix de orgId desde filial
 app.get('/gov/ai-inventory', authenticateToken, async (req, res) => { try { res.json(await Inventory.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
-
 app.post('/gov/ai-inventory', authenticateToken, async (req, res) => {
   try {
-    // FIX: Obtener orgId desde la filial, no del usuario
     const company = await Company.findById(req.body.companyId);
     if (!company) return res.status(404).json({ error: 'Filial no encontrada' });
-    const inventory = await Inventory.create({
-      ...req.body,
-      orgId: company.orgId, // ← orgId de la filial
-      companyId: new mongoose.Types.ObjectId(req.body.companyId)
-    });
+    const inventory = await Inventory.create({ ...req.body, orgId: company.orgId, companyId: new mongoose.Types.ObjectId(req.body.companyId) });
     res.status(201).json(inventory);
-  } catch (error) { res.status(500).json({ error: 'Error al crear modelo: ' + error.message }); }
+  } catch (error) { res.status(500).json({ error: 'Error: ' + error.message }); }
 });
 
 app.get('/gov/risks', authenticateToken, async (req, res) => { try { res.json(await Risk.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
-
 app.post('/gov/risks', authenticateToken, async (req, res) => {
   try {
     const score = req.body.probability * req.body.impact;
     let riskLevel = score >= 16 ? 'Crítico' : score >= 11 ? 'Alto' : score >= 6 ? 'Medio' : 'Bajo';
-
-    let targetOrgId = req.user.orgId;
-    let targetCompanyId = null;
-    if (req.body.companyId) {
-      const company = await Company.findById(req.body.companyId);
-      if (company) { targetOrgId = company.orgId; targetCompanyId = company._id; }
-    }
+    let targetOrgId = req.user.orgId, targetCompanyId = null;
+    if (req.body.companyId) { const company = await Company.findById(req.body.companyId); if (company) { targetOrgId = company.orgId; targetCompanyId = company._id; } }
     res.status(201).json(await Risk.create({ ...req.body, orgId: targetOrgId, companyId: targetCompanyId, riskScore: score, riskLevel }));
-  } catch (error) { res.status(500).json({ error: 'Error: ' + error.message }); }
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 app.delete('/gov/risks/:id', authenticateToken, async (req, res) => { try { await Risk.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
@@ -341,19 +315,13 @@ app.delete('/gov/deliverables/:id', authenticateToken, async (req, res) => { try
 app.get('/gov/evaluations', authenticateToken, async (req, res) => { try { res.json(await Evaluation.find(getOrgQuery(req)).sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/evaluations', authenticateToken, async (req, res) => {
   try {
-    let targetOrgId = req.user.orgId;
-    let targetCompanyId = null;
-    if (req.body.companyId) {
-      const company = await Company.findById(req.body.companyId);
-      if (company) { targetOrgId = company.orgId; targetCompanyId = company._id; }
-    }
+    let targetOrgId = req.user.orgId, targetCompanyId = null;
+    if (req.body.companyId) { const company = await Company.findById(req.body.companyId); if (company) { targetOrgId = company.orgId; targetCompanyId = company._id; } }
     res.status(201).json(await Evaluation.create({ ...req.body, orgId: targetOrgId, companyId: targetCompanyId }));
-  } catch (error) { res.status(500).json({ error: 'Error: ' + error.message }); }
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// ==========================================
-// FIX 1: UPLOAD CON VALIDACIÓN IA REAL
-// ==========================================
+// Evidencia
 app.get('/gov/evidence', authenticateToken, async (req, res) => { try { const query = await getEvidenceQuery(req); res.json(await Evidence.find(query).sort({ ts: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
 app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async (req, res) => {
@@ -362,98 +330,75 @@ app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async
     if (!req.file) return res.status(400).json({ error: 'No se recibió archivo' });
     if (!companyId || !questionId) return res.status(400).json({ error: 'Faltan companyId o questionId' });
 
-    // 1. Buscar la pregunta del catálogo AIGOS
     const question = await AssessmentQuestion.findOne({ code: questionId });
-    if (!question) return res.status(404).json({ error: 'Pregunta no encontrada en el catálogo' });
+    if (!question) return res.status(404).json({ error: 'Pregunta no encontrada' });
 
-    // 2. Extraer texto del PDF
     let pdfText = '';
     try {
       const pdf = await getDocumentProxy(new Uint8Array(req.file.buffer));
       const extracted = await extractText(pdf, { mergePages: true });
       pdfText = extracted.text || '';
-    } catch (pdfErr) {
-      console.error('[upload-evidence] Error extrayendo texto:', pdfErr.message);
-    }
+    } catch (pdfErr) { console.error('[upload-evidence] Error extrayendo texto:', pdfErr.message); }
 
-    // 3. Si no se pudo extraer texto, marcar como requiere revisión
     if (!pdfText || pdfText.trim().length < 50) {
       const ev = await Evidence.create({
-        companyId: new mongoose.Types.ObjectId(companyId),
-        questionId,
-        fileName: req.file.originalname,
+        companyId: new mongoose.Types.ObjectId(companyId), questionId, fileName: req.file.originalname,
         r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`,
-        validation: { valido: false, razon: 'No se pudo extraer texto del PDF (puede ser imagen escaneada). Requiere revisión manual.' }
+        validation: { valido: false, razon: 'No se pudo extraer texto (posible PDF escaneado). Revisión manual.' }
       });
       return res.json({ ok: true, evidence: ev, validation: ev.validation });
     }
 
-    // 4. Validar con Groq
     const systemPrompt = `Eres un auditor experto en gobernanza de IA (ISO 42001, NIST AI RMF).
-Evalúa si el DOCUMENTO proporcionado constituye EVIDENCIA VERIFICABLE para la siguiente PREGUNTA de assessment:
+Evalúa si el DOCUMENTO proporcionado constituye EVIDENCIA VERIFICABLE para la siguiente PREGUNTA:
 
 PREGUNTA: ${question.question}
 EVIDENCIA REQUERIDA: ${question.evidenceRequested}
 DOMINIO: ${question.domain}
-CONTROL ASOCIADO: ${question.controlName}
+CONTROL: ${question.controlName}
 
-INSTRUCCIONES ESTRICTAS:
-- VÁLIDO: el documento contiene información específica de la organización que respalda la pregunta (políticas, procedimientos, actas, configuraciones, resultados de pruebas, etc.).
-- INVÁLIDO: el documento es de OTRA empresa, es genérico sin datos propios, es un borrador sin aprobar, es un artículo/presentación sin contexto corporativo, o no responde la pregunta.
-- Sé estricto: preferir rechazar un documento dudoso a aceptar basura.
+Reglas:
+- VÁLIDO: contiene info específica de la organización que respalda la pregunta.
+- INVÁLIDO: es de otra empresa, genérico sin datos propios, borrador sin aprobar, o no responde.
 
-Responde ÚNICAMENTE con JSON válido:
-{ "valido": true|false, "razon": "explicación breve en español (max 200 caracteres)" }`;
+JSON: { "valido": true|false, "razon": "explicación breve en español" }`;
 
-    const userPrompt = `DOCUMENTO A EVALUAR:\n\n${pdfText.slice(0, 6000)}`;
-
-    let validation = { valido: false, razon: 'No se pudo validar el documento con IA.' };
+    let validation = { valido: false, razon: 'No se pudo validar.' };
     try {
-      const { content } = await callGroq({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.1,
-        maxTokens: 300,
-        timeoutMs: 25000
-      });
+      const { content } = await callGroq({ messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `DOCUMENTO:\n\n${pdfText.slice(0, 6000)}` }
+      ], temperature: 0.1, maxTokens: 300, timeoutMs: 25000 });
       const parsed = safeParseJSON(content);
-      if (parsed && typeof parsed.valido === 'boolean') {
-        validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
-      }
-    } catch (groqErr) {
-      console.error('[upload-evidence] Groq error:', groqErr.message);
-      validation = { valido: false, razon: 'Servicio de IA temporalmente no disponible. Revisar manualmente.' };
-    }
+      if (parsed && typeof parsed.valido === 'boolean') validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
+    } catch (groqErr) { console.error('[upload-evidence] Groq error:', groqErr.message); validation = { valido: false, razon: 'IA no disponible.' }; }
 
-    // 5. Guardar evidencia
     const ev = await Evidence.create({
-      companyId: new mongoose.Types.ObjectId(companyId),
-      questionId,
-      fileName: req.file.originalname,
-      r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`,
-      validation
+      companyId: new mongoose.Types.ObjectId(companyId), questionId, fileName: req.file.originalname,
+      r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`, validation
     });
 
+    // NUEVO: recalcular el AIGI del último assessment de esta empresa
+    if (validation.valido) {
+      const lastAssessment = await AssessmentResult.findOne({ companyId: new mongoose.Types.ObjectId(companyId) }).sort({ date: -1 });
+      if (lastAssessment) {
+        const updatedAnswers = lastAssessment.answers.map(a => a.questionCode === questionId ? { ...a.toObject(), hasEvidence: true } : a);
+        const recomputed = await recomputeAigiFromAnswers(companyId, updatedAnswers);
+        await AssessmentResult.findByIdAndUpdate(lastAssessment._id, { answers: updatedAnswers, maturity: recomputed.maturity, aigi: recomputed.aigi });
+      }
+    }
+
     res.json({ ok: true, evidence: ev, validation });
-  } catch (error) {
-    console.error('[upload-evidence] Error:', error);
-    res.status(500).json({ error: error.message });
-  }
+  } catch (error) { console.error('[upload-evidence] Error:', error); res.status(500).json({ error: error.message }); }
 });
 
 app.get('/gov/process-evals', authenticateToken, async (req, res) => { try { res.json(await ProcessEval.find(getOrgQuery(req))); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 app.post('/gov/process-evals', authenticateToken, async (req, res) => {
   try {
-    let targetOrgId = req.user.orgId;
-    let targetCompanyId = null;
-    if (req.body.companyId) {
-      const company = await Company.findById(req.body.companyId);
-      if (company) { targetOrgId = company.orgId; targetCompanyId = company._id; }
-    }
+    let targetOrgId = req.user.orgId, targetCompanyId = null;
+    if (req.body.companyId) { const company = await Company.findById(req.body.companyId); if (company) { targetOrgId = company.orgId; targetCompanyId = company._id; } }
     res.status(201).json(await ProcessEval.create({ ...req.body, orgId: targetOrgId, companyId: targetCompanyId }));
-  } catch (error) { res.status(500).json({ error: 'Error: ' + error.message }); }
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 app.delete('/gov/process-evals/:id', authenticateToken, async (req, res) => { try { await ProcessEval.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
@@ -467,20 +412,16 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
     const { orgId, companyId, companyName } = req.body;
     const lead = await Lead.findById(req.params.id);
     if (!lead) return res.status(404).json({ error: 'Lead no encontrado' });
-    if (lead.status === 'convertido') return res.status(400).json({ error: 'El lead ya fue convertido' });
+    if (lead.status === 'convertido') return res.status(400).json({ error: 'Ya convertido' });
     const targetOrgId = new mongoose.Types.ObjectId(orgId);
     let company;
     if (companyId) { company = await Company.findById(companyId); }
-    else if (companyName) {
-      company = await Company.findOne({ orgId: targetOrgId, name: companyName });
-      if (!company) company = await Company.create({ orgId: targetOrgId, name: companyName, riskProfile: 'operacional', active: true });
-    } else { return res.status(400).json({ error: 'Debes seleccionar o crear una filial' }); }
+    else if (companyName) { company = await Company.findOne({ orgId: targetOrgId, name: companyName }); if (!company) company = await Company.create({ orgId: targetOrgId, name: companyName, riskProfile: 'operacional', active: true }); }
+    else return res.status(400).json({ error: 'Debes seleccionar o crear filial' });
 
-    if (lead.tipo_lead === 'riesgo' && lead.resultado) {
-      await Evaluation.create({ orgId: targetOrgId, companyId: company._id, framework: 'LFPDPPP / ISO 42001', answers: {}, score: lead.resultado.score, risk_level: lead.resultado.risk_level, recommendations: { summary: lead.resultado.summary }, createdAt: new Date() });
-    } else if (lead.tipo_lead === 'automatizacion' && lead.proceso && lead.resultado) {
-      await ProcessEval.create({ orgId: targetOrgId, companyId: company._id, processName: lead.proceso.processName, volume: lead.proceso.volume, complexity: lead.proceso.complexityLabel || lead.proceso.complexity, dataType: lead.proceso.dataType, hoursSpent: lead.proceso.hoursSpent, score: lead.resultado.automationIndex, agentType: lead.resultado.agentType, recommendation: lead.resultado.agentDescription, createdAt: new Date() });
-    }
+    if (lead.tipo_lead === 'riesgo' && lead.resultado) { await Evaluation.create({ orgId: targetOrgId, companyId: company._id, framework: 'LFPDPPP / ISO 42001', answers: {}, score: lead.resultado.score, risk_level: lead.resultado.risk_level, recommendations: { summary: lead.resultado.summary } }); }
+    else if (lead.tipo_lead === 'automatizacion' && lead.proceso && lead.resultado) { await ProcessEval.create({ orgId: targetOrgId, companyId: company._id, processName: lead.proceso.processName, volume: lead.proceso.volume, complexity: lead.proceso.complexityLabel || lead.proceso.complexity, dataType: lead.proceso.dataType, hoursSpent: lead.proceso.hoursSpent, score: lead.resultado.automationIndex, agentType: lead.resultado.agentType, recommendation: lead.resultado.agentDescription }); }
+
     lead.status = 'convertido'; lead.orgIdAsignado = targetOrgId; lead.companyIdAsignado = company._id; await lead.save();
     res.json({ ok: true, companyId: company._id, lead });
   } catch (error) { res.status(500).json({ error: error.message }); }
@@ -488,37 +429,17 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
 
 // IA GENERATIVA
 app.post('/gov/suggest-risk', authenticateToken, async (req, res) => {
-  try {
-    const { content } = await callGroq({ messages: [
-      { role: 'system', content: 'Eres consultor senior. Genera un riesgo de IA basándote en el contexto. JSON con: riskName, category (Privacidad/Sesgo/Seguridad/Operacional/Regulatorio), probability (1-5), impact (1-5), mitigationPlan. ESPAÑOL.' },
-      { role: 'user', content: `Empresa: ${req.body.companyName}. Genera un riesgo relevante.` }
-    ] });
-    res.json(safeParseJSON(content));
-  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
+  try { const { content } = await callGroq({ messages: [{ role: 'system', content: 'Genera un riesgo de IA. JSON: riskName, category (Privacidad/Sesgo/Seguridad/Operacional/Regulatorio), probability (1-5), impact (1-5), mitigationPlan. ESPAÑOL.' }, { role: 'user', content: `Empresa: ${req.body.companyName}` }] }); res.json(safeParseJSON(content)); } catch (e) { res.status(500).json({ error: 'Error IA' }); }
 });
-
 app.post('/gov/suggest-task', authenticateToken, async (req, res) => {
-  try {
-    const { content } = await callGroq({ messages: [
-      { role: 'system', content: 'Genera una tarea de gobernanza de IA. JSON con: taskName, phase (Fase 1: Diagnóstico/Fase 2: Diseño/Fase 3: Implementación/Fase 4: Auditoría), assignedTo (Equipo BehAvIorLab/Cliente/Ambos). ESPAÑOL.' },
-      { role: 'user', content: `Empresa: ${req.body.companyName}. Genera una tarea relevante.` }
-    ] });
-    res.json(safeParseJSON(content));
-  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
+  try { const { content } = await callGroq({ messages: [{ role: 'system', content: 'Genera tarea de gobernanza IA. JSON: taskName, phase (Fase 1: Diagnóstico/Fase 2: Diseño/Fase 3: Implementación/Fase 4: Auditoría), assignedTo (Equipo BehAvIorLab/Cliente/Ambos). ESPAÑOL.' }, { role: 'user', content: `Empresa: ${req.body.companyName}` }] }); res.json(safeParseJSON(content)); } catch (e) { res.status(500).json({ error: 'Error IA' }); }
 });
-
 app.post('/gov/generate-report', authenticateToken, async (req, res) => {
-  try {
-    const { content } = await callGroq({ messages: [
-      { role: 'system', content: 'Eres consultor de gobernanza de IA. Genera un resumen ejecutivo en español. JSON: { "report": "texto" }' },
-      { role: 'user', content: JSON.stringify(req.body) }
-    ] });
-    res.json(safeParseJSON(content));
-  } catch (e) { res.status(500).json({ error: 'Error IA' }); }
+  try { const { content } = await callGroq({ messages: [{ role: 'system', content: 'Resumen ejecutivo. JSON: { "report": "texto" }. ESPAÑOL.' }, { role: 'user', content: JSON.stringify(req.body) }] }); res.json(safeParseJSON(content)); } catch (e) { res.status(500).json({ error: 'Error IA' }); }
 });
 
 // ==========================================
-// RUTAS AIGOS
+// AIGOS
 // ==========================================
 app.post('/gov/aigos/seed', authenticateToken, async (req, res) => {
   try {
@@ -535,24 +456,17 @@ app.get('/gov/aigos/master-risks', authenticateToken, async (req, res) => { try 
 app.post('/gov/aigos/import-risks', authenticateToken, async (req, res) => {
   try {
     const { companyId, riskCodes } = req.body;
-    if (!companyId || !riskCodes || riskCodes.length === 0) return res.status(400).json({ error: 'Faltan datos' });
+    if (!companyId || !riskCodes?.length) return res.status(400).json({ error: 'Faltan datos' });
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ error: 'Empresa no encontrada' });
     const masterRisks = await MasterRisk.find({ code: { $in: riskCodes } });
     const newRisks = [];
     for (const mr of masterRisks) {
       const exists = await Risk.findOne({ companyId: company._id, masterRiskCode: mr.code });
-      if (!exists) {
-        newRisks.push({
-          orgId: company.orgId, companyId: company._id,
-          riskName: mr.name, category: mr.category, probability: 3, impact: 4,
-          riskLevel: 'Alto', riskScore: 12, mitigationPlan: `Importado del catálogo: ${mr.description}`,
-          masterRiskCode: mr.code
-        });
-      }
+      if (!exists) newRisks.push({ orgId: company.orgId, companyId: company._id, riskName: mr.name, category: mr.category, probability: 3, impact: 4, riskLevel: 'Alto', riskScore: 12, mitigationPlan: `Catálogo: ${mr.description}`, masterRiskCode: mr.code });
     }
     if (newRisks.length > 0) await Risk.insertMany(newRisks);
-    res.json({ ok: true, message: `Se importaron ${newRisks.length} riesgos.`, imported: newRisks.length });
+    res.json({ ok: true, message: `Importados ${newRisks.length} riesgos.`, imported: newRisks.length });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
@@ -567,38 +481,162 @@ app.post('/gov/aigos/load-base-plan', authenticateToken, async (req, res) => {
       { taskName: "Implementar monitoreo de sesgos y alucinaciones (MLOps)", phase: "Fase 4: Auditoría", assignedTo: "Equipo BehAvIorLab", status: "Pendiente" }
     ];
     const existingCount = await Deliverable.countDocuments({ orgId: new mongoose.Types.ObjectId(orgId) });
-    if (existingCount > 0) return res.status(400).json({ error: 'El plan base ya fue cargado.' });
-    const newTasks = basePlan.map(t => ({ ...t, orgId: new mongoose.Types.ObjectId(orgId) }));
-    await Deliverable.insertMany(newTasks);
-    res.json({ ok: true, message: "Plan base cargado exitosamente.", imported: newTasks.length });
+    if (existingCount > 0) return res.status(400).json({ error: 'Ya cargado.' });
+    await Deliverable.insertMany(basePlan.map(t => ({ ...t, orgId: new mongoose.Types.ObjectId(orgId) })));
+    res.json({ ok: true, message: "Plan base cargado.", imported: basePlan.length });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// === FASE A: BORRADORES ===
+app.get('/gov/aigos/drafts/:companyId', authenticateToken, async (req, res) => {
+  try {
+    const draft = await AssessmentDraft.findOne({ companyId: req.params.companyId });
+    if (!draft) return res.status(404).json({ error: 'No hay borrador' });
+    res.json(draft);
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.put('/gov/aigos/drafts/:companyId', authenticateToken, async (req, res) => {
+  try {
+    const { answers } = req.body;
+    const company = await Company.findById(req.params.companyId);
+    if (!company) return res.status(404).json({ error: 'Empresa no encontrada' });
+    const draft = await AssessmentDraft.findOneAndUpdate(
+      { companyId: req.params.companyId },
+      { $set: { answers, updatedAt: new Date(), orgId: company.orgId, createdBy: req.user.email } },
+      { upsert: true, new: true }
+    );
+    res.json(draft);
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.delete('/gov/aigos/drafts/:companyId', authenticateToken, async (req, res) => {
+  try { await AssessmentDraft.deleteOne({ companyId: req.params.companyId }); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// === FASE A: HISTORIAL ===
+app.get('/gov/aigos/assessments/:companyId/history', authenticateToken, async (req, res) => {
+  try {
+    const results = await AssessmentResult.find({ companyId: req.params.companyId }).sort({ date: -1 }).limit(20);
+    res.json(results);
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// === FASE A: PENDIENTES DE EVIDENCIA ===
+app.get('/gov/aigos/pending-evidence/:companyId', authenticateToken, async (req, res) => {
+  try {
+    const lastAssessment = await AssessmentResult.findOne({ companyId: req.params.companyId }).sort({ date: -1 });
+    if (!lastAssessment) return res.json({ pending: [], total: 0 });
+
+    const pending = [];
+    for (const ans of lastAssessment.answers) {
+      if (ans.isNA) continue;
+      if (ans.level < 3) continue;
+      // Nivel >= 3: necesita evidencia
+      const hasEvidence = await Evidence.findOne({ companyId: req.params.companyId, questionId: ans.questionCode, 'validation.valido': true });
+      if (!hasEvidence) {
+        const question = await AssessmentQuestion.findOne({ code: ans.questionCode });
+        if (question) pending.push({ questionCode: ans.questionCode, level: ans.level, question: question.question, domain: question.domain, evidenceRequested: question.evidenceRequested });
+      }
+    }
+    res.json({ pending, total: pending.length });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// === POST assessment (con recompute y eliminar draft) ===
 app.post('/gov/aigos/assessments', authenticateToken, async (req, res) => {
   try {
     const { companyId, answers } = req.body;
-    const domainWeights = { "Estrategia y liderazgo": 8, "Gobierno y organización": 12, "Inventario y clasificación": 12, "Gestión de riesgos": 12, "Datos y privacidad": 10, "Seguridad": 10, "Ciclo de vida y calidad de modelos": 10, "Terceros y proveedores": 8, "Cultura y capacitación": 8, "Monitoreo, incidentes y mejora": 10 };
-    const maturityResult = calculateMaturity(answers, domainWeights);
-    const G = 70, E = 80, C = 65, V = 100;
-    const gates = { hasPolicy: true, hasActiveCommittee: false, hasUnmitigatedCriticalRisk: false };
-    const aigiResult = calculateAIGI(maturityResult.overall, G, E, C, V, gates);
+    const company = await Company.findById(companyId);
+    if (!company) return res.status(404).json({ error: 'Empresa no encontrada' });
 
-    let targetOrgId = req.user.orgId;
-    if (companyId) {
-      const company = await Company.findById(companyId);
-      if (company) targetOrgId = company.orgId;
-    }
-    const result = await AssessmentResult.create({ orgId: targetOrgId, companyId, answers, maturity: maturityResult, aigi: aigiResult });
+    const recomputed = await recomputeAigiFromAnswers(companyId, answers);
+
+    // Version: cuenta cuántos ya existen
+    const existingCount = await AssessmentResult.countDocuments({ companyId });
+    const version = existingCount + 1;
+
+    const result = await AssessmentResult.create({
+      orgId: company.orgId, companyId, answers,
+      maturity: recomputed.maturity, aigi: recomputed.aigi,
+      version, status: 'enviado'
+    });
+
+    // Limpiar el borrador
+    await AssessmentDraft.deleteOne({ companyId });
+
     res.status(201).json(result);
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// === FASE A: PATCH assessment (editar y crear nueva versión) ===
+app.patch('/gov/aigos/assessments/:id', authenticateToken, async (req, res) => {
+  try {
+    const { answers } = req.body;
+    const original = await AssessmentResult.findById(req.params.id);
+    if (!original) return res.status(404).json({ error: 'Assessment no encontrado' });
+
+    const recomputed = await recomputeAigiFromAnswers(original.companyId, answers);
+    const version = original.version + 1;
+
+    const newAssessment = await AssessmentResult.create({
+      orgId: original.orgId, companyId: original.companyId, answers,
+      maturity: recomputed.maturity, aigi: recomputed.aigi,
+      version, status: 'enviado'
+    });
+
+    res.status(201).json(newAssessment);
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// === GET último assessment ===
 app.get('/gov/aigos/companies/:companyId/latest', authenticateToken, async (req, res) => {
   try {
     const result = await AssessmentResult.findOne({ companyId: req.params.companyId }).sort({ date: -1 });
-    if (!result) return res.status(404).json({ error: 'No hay evaluación AIGOS para esta empresa' });
+    if (!result) return res.status(404).json({ error: 'Sin evaluación' });
     res.json(result);
   } catch (error) { res.status(500).json({ error: 'Error' }); }
+});
+
+// === POST evidencia directa a un assessment (post-envío) ===
+app.post('/gov/aigos/assessments/:id/evidence', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    const { questionCode } = req.body;
+    if (!req.file) return res.status(400).json({ error: 'Sin archivo' });
+
+    const assessment = await AssessmentResult.findById(req.params.id);
+    if (!assessment) return res.status(404).json({ error: 'Assessment no encontrado' });
+
+    const question = await AssessmentQuestion.findOne({ code: questionCode });
+    if (!question) return res.status(404).json({ error: 'Pregunta no encontrada' });
+
+    let pdfText = '';
+    try { const pdf = await getDocumentProxy(new Uint8Array(req.file.buffer)); const ext = await extractText(pdf, { mergePages: true }); pdfText = ext.text || ''; } catch (e) { }
+
+    if (!pdfText || pdfText.trim().length < 50) return res.status(400).json({ error: 'No se pudo extraer texto del PDF' });
+
+    const systemPrompt = `Auditor de IA (ISO 42001). ¿El documento es evidencia verificable para la pregunta?\n\nPREGUNTA: ${question.question}\nEVIDENCIA: ${question.evidenceRequested}\n\nJSON: { "valido": true|false, "razon": "..." }`;
+
+    let validation = { valido: false, razon: 'Error IA' };
+    try {
+      const { content } = await callGroq({ messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: pdfText.slice(0, 6000) }], temperature: 0.1, maxTokens: 300, timeoutMs: 25000 });
+      const parsed = safeParseJSON(content);
+      if (parsed && typeof parsed.valido === 'boolean') validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
+    } catch (e) { }
+
+    const ev = await Evidence.create({
+      companyId: assessment.companyId, questionId: questionCode, fileName: req.file.originalname,
+      r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`, validation
+    });
+
+    if (validation.valido) {
+      const updatedAnswers = assessment.answers.map(a => a.questionCode === questionCode ? { ...a.toObject(), hasEvidence: true } : a);
+      const recomputed = await recomputeAigiFromAnswers(assessment.companyId, updatedAnswers);
+      await AssessmentResult.findByIdAndUpdate(assessment._id, { answers: updatedAnswers, maturity: recomputed.maturity, aigi: recomputed.aigi });
+    }
+
+    res.json({ ok: true, evidence: ev, validation });
+  } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
 // ==========================================
@@ -607,48 +645,29 @@ app.get('/gov/aigos/companies/:companyId/latest', authenticateToken, async (req,
 app.post('/api/public/risk-assessment', async (req, res) => {
   const t0 = Date.now();
   try {
-    const ip = getClientIP(req);
-    const rl = checkPublicRateLimit(ip);
+    const ip = getClientIP(req); const rl = checkPublicRateLimit(ip);
     setRateLimitHeaders(res, rl);
-    if (!rl.allowed) {
-      res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000)));
-      return res.status(429).json({ ok: false, error: `Demasiadas solicitudes. Intenta en ${formatRetryMessage(rl.resetMs)}.` });
-    }
+    if (!rl.allowed) { res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000))); return res.status(429).json({ ok: false, error: `Demasiadas solicitudes. Intenta en ${formatRetryMessage(rl.resetMs)}.` }); }
     const b = req.body || {};
     const errors = [];
     if (!b.nombre || b.nombre.trim().length < 2) errors.push('nombre');
-    if (!b.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) errors.push('email válido');
+    if (!b.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) errors.push('email');
     if (!b.empresa || b.empresa.trim().length < 2) errors.push('empresa');
     if (!b.sector || !['servicios', 'alimentos', 'salud'].includes(b.sector)) errors.push('sector');
     if (!b.shadow_ai || !['bajo', 'medio', 'alto'].includes(b.shadow_ai)) errors.push('shadow_ai');
     if (errors.length > 0) return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
-
     const calc = computeRiskLevel({ sector: b.sector, shadow_ai: b.shadow_ai, samd: b.samd === true });
-    const lead = await Lead.create({
-      tipo_lead: 'riesgo', status: 'nuevo',
-      nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160), empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '',
-      sector: b.sector, shadow_ai: b.shadow_ai, samd: b.samd === true, risk_level: calc.level,
-      resultado: { score: calc.score, risk_level: calc.level, badges: calc.badges, summary: calc.summary },
-      fuente: 'risk-calculator', userAgent: req.headers['user-agent'], ip, meta: { durationMs: Date.now() - t0 },
-      name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date()
-    });
+    const lead = await Lead.create({ tipo_lead: 'riesgo', status: 'nuevo', nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160), empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '', sector: b.sector, shadow_ai: b.shadow_ai, samd: b.samd === true, risk_level: calc.level, resultado: { score: calc.score, risk_level: calc.level, badges: calc.badges, summary: calc.summary }, fuente: 'risk-calculator', userAgent: req.headers['user-agent'], ip, meta: { durationMs: Date.now() - t0 }, name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date() });
     return res.json({ ok: true, assessment: { risk_level: calc.level, score: calc.score, badges: calc.badges, summary: calc.summary }, leadId: lead._id.toString() });
-  } catch (err) {
-    console.error('[risk-assessment] error:', err);
-    return res.status(500).json({ ok: false, error: 'Error interno.' });
-  }
+  } catch (err) { return res.status(500).json({ ok: false, error: 'Error interno.' }); }
 });
 
 app.post('/api/public/automation-assessment', async (req, res) => {
   const t0 = Date.now();
   try {
-    const ip = getClientIP(req);
-    const rl = checkPublicRateLimit(ip);
+    const ip = getClientIP(req); const rl = checkPublicRateLimit(ip);
     setRateLimitHeaders(res, rl);
-    if (!rl.allowed) {
-      res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000)));
-      return res.status(429).json({ ok: false, error: `Demasiadas solicitudes. Intenta en ${formatRetryMessage(rl.resetMs)}.` });
-    }
+    if (!rl.allowed) { res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000))); return res.status(429).json({ ok: false, error: `Demasiadas solicitudes. Intenta en ${formatRetryMessage(rl.resetMs)}.` }); }
     const b = req.body || {};
     const errors = [];
     if (!b.processName || b.processName.trim().length < 2) errors.push('processName');
@@ -660,44 +679,21 @@ app.post('/api/public/automation-assessment', async (req, res) => {
     if (!b.empresa || b.empresa.trim().length < 2) errors.push('empresa');
     if (!b.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) errors.push('email');
     if (errors.length > 0) return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
-
-    const systemPrompt = `Eres un consultor senior de automatización con IA. Responde ÚNICAMENTE con JSON válido. Esquema: { "automationIndex": number, "baselineHoursPerMonth": number, "roiHoursPerMonth": number, "agentType": string, "agentDescription": string, "roiExplanation": string, "paybackMonths": number, "implementationPhases": string[], "confidence": string }`;
+    const systemPrompt = `Consultor de automatización. JSON: { "automationIndex": number, "baselineHoursPerMonth": number, "roiHoursPerMonth": number, "agentType": string, "agentDescription": string, "roiExplanation": string, "paybackMonths": number, "implementationPhases": string[], "confidence": string }`;
     const userPrompt = `Proceso: ${b.processName}. Volumen: ${b.volume}. Complejidad: ${b.complexity}/5. Datos: ${b.dataType}. Horas: ${b.hoursSpent}.`;
-
     let parsed = null;
-    try {
-      const { content } = await callGroq({ messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature: 0.3, maxTokens: 800, timeoutMs: 25000 });
-      parsed = safeParseJSON(content);
-    } catch (groqErr) {
-      if (groqErr.message === 'GROQ_UNAVAILABLE') return res.status(503).json({ ok: false, error: 'Servicio de IA temporalmente no disponible.' });
-      throw groqErr;
-    }
-    if (!parsed || typeof parsed.automationIndex !== 'number') return res.status(502).json({ ok: false, error: 'La IA no devolvió un assessment válido.' });
-
+    try { const { content } = await callGroq({ messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature: 0.3, maxTokens: 800, timeoutMs: 25000 }); parsed = safeParseJSON(content); }
+    catch (groqErr) { if (groqErr.message === 'GROQ_UNAVAILABLE') return res.status(503).json({ ok: false, error: 'IA no disponible.' }); throw groqErr; }
+    if (!parsed || typeof parsed.automationIndex !== 'number') return res.status(502).json({ ok: false, error: 'IA no devolvió assessment válido.' });
     const complexityLabels = { 1: 'muy baja', 2: 'baja', 3: 'media', 4: 'alta', 5: 'muy alta' };
     const baseline = Number(parsed.baselineHoursPerMonth) > 0 ? Math.round(Number(parsed.baselineHoursPerMonth)) : Math.max(Math.round(b.volume * 3 / 60), Math.round(b.hoursSpent) || 0);
-    const resultado = {
-      automationIndex: Math.max(0, Math.min(100, Math.round(Number(parsed.automationIndex)))),
-      agentType: String(parsed.agentType || 'Agente de Automatización').slice(0, 120),
-      agentDescription: String(parsed.agentDescription || '').slice(0, 600),
-      roiHoursPerMonth: Math.max(0, Math.round(Number(parsed.roiHoursPerMonth) || 0)),
-      baselineHoursPerMonth: baseline,
-      roiExplanation: String(parsed.roiExplanation || '').slice(0, 600),
-      paybackMonths: Math.max(1, Math.min(24, Math.round(Number(parsed.paybackMonths) || 6))),
-      implementationPhases: Array.isArray(parsed.implementationPhases) ? parsed.implementationPhases.slice(0, 6).map(p => String(p).slice(0, 120)) : ['Análisis'],
-      confidence: ['baja', 'media', 'alta'].includes(parsed.confidence) ? parsed.confidence : 'media',
-      source: 'groq'
-    };
+    const resultado = { automationIndex: Math.max(0, Math.min(100, Math.round(Number(parsed.automationIndex)))), agentType: String(parsed.agentType || 'Agente').slice(0, 120), agentDescription: String(parsed.agentDescription || '').slice(0, 600), roiHoursPerMonth: Math.max(0, Math.round(Number(parsed.roiHoursPerMonth) || 0)), baselineHoursPerMonth: baseline, roiExplanation: String(parsed.roiExplanation || '').slice(0, 600), paybackMonths: Math.max(1, Math.min(24, Math.round(Number(parsed.paybackMonths) || 6))), implementationPhases: Array.isArray(parsed.implementationPhases) ? parsed.implementationPhases.slice(0, 6).map(p => String(p).slice(0, 120)) : ['Análisis'], confidence: ['baja', 'media', 'alta'].includes(parsed.confidence) ? parsed.confidence : 'media', source: 'groq' };
     const proceso = { processName: String(b.processName).slice(0, 200), volume: b.volume, complexity: b.complexity, complexityLabel: complexityLabels[b.complexity] || 'media', dataType: String(b.dataType).slice(0, 60), hoursSpent: b.hoursSpent, baselineHoursPerMonth: baseline };
     const lead = await Lead.create({ tipo_lead: 'automatizacion', status: 'nuevo', nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160), empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '', proceso, resultado, fuente: 'automation-assessment', userAgent: req.headers['user-agent'], ip, meta: { durationMs: Date.now() - t0, model: GROQ_MODEL }, name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date() });
     return res.json({ ok: true, assessment: { automationIndex: resultado.automationIndex, roiHoursPerMonth: resultado.roiHoursPerMonth, agentType: resultado.agentType, agentDescription: resultado.agentDescription, roiExplanation: resultado.roiExplanation }, leadId: lead._id.toString() });
-  } catch (err) {
-    console.error('[automation-assessment] error:', err);
-    return res.status(500).json({ ok: false, error: 'Error interno.' });
-  }
+  } catch (err) { return res.status(500).json({ ok: false, error: 'Error interno.' }); }
 });
 
-// CONEXIÓN
 let server;
 async function startServer() {
   try {
