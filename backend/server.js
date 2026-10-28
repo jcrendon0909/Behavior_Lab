@@ -53,6 +53,11 @@ const LeadSchema = new mongoose.Schema({
   nombre: String, email: String, empresa: String, telefono: String,
   sector: String, shadow_ai: String, samd: Boolean, risk_level: String,
   proceso: mongoose.Schema.Types.Mixed, resultado: mongoose.Schema.Types.Mixed,
+  // 🆕 Readiness snapshot
+  profile: mongoose.Schema.Types.Mixed,
+  leadScore: Number,
+  leadPriority: String,
+  notifyFounder: Boolean,
   orgIdAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, companyIdAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
   fuente: String, userAgent: String, ip: String, meta: mongoose.Schema.Types.Mixed,
   name: String, company: String, ts: Date,
@@ -66,7 +71,7 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true, strict: false, collection: 'users' });
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
-const OrgSchema = new mongoose.Schema({ name: String, sector: String, plan: String, active: Boolean, modules: [String], estimated_models: { type: Number, default: 0 } }, { strict: false, collection: 'orgs' });
+const OrgSchema = new mongoose.Schema({ name: String, sector: String, plan: String, active: Boolean, modules: [String], estimated_models: { type: Number,default: 0 } }, { strict: false, collection: 'orgs' });
 const Org = mongoose.models.Org || mongoose.model('Org', OrgSchema);
 
 const CompanySchema = new mongoose.Schema({ orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, name: String, riskProfile: String, active: Boolean }, { strict: false, collection: 'companies' });
@@ -203,7 +208,7 @@ function checkPublicRateLimit(ip) {
   const now = Date.now();
   const entry = publicRateLimit.get(ip);
   if (!entry || now - entry.first > PUBLIC_RATE_WINDOW_MS) { publicRateLimit.set(ip, { count: 1, first: now }); return { allowed: true, limit: PUBLIC_RATE_MAX, remaining: PUBLIC_RATE_MAX - 1, resetMs: PUBLIC_RATE_WINDOW_MS }; }
-  if (entry.count >= PUBLIC_RATE_MAX) return { allowed: false, limit: PUBLIC_RATE_MAX, remaining: 0, resetMs: PUBLIC_RATE_WINDOW_MS - (now - entry.first) };
+  if (entry.count >= PUBLIC_RATE_MAX) return { allowed: false, limit: PUBLIC_RATE_MAX, remaining: 0, resetMs: PUBLIC_RATE_WINDOW_MS - (now - entry.first)};
   entry.count += 1;
   return { allowed: true, limit: PUBLIC_RATE_MAX, remaining: PUBLIC_RATE_MAX - entry.count, resetMs: PUBLIC_RATE_WINDOW_MS - (now - entry.first) };
 }
@@ -225,6 +230,124 @@ function computeRiskLevel({ sector, shadow_ai, samd }) {
   if (score >= 8) level = 'crítico'; else if (score >= 5) level = 'alto'; else if (score >= 3) level = 'medio';
   const summaryByLevel = { 'crítico': 'Exposición CRÍTICA.', 'alto': 'Exposición ALTA.', 'medio': 'Exposición MEDIA.', 'bajo': 'Exposición BAJA.' };
   return { score, level, badges, summary: summaryByLevel[level] };
+}
+
+// ==========================================
+// 🆕 READINESS SNAPSHOT — Scoring multi-dimensional
+// ==========================================
+function computeReadinessScores(input) {
+  // ---------- READINESS (0-100) ----------
+  const politica_pts = input.tiene_politica ? 20 : 0;
+  const inventario_pts = input.tiene_inventario === 'si' ? 20 : input.tiene_inventario === 'parcial' ? 10 : 0;
+  const responsable_pts = input.tiene_responsable ? 20 : 0;
+  const uso_ia_pts = input.uso_ia === 'regulado' ? 20 : input.uso_ia === 'guiado' ? 12 : input.uso_ia === 'libre' ? 5 : 0;
+  const presion_pts = input.cliente_pidio_evidencia ? 20 : input.urgencia === '3_meses' ? 10 : input.urgencia === '6_meses' ? 5 : 0;
+
+  const readiness = Math.min(100, politica_pts + inventario_pts + responsable_pts + uso_ia_pts + presion_pts);
+  const readinessLevel = readiness < 25 ? 'vulnerable' : readiness < 50 ? 'inicial' : readiness < 75 ? 'basico' : 'gestionado';
+
+  // ---------- GOVERNANCE RISK (0-100, mayor = más riesgo) ----------
+  let risk = (100 - readiness) * 0.7;
+  const sectorBonus = { 'salud': 25, 'alimentos': 15, 'manufactura': 12, 'logistica': 8, 'servicios': 5 }[input.sector] || 0;
+  risk += sectorBonus;
+  if (input.cliente_pidio_evidencia && !input.tiene_politica) risk += 20;
+  const governanceRisk = Math.min(100, Math.round(risk));
+  const governanceRiskLevel = governanceRisk >= 75 ? 'critico' : governanceRisk >= 50 ? 'alto' : governanceRisk >= 25 ? 'medio' : 'bajo';
+
+  // ---------- AUTOMATION POTENTIAL (0-100) ----------
+  const manual_pts = { '0-25': 20, '25-50': 40, '50-75': 65, '75-100': 90 }[input.porcentaje_manual] || 0;
+  const areasCount = Array.isArray(input.areas_con_ia) ? input.areas_con_ia.length : 0;
+  const areasBonus = Math.min(10, areasCount * 2);
+  const automationPotential = Math.min(100, manual_pts + areasBonus);
+  const automationPotentialLevel = automationPotential >= 75 ? 'alta' : automationPotential >= 50 ? 'media' : automationPotential >= 25 ? 'baja' : 'minima';
+
+  // ---------- OPPORTUNITY (0-100) ----------
+  const readinessGap = (100 - readiness) / 100;
+  const urgencyMult = { '3_meses': 1.0, '6_meses': 0.7, '12_meses': 0.4, 'sin_urgencia': 0.2 }[input.urgencia] || 0.2;
+  const sizeMult = { '1000+': 1.0, '500-1000': 0.85, '200-500': 0.7, '50-200': 0.5 }[input.empleados] || 0.5;
+  const triggerMult = input.cliente_pidio_evidencia ? 1.0 : 0.6;
+  const opportunity = Math.min(100, Math.round(readinessGap * urgencyMult * sizeMult * triggerMult * 100));
+  const opportunityLevel = opportunity >= 60 ? 'hot' : opportunity >= 35 ? 'warm' : 'cold';
+
+  // ---------- PRIORITIES + RECOMMENDATION ----------
+  const priorities = [];
+  if (!input.tiene_politica) priorities.push('Formalizar una política de uso aceptable de IA');
+  if (input.tiene_inventario === 'no') priorities.push('Hacer inventario de sistemas de IA (incluyendo shadow AI)');
+  else if (input.tiene_inventario === 'parcial') priorities.push('Completar el inventario de IA (incluye sistemas olvidados)');
+  if (!input.tiene_responsable) priorities.push('Designar un responsable de gobernanza de IA');
+  if (input.uso_ia === 'libre' || input.uso_ia === 'guiado') priorities.push('Regular el uso de IA en la organización');
+  if (automationPotential >= 50) priorities.push(`Automatizar procesos (${automationPotential}% de potencial identificado)`);
+
+  let recommendedProduct, recommendationReason;
+  if (readiness < 25) {
+    recommendedProduct = 'assessment_express';
+    recommendationReason = 'Tu empresa usa IA pero no tiene fundamentos de gobernanza. El primer paso es un Assessment AIGOS™ Exprés para entender el panorama completo y priorizar acciones.';
+  } else if (readiness < 50) {
+    recommendedProduct = 'assessment_express';
+    recommendationReason = 'Tienes bases pero faltan piezas clave de gobernanza. Un Assessment AIGOS™ Exprés te dará el diagnóstico completo con evidencia para tu cliente enterprise.';
+  } else if (readiness < 75) {
+    recommendedProduct = 'immersion_program';
+    recommendationReason = 'Tu gobernanza está en construcción. El siguiente paso es formalizar el modelo (política, comité, roles) para hacerlo sostenible y demostrable.';
+  } else {
+    recommendedProduct = automationPotential >= 50 ? 'deploy_agent' : 'keep_monitoring';
+    recommendationReason = automationPotential >= 50
+      ? 'Tu gobernanza está sólida. Es momento de convertirla en ventaja: automatizar procesos con agentes gobernados.'
+      : 'Tu gobernanza está sólida. Mantén el monitoreo continuo y evalúa automatización cuando estés listo.';
+  }
+
+  return {
+    readiness, readinessLevel,
+    governanceRisk, governanceRiskLevel,
+    automationPotential, automationPotentialLevel,
+    opportunity, opportunityLevel,
+    priorities,
+    recommendedProduct, recommendationReason,
+    breakdown: { politica_pts, inventario_pts, responsable_pts, uso_ia_pts, presion_pts, manual_pts, areasBonus, sectorBonus }
+  };
+}
+
+async function notifyHotLead(lead) {
+  const priority = lead.leadPriority || 'warm';
+  const icon = priority === 'hot' ? '🔥' : priority === 'warm' ? '🟡' : '🔵';
+  const payload = {
+    icon, priority,
+    leadScore: lead.leadScore,
+    empresa: lead.empresa,
+    nombre: lead.nombre,
+    cargo: lead.profile?.cargo,
+    sector: lead.sector,
+    empleados: lead.profile?.empleados,
+    readiness: lead.resultado?.readiness_score,
+    governanceRisk: lead.resultado?.governance_risk,
+    automationPotential: lead.resultado?.automation_potential,
+    clientePidioEvidencia: lead.profile?.cliente_pidio_evidencia,
+    urgencia: lead.profile?.urgencia,
+    priorities: lead.resultado?.priorities?.slice(0, 3),
+    recommendedProduct: lead.resultado?.recommended_product
+  };
+
+  // Log estructurado (visible en Render logs)
+  console.log('[HOT-LEAD] ' + JSON.stringify(payload));
+
+  // Webhook opcional (Slack/Discord/Teams compatible vía FOUNDER_WEBHOOK_URL)
+  const webhookUrl = process.env.FOUNDER_WEBHOOK_URL;
+  if (webhookUrl && webhookUrl.startsWith('http')) {
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `${icon} Nuevo lead ${priority.toUpperCase()} — ${lead.empresa}\n` +
+                `Score: ${lead.leadScore}/100 | Readiness: ${lead.resultado?.readiness_score} | Riesgo: ${lead.resultado?.governance_risk}\n` +
+                `Contacto: ${lead.nombre} (${lead.profile?.cargo}) — ${lead.email}\n` +
+                `Trigger: ${lead.profile?.cliente_pidio_evidencia ? 'Cliente pidió evidencia' : 'Sin trigger'} | Urgencia: ${lead.profile?.urgencia}\n` +
+                `Producto recomendado: ${lead.resultado?.recommended_product}`
+        })
+      });
+    } catch (err) {
+      console.error('[notifyHotLead] Webhook falló:', err.message);
+    }
+  }
 }
 
 // ==========================================
@@ -332,7 +455,6 @@ app.post('/gov/evaluations', authenticateToken, async (req, res) => {
 // ==========================================
 app.get('/gov/evidence', authenticateToken, async (req, res) => { try { const query = await getEvidenceQuery(req); res.json(await Evidence.find(query).sort({ ts: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
-// 🆕 FIX C: Listar evidencias por pregunta (para saber si hay rechazadas en el modal)
 app.get('/gov/evidence/by-question/:companyId/:questionId', authenticateToken, async (req, res) => {
   try {
     const evidences = await Evidence.find({
@@ -343,7 +465,6 @@ app.get('/gov/evidence/by-question/:companyId/:questionId', authenticateToken, a
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// 🆕 FIX C: Eliminar una evidencia
 app.delete('/gov/evidence/:id', authenticateToken, async (req, res) => {
   try {
     const evidence = await Evidence.findById(req.params.id);
@@ -358,7 +479,6 @@ app.delete('/gov/evidence/:id', authenticateToken, async (req, res) => {
 
     await Evidence.findByIdAndDelete(req.params.id);
 
-    // Si era válida, quitar el flag hasEvidence del último assessment y recalcular AIGI
     if (evidence.validation?.valido) {
       const lastAssessment = await AssessmentResult.findOne({ companyId: evidence.companyId }).sort({ date: -1 });
       if (lastAssessment) {
@@ -378,7 +498,6 @@ app.delete('/gov/evidence/:id', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// 🆕 FIX C: Upload con reemplazo automático
 app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     const { companyId, questionId } = req.body;
@@ -424,19 +543,15 @@ JSON: { "valido": true|false, "razon": "explicación breve en español" }`;
       } catch (groqErr) { console.error('[upload-evidence] Groq error:', groqErr.message); validation = { valido: false, razon: 'IA no disponible.' }; }
     }
 
-    // 🆕 FIX C: Si el nuevo es válido, eliminar TODAS las rechazadas previas de esta pregunta
-    // Si el nuevo es rechazado, eliminar solo la rechazada más antigua (para no acumular basura)
     if (validation.valido) {
       await replaceRejectedEvidence(companyId, questionId);
     } else {
-      // Eliminar el rechazado anterior más antiguo si ya había uno (solo mantener 1 rechazado visible)
       const existingRejected = await Evidence.find({
         companyId: new mongoose.Types.ObjectId(companyId),
         questionId,
         'validation.valido': false
       }).sort({ ts: 1 });
       if (existingRejected.length >= 1) {
-        // Borrar los anteriores, dejar solo el actual
         await Evidence.deleteMany({ _id: { $in: existingRejected.map(e => e._id) } });
       }
     }
@@ -446,7 +561,6 @@ JSON: { "valido": true|false, "razon": "explicación breve en español" }`;
       r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`, validation
     });
 
-    // Recalcular AIGI si es válido
     if (validation.valido) {
       const lastAssessment = await AssessmentResult.findOne({ companyId: new mongoose.Types.ObjectId(companyId) }).sort({ date: -1 });
       if (lastAssessment) {
@@ -471,7 +585,14 @@ app.post('/gov/process-evals', authenticateToken, async (req, res) => {
 app.delete('/gov/process-evals/:id', authenticateToken, async (req, res) => { try { await ProcessEval.findByIdAndDelete(req.params.id); res.json({ ok: true }); } catch (error) { res.status(500).json({ error: 'Error' }); } });
 
 // LEADS
-app.get('/gov/leads', authenticateToken, async (req, res) => { try { res.json(await Lead.find().sort({ createdAt: -1 })); } catch (error) { res.status(500).json({ error: 'Error' }); } });
+app.get('/gov/leads', authenticateToken, async (req, res) => {
+  try {
+    const filter = {};
+    if (req.query.tipo_lead) filter.tipo_lead = req.query.tipo_lead;
+    if (req.query.priority) filter.leadPriority = req.query.priority;
+    res.json(await Lead.find(filter).sort({ createdAt: -1 }));
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
+});
 app.patch('/gov/leads/:id/status', authenticateToken, async (req, res) => {
   try { const { status } = req.body; const lead = await Lead.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true }); res.json({ ok: true, lead }); } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
@@ -489,6 +610,7 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
 
     if (lead.tipo_lead === 'riesgo' && lead.resultado) { await Evaluation.create({ orgId: targetOrgId, companyId: company._id, framework: 'LFPDPPP / ISO 42001', answers: {}, score: lead.resultado.score, risk_level: lead.resultado.risk_level, recommendations: { summary: lead.resultado.summary } }); }
     else if (lead.tipo_lead === 'automatizacion' && lead.proceso && lead.resultado) { await ProcessEval.create({ orgId: targetOrgId, companyId: company._id, processName: lead.proceso.processName, volume: lead.proceso.volume, complexity: lead.proceso.complexityLabel || lead.proceso.complexity, dataType: lead.proceso.dataType, hoursSpent: lead.proceso.hoursSpent, score: lead.resultado.automationIndex, agentType: lead.resultado.agentType, recommendation: lead.resultado.agentDescription }); }
+    // tipo_lead 'readiness' no se auto-convierte — requiere intervención manual (se elige producto)
 
     lead.status = 'convertido'; lead.orgIdAsignado = targetOrgId; lead.companyIdAsignado = company._id; await lead.save();
     res.json({ ok: true, companyId: company._id, lead });
@@ -584,7 +706,7 @@ app.delete('/gov/aigos/drafts/:companyId', authenticateToken, async (req, res) =
 
 // HISTORIAL Y PENDIENTES
 app.get('/gov/aigos/assessments/:companyId/history', authenticateToken, async (req, res) => {
-  try { res.json(await AssessmentResult.find({ companyId: req.params.companyId }).sort({ date: -1 }).limit(20)); } catch (error) { res.status(500).json({ error: error.message }); }
+  try { res.json(await AssessmentResult.find({ companyId: req.params.companyId }).sort({ date: -1 }).limit(20)); } catch (error) { res.status(500).json({error: error.message}); }
 });
 
 app.get('/gov/aigos/pending-evidence/:companyId', authenticateToken, async (req, res) => {
@@ -655,7 +777,6 @@ app.get('/gov/aigos/companies/:companyId/latest', authenticateToken, async (req,
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// 🆕 FIX C: Upload de evidencia directa al assessment (con reemplazo)
 app.post('/gov/aigos/assessments/:id/evidence', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     const { questionCode } = req.body;
@@ -681,7 +802,6 @@ app.post('/gov/aigos/assessments/:id/evidence', authenticateToken, upload.single
       if (parsed && typeof parsed.valido === 'boolean') validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
     } catch (e) { }
 
-    // 🆕 FIX C: Aplicar la misma lógica de reemplazo
     if (validation.valido) {
       await replaceRejectedEvidence(assessment.companyId.toString(), questionCode);
     } else {
@@ -711,6 +831,106 @@ app.post('/gov/aigos/assessments/:id/evidence', authenticateToken, upload.single
 // ==========================================
 // ENDPOINTS PÚBLICOS
 // ==========================================
+
+// 🆕 AI READINESS SNAPSHOT
+app.post('/api/public/readiness-snapshot', async (req, res) => {
+  const t0 = Date.now();
+  try {
+    const ip = getClientIP(req); const rl = checkPublicRateLimit(ip);
+    setRateLimitHeaders(res, rl);
+    if (!rl.allowed) { res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000))); return res.status(429).json({ ok: false, error: `Demasiadas solicitudes. Intenta en ${formatRetryMessage(rl.resetMs)}.` }); }
+
+    const b = req.body || {};
+    const errors = [];
+    if (!b.nombre || b.nombre.trim().length < 2) errors.push('nombre');
+    if (!b.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) errors.push('email');
+    if (!b.empresa || b.empresa.trim().length < 2) errors.push('empresa');
+    if (!b.cargo || b.cargo.trim().length < 2) errors.push('cargo');
+    if (!b.sector || !['manufactura', 'alimentos', 'logistica', 'servicios', 'salud'].includes(b.sector)) errors.push('sector');
+    if (!b.empleados || !['50-200', '200-500', '500-1000', '1000+'].includes(b.empleados)) errors.push('empleados');
+    if (!b.facturacion_estimada || !['200-500M', '500-1000M', '1000-2000M', '2000M+'].includes(b.facturacion_estimada)) errors.push('facturacion_estimada');
+    if (!b.uso_ia || !['no_usa', 'libre', 'guiado', 'regulado'].includes(b.uso_ia)) errors.push('uso_ia');
+    if (typeof b.tiene_politica !== 'boolean') errors.push('tiene_politica');
+    if (!b.tiene_inventario || !['no', 'parcial', 'si'].includes(b.tiene_inventario)) errors.push('tiene_inventario');
+    if (typeof b.tiene_responsable !== 'boolean') errors.push('tiene_responsable');
+    if (typeof b.cliente_pidio_evidencia !== 'boolean') errors.push('cliente_pidio_evidencia');
+    if (!Array.isArray(b.areas_con_ia)) errors.push('areas_con_ia');
+    if (!b.urgencia || !['3_meses', '6_meses', '12_meses', 'sin_urgencia'].includes(b.urgencia)) errors.push('urgencia');
+    if (!b.porcentaje_manual || !['0-25', '25-50', '50-75', '75-100'].includes(b.porcentaje_manual)) errors.push('porcentaje_manual');
+
+    if (errors.length > 0) return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
+
+    const scores = computeReadinessScores(b);
+
+    const profile = {
+      cargo: b.cargo.trim().slice(0, 120),
+      sector: b.sector,
+      empleados: b.empleados,
+      facturacion_estimada: b.facturacion_estimada,
+      uso_ia: b.uso_ia,
+      tiene_politica: b.tiene_politica,
+      tiene_inventario: b.tiene_inventario,
+      tiene_responsable: b.tiene_responsable,
+      cliente_pidio_evidencia: b.cliente_pidio_evidencia,
+      areas_con_ia: b.areas_con_ia.slice(0, 10).map(a => String(a).slice(0, 40)),
+      urgencia: b.urgencia,
+      porcentaje_manual: b.porcentaje_manual,
+      proceso_doloroso: b.proceso_doloroso ? String(b.proceso_doloroso).slice(0, 200) : '',
+    };
+
+    const resultado = {
+      readiness_score: scores.readiness,
+      readiness_level: scores.readinessLevel,
+      governance_risk: scores.governanceRisk,
+      governance_risk_level: scores.governanceRiskLevel,
+      automation_potential: scores.automationPotential,
+      automation_potential_level: scores.automationPotentialLevel,
+      opportunity_score: scores.opportunity,
+      opportunity_level: scores.opportunityLevel,
+      breakdown: scores.breakdown,
+      priorities: scores.priorities,
+      recommended_product: scores.recommendedProduct,
+      recommendation_reason: scores.recommendationReason,
+      source: 'readiness-snapshot'
+    };
+
+    const lead = await Lead.create({
+      tipo_lead: 'readiness',
+      status: 'nuevo',
+      nombre: b.nombre.trim().slice(0, 120),
+      email: b.email.toLowerCase().slice(0, 160),
+      empresa: b.empresa.trim().slice(0, 160),
+      telefono: b.telefono || '',
+      sector: b.sector,
+      profile,
+      resultado,
+      leadScore: scores.opportunity,
+      leadPriority: scores.opportunityLevel,
+      notifyFounder: scores.opportunity >= 60 || b.cliente_pidio_evidencia === true,
+      fuente: b.source || 'landing_readiness',
+      userAgent: req.headers['user-agent'],
+      ip,
+      meta: { durationMs: Date.now() - t0 },
+      name: b.nombre.trim().slice(0, 120),
+      company: b.empresa.trim().slice(0, 160),
+      ts: new Date()
+    });
+
+    if (lead.notifyFounder) {
+      notifyHotLead(lead).catch(err => console.error('[notifyHotLead]', err.message));
+    }
+
+    return res.json({
+      ok: true,
+      leadId: lead._id.toString(),
+      profile: resultado
+    });
+  } catch (err) {
+    console.error('[readiness-snapshot] Error:', err);
+    return res.status(500).json({ ok: false, error: 'Error interno.' });
+  }
+});
+
 app.post('/api/public/risk-assessment', async (req, res) => {
   const t0 = Date.now();
   try {
@@ -751,7 +971,7 @@ app.post('/api/public/automation-assessment', async (req, res) => {
     const systemPrompt = `Consultor de automatización. JSON: { "automationIndex": number, "baselineHoursPerMonth": number, "roiHoursPerMonth": number, "agentType": string, "agentDescription": string, "roiExplanation": string, "paybackMonths": number, "implementationPhases": string[], "confidence": string }`;
     const userPrompt = `Proceso: ${b.processName}. Volumen: ${b.volume}. Complejidad: ${b.complexity}/5. Datos: ${b.dataType}. Horas: ${b.hoursSpent}.`;
     let parsed = null;
-    try { const { content } = await callGroq({ messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature: 0.3, maxTokens: 800, timeoutMs: 25000 }); parsed = safeParseJSON(content); }
+    try { const { content } = await callGroq({ messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature:0.3, maxTokens: 800, timeoutMs: 25000 }); parsed = safeParseJSON(content); }
     catch (groqErr) { if (groqErr.message === 'GROQ_UNAVAILABLE') return res.status(503).json({ ok: false, error: 'IA no disponible.' }); throw groqErr; }
     if (!parsed || typeof parsed.automationIndex !== 'number') return res.status(502).json({ ok: false, error: 'IA no devolvió assessment válido.' });
     const complexityLabels = { 1: 'muy baja', 2: 'baja', 3: 'media', 4: 'alta', 5: 'muy alta' };
