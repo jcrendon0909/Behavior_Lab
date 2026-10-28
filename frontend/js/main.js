@@ -1,5 +1,6 @@
 // ================================================================
-// MAIN JS — BehAvIorLab (animaciones, scroll, contadores, modales)
+// MAIN JS — BehAvIorLab
+// v3 — contadores hardened (fallback 2s), init defensivo con try/catch
 // ================================================================
 
 (function() {
@@ -8,9 +9,17 @@
   // ---------- ANIMACIÓN DE CONTADORES ----------
   function animateCounters() {
     const counters = document.querySelectorAll('.stat-number');
+    if (!counters.length) return;
     counters.forEach(counter => {
-      const target = parseInt(counter.getAttribute('data-target'));
-      if (isNaN(target) || target === 0) return;
+      if (counter.dataset.animated === 'true') return;
+      counter.dataset.animated = 'true';
+
+      const target = parseInt(counter.getAttribute('data-target'), 10);
+      if (isNaN(target) || target <= 0) {
+        counter.textContent = '0';
+        return;
+      }
+
       const duration = 2000;
       const startTime = performance.now();
 
@@ -32,28 +41,57 @@
 
   function setupCounterObserver() {
     const aboutSection = document.querySelector('.about');
-    if (!aboutSection) return;
+    if (!aboutSection) {
+      animateCounters();
+      return;
+    }
+
     const rect = aboutSection.getBoundingClientRect();
     const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
     if (isVisible) {
-      setTimeout(animateCounters, 300);
+      setTimeout(animateCounters, 200);
       return;
     }
+
+    if (typeof IntersectionObserver === 'undefined') {
+      animateCounters();
+      return;
+    }
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          setTimeout(animateCounters, 300);
+          setTimeout(animateCounters, 200);
           observer.disconnect();
         }
       });
-    }, { threshold: 0.3 });
+    }, { threshold: 0.1 });
+
     observer.observe(aboutSection);
+  }
+
+  // Fallback de credibilidad: si en 2s no corrió la animación,
+  // poner los valores finales. Nunca mostrar "0" falso.
+  function setupCounterFallback() {
+    setTimeout(() => {
+      document.querySelectorAll('.stat-number').forEach(el => {
+        if (el.dataset.animated === 'true') return;
+        const t = parseInt(el.dataset.target, 10);
+        if (!isNaN(t) && t > 0 && (el.textContent === '0' || el.textContent === '')) {
+          el.textContent = t;
+        }
+      });
+    }, 2000);
   }
 
   // ---------- SCROLL REVEAL ----------
   function setupRevealObserver() {
     const reveals = document.querySelectorAll('.reveal');
     if (reveals.length === 0) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      reveals.forEach(el => el.classList.add('visible'));
+      return;
+    }
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -84,7 +122,7 @@
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function(e) {
         const targetId = this.getAttribute('href');
-        if (targetId === '#') return;
+        if (targetId === '#' || targetId.length <= 1) return;
         const target = document.querySelector(targetId);
         if (target) {
           e.preventDefault();
@@ -127,7 +165,6 @@
     const modals = document.querySelectorAll('.arch-modal');
     const closeButtons = document.querySelectorAll('.arch-modal-close');
 
-    // Abrir modal
     modalTriggers.forEach(trigger => {
       trigger.addEventListener('click', function() {
         const modalId = this.getAttribute('data-modal');
@@ -139,7 +176,6 @@
       });
     });
 
-    // Cerrar modal (botón X)
     closeButtons.forEach(btn => {
       btn.addEventListener('click', function() {
         const modal = this.closest('.arch-modal');
@@ -148,7 +184,6 @@
       });
     });
 
-    // Cerrar modal (clic fuera)
     modals.forEach(modal => {
       modal.addEventListener('click', function(e) {
         if (e.target === this) {
@@ -158,7 +193,6 @@
       });
     });
 
-    // Cerrar modal con Escape
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         modals.forEach(modal => {
@@ -169,23 +203,29 @@
     });
   }
 
-  // ---------- INICIO ----------
+  // ---------- INIT (defensivo: cada bloque aislado) ----------
+  function init() {
+    const safe = (fn, name) => {
+      try {
+        fn();
+      } catch (err) {
+        console.error('[main.js] Error en ' + name + ':', err);
+      }
+    };
+
+    safe(setupCounterObserver, 'setupCounterObserver');
+    safe(setupCounterFallback, 'setupCounterFallback');
+    safe(setupRevealObserver, 'setupRevealObserver');
+    safe(setupHamburger, 'setupHamburger');
+    safe(setupSmoothScroll, 'setupSmoothScroll');
+    safe(setupPhraseCarousel, 'setupPhraseCarousel');
+    safe(setupModals, 'setupModals');
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      setupRevealObserver();
-      setupHamburger();
-      setupSmoothScroll();
-      setupCounterObserver();
-      setupPhraseCarousel();
-      setupModals();
-    });
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    setupRevealObserver();
-    setupHamburger();
-    setupSmoothScroll();
-    setupCounterObserver();
-    setupPhraseCarousel();
-    setupModals();
+    init();
   }
 
 })();
