@@ -1313,3 +1313,179 @@ section {
     font-size: 1.4rem;
   }
 }
+/* ================================================================
+   ADVISOR — AI Business Advisor (chat guía flotante)
+   ================================================================ */
+.advisor-trigger {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #00f2fe, #0891b2);
+  color: #050810;
+  border: none;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 12px 40px rgba(0,242,254,0.4), 0 0 0 1px rgba(255,255,255,0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Inter', sans-serif;
+}
+.advisor-trigger:hover { transform: translateY(-3px); box-shadow: 0 16px 50px rgba(0,242,254,0.5); }
+.advisor-trigger.hidden { opacity: 0; pointer-events: none; transform: scale(0.8); }
+.advisor-trigger-icon { font-size: 1.3rem; }
+
+.advisor-panel {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9999;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  height: 560px;
+  max-height: calc(100vh - 48px);
+  background: #0a1220;
+  border: 1px solid rgba(0,242,254,0.25);
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,242,254,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Inter', sans-serif;
+}
+.advisor-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+
+.advisor-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(0,242,254,0.08), rgba(0,242,254,0.02));
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.advisor-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #00f2fe, #0891b2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.advisor-header-info { flex: 1; }
+.advisor-name { font-size: 0.95rem; font-weight: 700; color: white; }
+.advisor-status { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #94a3b8; margin-top: 2px; }
+.advisor-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; animation: advisor-pulse 2s infinite; }
+@keyframes advisor-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+.advisor-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.advisor-close:hover { background: rgba(255,255,255,0.08); color: white; }
+
+.advisor-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.advisor-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+}
+.advisor-messages::-webkit-scrollbar { width: 6px; }
+.advisor-messages::-webkit-scrollbar-track { background: transparent; }
+.advisor-messages::-webkit-scrollbar-thumb { background: rgba(0,242,254,0.2); border-radius: 3px; }
+
+.advisor-bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px 14px 14px 4px;
+  color: #e2e8f0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  animation: advisor-slide 0.3s ease;
+}
+.advisor-bubble-user {
+  align-self: flex-end;
+  background: rgba(0,242,254,0.12);
+  border-color: rgba(0,242,254,0.3);
+  color: #00f2fe;
+  border-radius: 14px 14px 4px 14px;
+  font-weight: 600;
+}
+@keyframes advisor-slide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.advisor-options {
+  padding: 12px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.advisor-option-btn {
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+  animation: advisor-slide 0.3s ease;
+}
+.advisor-option-btn:hover {
+  background: rgba(0,242,254,0.1);
+  border-color: rgba(0,242,254,0.4);
+  color: white;
+  transform: translateX(3px);
+}
+
+@media (max-width: 640px) {
+  .advisor-trigger { bottom: 16px; left: 16px; padding: 12px 16px; font-size: 0.82rem; }
+  .advisor-panel {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 85vh;
+    max-height: 85vh;
+    border-radius: 18px 18px 0 0;
+  }
+  .advisor-bubble { font-size: 0.85rem; }
+}

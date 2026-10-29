@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BehAvIorLab · Convierte la IA en capacidad empresarial</title>
-  <meta name="description" content="5 preguntas sobre IA que su consejo puede hacerle mañana. Diagnóstico en 60 segundos. Assessment AIGOS, agentes de IA y gobernanza para la industria mediana mexicana." />
+  <meta name="description" content="BehAvIorLab ayuda a empresas medianas mexicanas a gobernar, automatizar y desplegar inteligencia artificial. Metodología AIGOS™, ISO 42001, NIST AI RMF." />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=30" />
+  <link rel="stylesheet" href="css/styles.css?v=31" />
   <style>
     :root { --accent: #00f2fe; --accent-amber: #FFB020; --bg-base: #050810; --bg-soft: rgba(255,255,255,0.02); }
     .grc-input, .grc-select { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: white; outline: none; transition: all 0.3s ease; font-family: inherit; font-size: 0.95rem; }
@@ -18,7 +18,7 @@
     .section-sub-big { font-size: 1.05rem; line-height: 1.7; color: #94a3b8; max-width: 720px; margin-bottom: 2.5rem; }
 
     /* HERO */
-    .hero-new { min-height: 90vh; display: flex; align-items: center; padding: 6rem 0 4rem; position: relative; overflow: hidden; }
+    .hero-new { min-height: 85vh; display: flex; align-items: center; padding: 6rem 0 4rem; position: relative; overflow: hidden; }
     .hero-new::before { content: ''; position: absolute; top: 10%; right: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(0,242,254,0.15) 0%, transparent 70%); pointer-events: none; z-index: 0; }
     .hero-new::after { content: ''; position: absolute; bottom: -20%; left: -10%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(255,176,32,0.08) 0%, transparent 70%); pointer-events: none; z-index: 0; }
     .hero-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 3rem; align-items: center; position: relative; z-index: 2; }
@@ -29,7 +29,7 @@
     .hero-headline .hl { background: linear-gradient(135deg, var(--accent) 0%, #4dd0e1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
     .hero-sub { font-size: 1.15rem; line-height: 1.6; color: #94a3b8; margin-bottom: 2rem; max-width: 560px; }
     .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 2rem; }
-    .hero-cta-primary { padding: 16px 28px; background: var(--accent); color: #050810; border-radius: 10px; font-weight: 700; font-size: 1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 8px 32px rgba(0,242,254,0.3); }
+    .hero-cta-primary { padding: 16px 28px; background: var(--accent); color: #050810; border-radius: 10px; font-weight: 700; font-size: 1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 8px 32px rgba(0,242,254,0.3); border: none; cursor: pointer; }
     .hero-cta-primary:hover { background: #00d4e0; transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,242,254,0.4); }
     .hero-cta-secondary { padding: 16px 24px; background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; font-weight: 600; font-size: 0.95rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
     .hero-cta-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); }
@@ -38,7 +38,7 @@
     .hero-trust span::before { content: '✓'; color: var(--accent); font-weight: 700; }
 
     /* MOCK DASHBOARD */
-    .mock-dashboard { background: linear-gradient(180deg, #0a1220 0%, #050810 100%); border: 1px solid rgba(0,242,254,0.15); border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,242,254,0.15), 0 0 0 1px rgba(255,255,255,0.02); }
+    .mock-dashboard { background: linear-gradient(180deg, #0a1220 0%, #050810 100%); border: 1px solid rgba(0,242,254,0.15); border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,242,254,0.15); }
     .mock-header { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05); }
     .mock-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.15); }
     .mock-dot:first-child { background: #ff5f57; } .mock-dot:nth-child(2) { background: #febc2e; } .mock-dot:nth-child(3) { background: #28c840; }
@@ -58,8 +58,67 @@
     .mock-status { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
     .mock-status.warn { background: #fbbf24; } .mock-status.ok { background: #34d399; } .mock-status.alert { background: #f87171; }
 
+    /* QUÉ ES BEHAVIORLAB — SECCIÓN NUEVA */
+    .what-is { padding: 6rem 0; background: var(--bg-soft); border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .what-header { text-align: center; max-width: 820px; margin: 0 auto 3rem; }
+    .what-header h2 { font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1.2; font-weight: 800; color: white; margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; }
+    .what-header p { font-size: 1.1rem; line-height: 1.7; color: #94a3b8; }
+
+    .pillars-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 4rem; }
+    .pillar-card { padding: 2.2rem; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; transition: all 0.3s; position: relative; overflow: hidden; }
+    .pillar-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), transparent); }
+    .pillar-card:nth-child(2)::before { background: linear-gradient(90deg, #a78bfa, transparent); }
+    .pillar-card:nth-child(3)::before { background: linear-gradient(90deg, var(--accent-amber), transparent); }
+    .pillar-card:hover { border-color: rgba(0,242,254,0.4); transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.4); }
+    .pillar-icon { font-size: 2.8rem; margin-bottom: 1rem; display: block; }
+    .pillar-card h3 { font-size: 1.35rem; color: white; font-weight: 800; margin-bottom: 0.6rem; font-family: 'Space Grotesk', sans-serif; }
+    .pillar-card .pillar-desc { font-size: 0.92rem; color: #94a3b8; line-height: 1.7; margin-bottom: 1.5rem; }
+    .pillar-card .pillar-features { list-style: none; padding: 0; margin-bottom: 1.5rem; }
+    .pillar-card .pillar-features li { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; }
+    .pillar-card .pillar-features li::before { content: '→'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+    .pillar-card .pillar-product { display: inline-block; font-size: 0.72rem; padding: 5px 12px; background: rgba(0,242,254,0.1); color: var(--accent); border-radius: 100px; font-weight: 600; }
+
+    .how-we-work { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 3rem 2rem; margin-top: 2rem; }
+    .how-header { text-align: center; margin-bottom: 2.5rem; }
+    .how-header h3 { font-size: 1.6rem; color: white; font-weight: 800; margin-bottom: 0.5rem; font-family: 'Space Grotesk', sans-serif; }
+    .how-header p { color: #94a3b8; font-size: 0.95rem; }
+    .how-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem; }
+    .how-step { padding: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; transition: all 0.2s; position: relative; }
+    .how-step:hover { border-color: rgba(0,242,254,0.3); }
+    .how-step-num { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 900; color: rgba(0,242,254,0.2); line-height: 1; margin-bottom: 0.8rem; }
+    .how-step h4 { font-size: 1rem; color: white; font-weight: 700; margin-bottom: 0.4rem; }
+    .how-step p { font-size: 0.82rem; color: #94a3b8; line-height: 1.5; margin-bottom: 0.8rem; }
+    .how-step-time { display: inline-block; font-size: 0.7rem; color: var(--accent); font-family: monospace; letter-spacing: 1px; }
+
+    /* MANIFESTO */
+    .manifesto { padding: 8rem 0; background: radial-gradient(ellipse at center, #0a1220 0%, #050810 100%); position: relative; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .manifesto::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(0,242,254,0.04) 0%, transparent 50%); pointer-events: none; }
+    .manifesto-content { max-width: 900px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
+    .manifesto-quote { font-size: clamp(1.6rem, 3.5vw, 2.8rem); line-height: 1.3; font-weight: 700; color: white; margin-bottom: 1.5rem; font-family: 'Space Grotesk', sans-serif; }
+    .manifesto-quote .hl-teal { background: linear-gradient(135deg, var(--accent), #4dd0e1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .manifesto-quote .hl-amber { color: var(--accent-amber); }
+    .manifesto-conclusion { font-size: clamp(1.2rem, 2.2vw, 1.6rem); color: #94a3b8; margin-top: 3rem; line-height: 1.6; }
+    .manifesto-conclusion strong { color: white; }
+    .manifesto-signature { font-size: 0.75rem; letter-spacing: 4px; color: #475569; font-weight: 700; margin-top: 2rem; }
+
+    /* PAINS */
+    .pains-section { padding: 6rem 0; }
+    .pains-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+    .pain-card { padding: 2rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; transition: all 0.3s; }
+    .pain-card:hover { border-color: rgba(0,242,254,0.3); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+    .pain-header { display: flex; gap: 12px; align-items: center; margin-bottom: 1rem; }
+    .pain-icon-badge { width: 40px; height: 40px; border-radius: 10px; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    .pain-card h3 { font-size: 1.15rem; color: white; font-weight: 700; margin: 0; }
+    .pain-desc { font-size: 0.9rem; color: #94a3b8; line-height: 1.7; margin-bottom: 1.2rem; }
+    .pain-solution { padding-top: 1.2rem; border-top: 1px solid rgba(255,255,255,0.06); }
+    .solution-label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem; text-transform: uppercase; }
+    .pain-solution p { font-size: 0.88rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 1rem; }
+    .pain-product { display: inline-block; font-size: 0.72rem; padding: 4px 10px; background: rgba(255,176,32,0.1); color: var(--accent-amber); border-radius: 100px; font-weight: 600; margin-bottom: 1rem; }
+    .pain-cta { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: gap 0.2s; }
+    .pain-cta:hover { gap: 10px; }
+
     /* 5 QUESTIONS */
-    .five-q-section { padding: 5rem 0; background: var(--bg-soft); border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); position: relative; }
+    .five-q-section { padding: 5rem 0; background: var(--bg-soft); border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
     .five-q-header { text-align: center; max-width: 760px; margin: 0 auto 3rem; }
     .five-q-confidencial { display: inline-block; font-size: 0.72rem; letter-spacing: 3px; font-weight: 700; color: var(--accent-amber); padding: 6px 16px; background: rgba(255,176,32,0.08); border: 1px solid rgba(255,176,32,0.2); border-radius: 100px; margin-bottom: 1rem; }
     .five-q-list { display: flex; flex-direction: column; gap: 1rem; max-width: 900px; margin: 0 auto 2rem; }
@@ -78,8 +137,7 @@
     .five-q-btn { padding: 16px 40px; background: var(--accent); color: #050810; border: none; border-radius: 10px; font-weight: 700; font-size: 1.05rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 32px rgba(0,242,254,0.3); }
     .five-q-btn:hover:not(:disabled) { background: #00d4e0; transform: translateY(-2px); }
     .five-q-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
-    .five-q-result { display: none; margin-top: 2rem; padding: 2.5rem; background: linear-gradient(135deg, rgba(0,242,254,0.06), rgba(255,176,32,0.04)); border: 1px solid rgba(0,242,254,0.3); border-radius: 16px; text-align: center; animation: fadeInUp 0.5s ease; }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .five-q-result { display: none; margin-top: 2rem; padding: 2.5rem; background: linear-gradient(135deg, rgba(0,242,254,0.06), rgba(255,176,32,0.04)); border: 1px solid rgba(0,242,254,0.3); border-radius: 16px; text-align: center; }
     .five-q-score-big { font-size: clamp(4rem, 10vw, 6rem); font-weight: 900; font-family: 'Space Grotesk', sans-serif; line-height: 1; margin-bottom: 0.5rem; }
     .five-q-score-big small { font-size: 1.5rem; color: #64748b; font-weight: 400; }
     .five-q-score-label { font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-bottom: 1.5rem; }
@@ -87,37 +145,9 @@
     .five-q-result-msg { font-size: 1rem; color: #cbd5e1; line-height: 1.6; max-width: 560px; margin: 0 auto 2rem; }
     .five-q-result-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
-    /* MANIFESTO */
-    .manifesto { padding: 8rem 0; background: radial-gradient(ellipse at center, #0a1220 0%, #050810 100%); position: relative; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
-    .manifesto::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(0,242,254,0.04) 0%, transparent 50%); pointer-events: none; }
-    .manifesto-content { max-width: 900px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
-    .manifesto-quote { font-size: clamp(1.6rem, 3.5vw, 2.8rem); line-height: 1.3; font-weight: 700; color: white; margin-bottom: 1.5rem; font-family: 'Space Grotesk', sans-serif; }
-    .manifesto-quote .hl-teal { background: linear-gradient(135deg, var(--accent), #4dd0e1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .manifesto-quote .hl-amber { color: var(--accent-amber); }
-    .manifesto-conclusion { font-size: clamp(1.2rem, 2.2vw, 1.6rem); color: #94a3b8; margin-top: 3rem; line-height: 1.6; }
-    .manifesto-conclusion strong { color: white; }
-    .manifesto-signature { font-size: 0.75rem; letter-spacing: 4px; color: #475569; font-weight: 700; margin-top: 2rem; }
-
-    /* PAINS */
-    .pains-section { padding: 6rem 0; }
-    .pains-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
-    .pain-card { padding: 2rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; transition: all 0.3s; position: relative; overflow: hidden; }
-    .pain-card:hover { border-color: rgba(0,242,254,0.3); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
-    .pain-header { display: flex; gap: 12px; align-items: center; margin-bottom: 1rem; }
-    .pain-icon-badge { width: 40px; height: 40px; border-radius: 10px; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-    .pain-card h3 { font-size: 1.15rem; color: white; font-weight: 700; margin: 0; }
-    .pain-desc { font-size: 0.9rem; color: #94a3b8; line-height: 1.7; margin-bottom: 1.2rem; }
-    .pain-solution { padding-top: 1.2rem; border-top: 1px solid rgba(255,255,255,0.06); }
-    .solution-label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem; text-transform: uppercase; }
-    .pain-solution p { font-size: 0.88rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 1rem; }
-    .pain-product { display: inline-block; font-size: 0.72rem; padding: 4px 10px; background: rgba(255,176,32,0.1); color: var(--accent-amber); border-radius: 100px; font-weight: 600; margin-bottom: 1rem; }
-    .pain-cta { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: gap 0.2s; }
-    .pain-cta:hover { gap: 10px; }
-
     /* RUTAS */
-    .rutas-section { padding: 6rem 0; background: var(--bg-soft); border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
-    .ruta-card-big { padding: 2.5rem; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; transition: all 0.3s; position: relative; overflow: hidden; }
-    .ruta-card-big::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), transparent); }
+    .rutas-section { padding: 6rem 0; background: var(--bg-soft); border-top: 1px solid rgba(255,255,255,0.04); }
+    .ruta-card-big { padding: 2.5rem; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; transition: all 0.3s; }
     .ruta-card-big:hover { border-color: rgba(0,242,254,0.4); transform: translateY(-4px); }
     .ruta-icon-big { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
     .ruta-card-big h3 { font-size: 1.4rem; color: white; font-weight: 800; margin-bottom: 0.5rem; font-family: 'Space Grotesk', sans-serif; }
@@ -159,7 +189,6 @@
       .mock-dashboard { max-width: 420px; margin: 0 auto; }
       .q-options { margin-left: 0; grid-template-columns: 1fr; }
       .manifesto { padding: 5rem 0; }
-      .rutas-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -174,10 +203,10 @@
       <div class="container">
         <a href="#hero" class="logo"><img src="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg" alt="BehAvIorLab" class="logo-img"></a>
         <div class="nav-links">
-          <a href="#five-q">5 preguntas</a>
+          <a href="#que-es">Qué es</a>
           <a href="#pains">Dolores</a>
+          <a href="#five-q">Diagnóstico</a>
           <a href="#rutas">Rutas</a>
-          <a href="#readiness">Diagnóstico</a>
           <a href="#ecosystem">Ecosistema</a>
           <a href="app/index.html" class="btn-nav" style="background: #00f2fe; color: #000; font-weight: bold;">Portal Clientes</a>
         </div>
@@ -191,11 +220,11 @@
         <div class="hero-grid">
           <div>
             <div class="hero-eyebrow">BehAvIorLab · Ecosistema GōkuLab</div>
-            <h1 class="hero-headline">Cinco preguntas sobre IA que su consejo puede hacerle mañana. <span class="hl">¿Puede responderlas hoy?</span></h1>
-            <p class="hero-sub">En 60 segundos, evalúe qué tan preparada está su empresa para la nueva economía de la IA. Sin costo. Sin registro. Sin rodeos.</p>
+            <h1 class="hero-headline">Convierte la IA en <span class="hl">capacidad empresarial</span>.</h1>
+            <p class="hero-sub">BehAvIorLab ayuda a empresas medianas mexicanas a <strong style="color: white;">gobernar, automatizar y desplegar</strong> inteligencia artificial — con la metodología AIGOS™ y estándares internacionales (ISO 42001, NIST AI RMF).</p>
             <div class="hero-ctas">
-              <a href="#five-q" class="hero-cta-primary">Responder 5 preguntas →</a>
-              <a href="#rutas" class="hero-cta-secondary">Conocer las 3 rutas</a>
+              <a href="#que-es" class="hero-cta-primary">Conoce cómo trabajamos →</a>
+              <button onclick="if(window.openAdvisor)window.openAdvisor()" class="hero-cta-secondary">🤖 Hablar con nuestro Advisor</button>
             </div>
             <div class="hero-trust">
               <span>ISO 42001 · NIST AI RMF</span>
@@ -231,90 +260,89 @@
       </div>
     </section>
 
-    <!-- 5 QUESTIONS -->
-    <section class="five-q-section" id="five-q">
+    <!-- ¿QUÉ ES BEHAVIORLAB? — NUEVA SECCIÓN -->
+    <section class="what-is anchor-offset" id="que-es">
       <div class="container">
-        <div class="five-q-header">
-          <span class="five-q-confidencial">60 SEGUNDOS · CONFIDENCIAL</span>
-          <h2 class="section-title-big">Cinco preguntas sobre IA que su consejo puede hacerle mañana.</h2>
-          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6;">Respóndalas usted mismo. Nadie más va a leer sus respuestas.</p>
+        <div class="what-header">
+          <span class="section-eyebrow">Quiénes somos</span>
+          <h2>No somos un consultor que deja un PDF.<br><span style="color: var(--accent);">Somos un equipo que diagnostica, implementa y monitorea.</span></h2>
+          <p>BehAvIorLab es la firma mexicana de AI Governance + Agentes de IA para la industria mediana. Tres pilares, un mismo socio, un mismo estándar de evidencia.</p>
         </div>
 
-        <div class="five-q-list">
-          <div class="five-q-item" data-q="1">
-            <div class="five-q-item-header">
-              <span class="q-num">1</span>
-              <div class="q-text">¿Puede decir hoy cuántas herramientas de IA usa su empresa, incluidas las que nadie autorizó?</div>
-            </div>
-            <div class="q-options">
-              <label class="q-option"><input type="radio" name="q1" value="0"><span>Sí, con evidencia</span></label>
-              <label class="q-option"><input type="radio" name="q1" value="1"><span>Creo que sí</span></label>
-              <label class="q-option"><input type="radio" name="q1" value="1"><span>No lo sé</span></label>
-            </div>
+        <div class="pillars-grid">
+          <div class="pillar-card">
+            <span class="pillar-icon">🛡️</span>
+            <h3>AI Governance</h3>
+            <p class="pillar-desc">Controla la IA que ya está en tu empresa. Inventario, riesgos, políticas, comité y evidencia auditable — antes de que tu cliente o el regulador te lo pida.</p>
+            <ul class="pillar-features">
+              <li>Assessment AIGOS™ de 80 preguntas en 10 dominios</li>
+              <li>Inventario de IA incluyendo shadow AI</li>
+              <li>Mapa de riesgos con criticidad y plan de mitigación</li>
+              <li>Política corporativa + comité + RACI</li>
+              <li>Reporte auditable con AIGI score</li>
+            </ul>
+            <span class="pillar-product">Assessment AIGOS · Immersion Program</span>
           </div>
 
-          <div class="five-q-item" data-q="2">
-            <div class="five-q-item-header">
-              <span class="q-num">2</span>
-              <div class="q-text">¿Sabe qué información confidencial (contratos, clientes, datos personales, fórmulas) ha pasado por ellas?</div>
-            </div>
-            <div class="q-options">
-              <label class="q-option"><input type="radio" name="q2" value="0"><span>Sí, con evidencia</span></label>
-              <label class="q-option"><input type="radio" name="q2" value="1"><span>Creo que sí</span></label>
-              <label class="q-option"><input type="radio" name="q2" value="1"><span>No lo sé</span></label>
-            </div>
+          <div class="pillar-card">
+            <span class="pillar-icon">⚙️</span>
+            <h3>AI Automation</h3>
+            <p class="pillar-desc">Convierte procesos manuales en flujos medibles. Identificamos las tareas con mayor ROI y te damos un plan claro de automatización por fases.</p>
+            <ul class="pillar-features">
+              <li>Assessment de automatización con ROI estimado</li>
+              <li>Identificación de procesos con mayor potencial</li>
+              <li>Diseño de casos de uso priorizados</li>
+              <li>Plan de implementación por fases</li>
+              <li>Roadmap de productividad medible</li>
+            </ul>
+            <span class="pillar-product">ROI Scan · Process Redesign</span>
           </div>
 
-          <div class="five-q-item" data-q="3">
-            <div class="five-q-item-header">
-              <span class="q-num">3</span>
-              <div class="q-text">¿Hay una persona que responda por cada sistema de IA si se equivoca o filtra datos?</div>
-            </div>
-            <div class="q-options">
-              <label class="q-option"><input type="radio" name="q3" value="0"><span>Sí, con evidencia</span></label>
-              <label class="q-option"><input type="radio" name="q3" value="1"><span>Creo que sí</span></label>
-              <label class="q-option"><input type="radio" name="q3" value="1"><span>No lo sé</span></label>
-            </div>
-          </div>
-
-          <div class="five-q-item" data-q="4">
-            <div class="five-q-item-header">
-              <span class="q-num">4</span>
-              <div class="q-text">Si un cliente, un auditor o el consejo se lo pidiera mañana, ¿podría mostrar evidencia de cómo gobierna la IA?</div>
-            </div>
-            <div class="q-options">
-              <label class="q-option"><input type="radio" name="q4" value="0"><span>Sí, con evidencia</span></label>
-              <label class="q-option"><input type="radio" name="q4" value="1"><span>Creo que sí</span></label>
-              <label class="q-option"><input type="radio" name="q4" value="1"><span>No lo sé</span></label>
-            </div>
-          </div>
-
-          <div class="five-q-item" data-q="5">
-            <div class="five-q-item-header">
-              <span class="q-num">5</span>
-              <div class="q-text">¿Sabe qué funciones de IA activaron sus proveedores dentro del software que ya contrató?</div>
-            </div>
-            <div class="q-options">
-              <label class="q-option"><input type="radio" name="q5" value="0"><span>Sí, con evidencia</span></label>
-              <label class="q-option"><input type="radio" name="q5" value="1"><span>Creo que sí</span></label>
-              <label class="q-option"><input type="radio" name="q5" value="1"><span>No lo sé</span></label>
-            </div>
+          <div class="pillar-card">
+            <span class="pillar-icon">🤖</span>
+            <h3>AI Agents</h3>
+            <p class="pillar-desc">Despliega agentes que ejecutan tareas reales sobre tus sistemas. Diseñados, integrados y monitoreados — con gobernanza incluida desde el día 1.</p>
+            <ul class="pillar-features">
+              <li>Discovery del agente (arquitectura, flujos, datos)</li>
+              <li>Integración con CRM / ERP / core</li>
+              <li>Monitoreo + MLOps + trazabilidad</li>
+              <li>Capacitación operativa al equipo</li>
+              <li>Agente en producción con ROI medible</li>
+            </ul>
+            <span class="pillar-product">Agent Discovery · Deploy · MLOps</span>
           </div>
         </div>
 
-        <div class="five-q-submit">
-          <button class="five-q-btn" id="fiveQSubmit" disabled>Ver mi resultado →</button>
-          <p style="font-size: 0.78rem; color: #64748b; margin-top: 10px;">Toma 60 segundos. No requiere registro.</p>
-        </div>
-
-        <div class="five-q-result" id="fiveQResult">
-          <div class="five-q-score-big" id="fiveQScoreNum" style="color: var(--accent);">0<small>/5</small></div>
-          <div class="five-q-score-label">Preguntas sin evidencia</div>
-          <h3 class="five-q-result-title" id="fiveQResultTitle"></h3>
-          <p class="five-q-result-msg" id="fiveQResultMsg"></p>
-          <div class="five-q-result-ctas">
-            <a href="#readiness" class="hero-cta-primary" id="fiveQCtaPrimary">Ver mi diagnóstico completo →</a>
-            <a href="#contacto" class="hero-cta-secondary" id="fiveQCtaSecondary">Hablar con un experto</a>
+        <div class="how-we-work">
+          <div class="how-header">
+            <h3>Cómo trabajamos · 4 fases</h3>
+            <p>De la primera conversación al monitoreo continuo en 4 etapas claras.</p>
+          </div>
+          <div class="how-steps">
+            <div class="how-step">
+              <div class="how-step-num">01</div>
+              <h4>Diagnosticar</h4>
+              <p>Assessment AIGOS™ + ROI Scan. Medimos dónde estás, qué riesgos tienes, dónde hay mayor potencial.</p>
+              <span class="how-step-time">2 semanas</span>
+            </div>
+            <div class="how-step">
+              <div class="how-step-num">02</div>
+              <h4>Gobernar</h4>
+              <p>Política, comité, RACI, apetito de riesgo. Estructura formal lista para auditorías.</p>
+              <span class="how-step-time">4-6 semanas</span>
+            </div>
+            <div class="how-step">
+              <div class="how-step-num">03</div>
+              <h4>Automatizar</h4>
+              <p>Agentes en producción. Integración con tus sistemas, gobernanza incluida.</p>
+              <span class="how-step-time">6-8 semanas</span>
+            </div>
+            <div class="how-step">
+              <div class="how-step-num">04</div>
+              <h4>Escalar</h4>
+              <p>MLOps continuo. Monitoreo de drift, sesgos y trazabilidad. Mejora iterativa.</p>
+              <span class="how-step-time">Continuo</span>
+            </div>
           </div>
         </div>
       </div>
@@ -343,24 +371,18 @@
 
         <div class="pains-grid">
           <div class="pain-card">
-            <div class="pain-header">
-              <div class="pain-icon-badge">🚨</div>
-              <h3>Shadow AI sin control</h3>
-            </div>
+            <div class="pain-header"><div class="pain-icon-badge">🚨</div><h3>Shadow AI sin control</h3></div>
             <p class="pain-desc">Su gente ya usa ChatGPT, Claude o Gemini para tareas críticas. Nadie sabe cuántos son, qué datos ingresaron, ni qué herramientas no autorizadas están activas.</p>
             <div class="pain-solution">
               <span class="solution-label">✓ Cómo lo resolvemos</span>
               <p>Assessment AIGOS™ — 80 preguntas, 10 dominios. Detectamos shadow AI, lo clasificamos por criticidad y le damos evidencia documentada.</p>
               <span class="pain-product">Assessment AIGOS Exprés · 2 semanas</span><br>
-              <a href="#readiness" class="pain-cta">Hacer diagnóstico →</a>
+              <a href="#five-q" class="pain-cta">Hacer diagnóstico →</a>
             </div>
           </div>
 
           <div class="pain-card">
-            <div class="pain-header">
-              <div class="pain-icon-badge">📋</div>
-              <h3>Su cliente enterprise le pide evidencia</h3>
-            </div>
+            <div class="pain-header"><div class="pain-icon-badge">📋</div><h3>Su cliente enterprise le pide evidencia</h3></div>
             <p class="pain-desc">Su cliente Ford, Bombardier, Bimbo o P&G acaba de incluir un cuestionario de AI governance en su auditoría de supply chain. Si no responde con evidencia, pone en riesgo el contrato.</p>
             <div class="pain-solution">
               <span class="solution-label">✓ Cómo lo resolvemos</span>
@@ -371,10 +393,7 @@
           </div>
 
           <div class="pain-card">
-            <div class="pain-header">
-              <div class="pain-icon-badge">🤷</div>
-              <h3>Nadie responde si falla un modelo</h3>
-            </div>
+            <div class="pain-header"><div class="pain-icon-badge">🤷</div><h3>Nadie responde si falla un modelo</h3></div>
             <p class="pain-desc">Si un modelo falla, sesga o filtra datos, no hay dueño definido, no hay comité, no hay ruta de escalamiento. Cuando el regulador pregunte, no habrá respuesta.</p>
             <div class="pain-solution">
               <span class="solution-label">✓ Cómo lo resolvemos</span>
@@ -385,24 +404,18 @@
           </div>
 
           <div class="pain-card">
-            <div class="pain-header">
-              <div class="pain-icon-badge">🐌</div>
-              <h3>Procesos manuales que consumen horas</h3>
-            </div>
+            <div class="pain-header"><div class="pain-icon-badge">🐌</div><h3>Procesos manuales que consumen horas</h3></div>
             <p class="pain-desc">Su operación depende de procesos manuales que consumen 200+ hrs/mes. Cada nueva orden implica más contrataciones. La estructura crece, la productividad no.</p>
             <div class="pain-solution">
               <span class="solution-label">✓ Cómo lo resolvemos</span>
               <p>Agentes de IA que ejecutan tareas reales. Diseñados, desplegados y monitoreados en 6-8 semanas. Con gobernanza incluida desde el día 1.</p>
               <span class="pain-product">Deploy de Agente Único · 6-8 semanas</span><br>
-              <a href="#readiness" class="pain-cta">Hacer assessment →</a>
+              <a href="#assessment" class="pain-cta">Hacer assessment →</a>
             </div>
           </div>
 
           <div class="pain-card">
-            <div class="pain-header">
-              <div class="pain-icon-badge">🎩</div>
-              <h3>Consejo desinformado sobre IA</h3>
-            </div>
+            <div class="pain-header"><div class="pain-icon-badge">🎩</div><h3>Consejo desinformado sobre IA</h3></div>
             <p class="pain-desc">El Consejo aprueba inversiones en IA sin entender los riesgos que está aceptando. Cuando estalla un incidente, nadie sabe qué decisiones se tomaron ni por qué.</p>
             <div class="pain-solution">
               <span class="solution-label">✓ Cómo lo resolvemos</span>
@@ -413,14 +426,81 @@
           </div>
 
           <div class="pain-card" style="background: linear-gradient(135deg, rgba(0,242,254,0.05), rgba(255,176,32,0.03)); border-color: rgba(0,242,254,0.3);">
-            <div class="pain-header">
-              <div class="pain-icon-badge" style="background: rgba(0,242,254,0.1); border-color: rgba(0,242,254,0.3);">💡</div>
-              <h3>Y su caso, ¿cuál es?</h3>
-            </div>
+            <div class="pain-header"><div class="pain-icon-badge" style="background: rgba(0,242,254,0.1); border-color: rgba(0,242,254,0.3);">💡</div><h3>Y su caso, ¿cuál es?</h3></div>
             <p class="pain-desc">Cada empresa tiene un dolor específico. El diagnóstico de 5 preguntas le dice cuál es el suyo en 60 segundos.</p>
             <div class="pain-solution" style="border-top-color: rgba(0,242,254,0.2);">
               <a href="#five-q" class="hero-cta-primary" style="padding: 12px 20px; font-size: 0.9rem; display: inline-flex;">Empezar las 5 preguntas →</a>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 QUESTIONS -->
+    <section class="five-q-section anchor-offset" id="five-q">
+      <div class="container">
+        <div class="five-q-header">
+          <span class="five-q-confidencial">60 SEGUNDOS · CONFIDENCIAL</span>
+          <h2 class="section-title-big">Cinco preguntas sobre IA que su consejo puede hacerle mañana.</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6;">Respóndalas usted mismo. Nadie más va a leer sus respuestas.</p>
+        </div>
+
+        <div class="five-q-list">
+          <div class="five-q-item" data-q="1">
+            <div class="five-q-item-header"><span class="q-num">1</span><div class="q-text">¿Puede decir hoy cuántas herramientas de IA usa su empresa, incluidas las que nadie autorizó?</div></div>
+            <div class="q-options">
+              <label class="q-option"><input type="radio" name="q1" value="0"><span>Sí, con evidencia</span></label>
+              <label class="q-option"><input type="radio" name="q1" value="1"><span>Creo que sí</span></label>
+              <label class="q-option"><input type="radio" name="q1" value="1"><span>No lo sé</span></label>
+            </div>
+          </div>
+          <div class="five-q-item" data-q="2">
+            <div class="five-q-item-header"><span class="q-num">2</span><div class="q-text">¿Sabe qué información confidencial (contratos, clientes, datos personales, fórmulas) ha pasado por ellas?</div></div>
+            <div class="q-options">
+              <label class="q-option"><input type="radio" name="q2" value="0"><span>Sí, con evidencia</span></label>
+              <label class="q-option"><input type="radio" name="q2" value="1"><span>Creo que sí</span></label>
+              <label class="q-option"><input type="radio" name="q2" value="1"><span>No lo sé</span></label>
+            </div>
+          </div>
+          <div class="five-q-item" data-q="3">
+            <div class="five-q-item-header"><span class="q-num">3</span><div class="q-text">¿Hay una persona que responda por cada sistema de IA si se equivoca o filtra datos?</div></div>
+            <div class="q-options">
+              <label class="q-option"><input type="radio" name="q3" value="0"><span>Sí, con evidencia</span></label>
+              <label class="q-option"><input type="radio" name="q3" value="1"><span>Creo que sí</span></label>
+              <label class="q-option"><input type="radio" name="q3" value="1"><span>No lo sé</span></label>
+            </div>
+          </div>
+          <div class="five-q-item" data-q="4">
+            <div class="five-q-item-header"><span class="q-num">4</span><div class="q-text">Si un cliente, un auditor o el consejo se lo pidiera mañana, ¿podría mostrar evidencia de cómo gobierna la IA?</div></div>
+            <div class="q-options">
+              <label class="q-option"><input type="radio" name="q4" value="0"><span>Sí, con evidencia</span></label>
+              <label class="q-option"><input type="radio" name="q4" value="1"><span>Creo que sí</span></label>
+              <label class="q-option"><input type="radio" name="q4" value="1"><span>No lo sé</span></label>
+            </div>
+          </div>
+          <div class="five-q-item" data-q="5">
+            <div class="five-q-item-header"><span class="q-num">5</span><div class="q-text">¿Sabe qué funciones de IA activaron sus proveedores dentro del software que ya contrató?</div></div>
+            <div class="q-options">
+              <label class="q-option"><input type="radio" name="q5" value="0"><span>Sí, con evidencia</span></label>
+              <label class="q-option"><input type="radio" name="q5" value="1"><span>Creo que sí</span></label>
+              <label class="q-option"><input type="radio" name="q5" value="1"><span>No lo sé</span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="five-q-submit">
+          <button class="five-q-btn" id="fiveQSubmit" disabled>Ver mi resultado →</button>
+          <p style="font-size: 0.78rem; color: #64748b; margin-top: 10px;">Toma 60 segundos. No requiere registro.</p>
+        </div>
+
+        <div class="five-q-result" id="fiveQResult">
+          <div class="five-q-score-big" id="fiveQScoreNum" style="color: var(--accent);">0<small>/5</small></div>
+          <div class="five-q-score-label">Preguntas sin evidencia</div>
+          <h3 class="five-q-result-title" id="fiveQResultTitle"></h3>
+          <p class="five-q-result-msg" id="fiveQResultMsg"></p>
+          <div class="five-q-result-ctas">
+            <a href="#readiness" class="hero-cta-primary" id="fiveQCtaPrimary">Ver mi diagnóstico completo →</a>
+            <a href="#contacto" class="hero-cta-secondary" id="fiveQCtaSecondary">Hablar con un experto</a>
           </div>
         </div>
       </div>
@@ -447,10 +527,7 @@
               <li>Reporte ejecutivo con AIGI score</li>
               <li>Evidencia lista para cliente enterprise</li>
             </ul>
-            <div class="ruta-deliverable">
-              <small>Entregable</small>
-              <p>Reporte AIGOS™ auditable con evidencia documentada. Listo para presentar a cliente, auditor o consejo.</p>
-            </div>
+            <div class="ruta-deliverable"><small>Entregable</small><p>Reporte AIGOS™ auditable con evidencia documentada. Listo para presentar a cliente, auditor o consejo.</p></div>
             <a href="#readiness" class="ruta-cta-big">Solicitar Assessment AIGOS™ →</a>
           </div>
 
@@ -465,11 +542,8 @@
               <li>Plan de implementación por fases</li>
               <li>Roadmap de productividad medible</li>
             </ul>
-            <div class="ruta-deliverable">
-              <small>Entregable</small>
-              <p>ROI Scan con horas ahorrables, agente recomendado y plan de implementación por fases.</p>
-            </div>
-            <a href="#readiness" class="ruta-cta-big">Solicitar ROI Scan →</a>
+            <div class="ruta-deliverable"><small>Entregable</small><p>ROI Scan con horas ahorrables, agente recomendado y plan de implementación por fases.</p></div>
+            <a href="#assessment" class="ruta-cta-big">Solicitar ROI Scan →</a>
           </div>
 
           <div class="ruta-card-big">
@@ -483,10 +557,7 @@
               <li>Capacitación operativa al equipo</li>
               <li>Agente en producción con ROI medible</li>
             </ul>
-            <div class="ruta-deliverable">
-              <small>Entregable</small>
-              <p>Agente en producción con integración a sus sistemas, monitoreo continuo y ROI documentado a 90 días.</p>
-            </div>
+            <div class="ruta-deliverable"><small>Entregable</small><p>Agente en producción con integración a sus sistemas, monitoreo continuo y ROI documentado a 90 días.</p></div>
             <a href="#contacto" class="ruta-cta-big">Solicitar Agent Discovery →</a>
           </div>
         </div>
@@ -509,134 +580,44 @@
             <span class="rs-step-label">PASO 1 DE 5 · EMPRESA</span>
             <div style="display: flex; flex-direction: column; gap: 1.5rem;">
               <div><label class="grc-label">Nombre de tu empresa *</label><input type="text" id="rs_empresa" placeholder="Ej. Manufacturera Querétaro SA de CV" class="grc-input" required></div>
-              <div><label class="grc-label">Sector *</label>
-                <select id="rs_sector" class="grc-select">
-                  <option value="">Selecciona...</option>
-                  <option value="manufactura">Manufactura (automotriz, aeroespacial, electrodomésticos)</option>
-                  <option value="alimentos">Alimentos y consumo masivo</option>
-                  <option value="logistica">Logística 3PL / 4PL</option>
-                  <option value="servicios">Servicios profesionales</option>
-                  <option value="salud">Salud / Cuidado personal / Biotecnología</option>
-                </select>
-              </div>
-              <div><label class="grc-label">Número de empleados *</label>
-                <select id="rs_empleados" class="grc-select">
-                  <option value="">Selecciona...</option>
-                  <option value="50-200">50 a 200</option>
-                  <option value="200-500">200 a 500</option>
-                  <option value="500-1000">500 a 1,000</option>
-                  <option value="1000+">Más de 1,000</option>
-                </select>
-              </div>
-              <div><label class="grc-label">Facturación anual estimada (MXN) *</label>
-                <select id="rs_facturacion" class="grc-select">
-                  <option value="">Selecciona...</option>
-                  <option value="200-500M">$200M a $500M</option>
-                  <option value="500-1000M">$500M a $1,000M</option>
-                  <option value="1000-2000M">$1,000M a $2,000M</option>
-                  <option value="2000M+">Más de $2,000M</option>
-                </select>
-              </div>
+              <div><label class="grc-label">Sector *</label><select id="rs_sector" class="grc-select"><option value="">Selecciona...</option><option value="manufactura">Manufactura (automotriz, aeroespacial, electrodomésticos)</option><option value="alimentos">Alimentos y consumo masivo</option><option value="logistica">Logística 3PL / 4PL</option><option value="servicios">Servicios profesionales</option><option value="salud">Salud / Cuidado personal / Biotecnología</option></select></div>
+              <div><label class="grc-label">Número de empleados *</label><select id="rs_empleados" class="grc-select"><option value="">Selecciona...</option><option value="50-200">50 a 200</option><option value="200-500">200 a 500</option><option value="500-1000">500 a 1,000</option><option value="1000+">Más de 1,000</option></select></div>
+              <div><label class="grc-label">Facturación anual estimada (MXN) *</label><select id="rs_facturacion" class="grc-select"><option value="">Selecciona...</option><option value="200-500M">$200M a $500M</option><option value="500-1000M">$500M a $1,000M</option><option value="1000-2000M">$1,000M a $2,000M</option><option value="2000M+">Más de $2,000M</option></select></div>
             </div>
-            <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
-              <button type="button" onclick="rs_nextStep(2)" class="btn-primary" style="border: none; cursor: pointer;">Siguiente →</button>
-            </div>
+            <div style="margin-top: 2rem; display: flex; justify-content: flex-end;"><button type="button" onclick="rs_nextStep(2)" class="btn-primary" style="border: none; cursor: pointer;">Siguiente →</button></div>
             <div class="rs-error" id="rs-error-1" style="display: none; margin-top: 1rem; color: #f87171; text-align: center; font-size: 0.9rem;"></div>
           </div>
 
           <div class="rs-step" id="rs-step-2" style="display: none;">
             <span class="rs-step-label">PASO 2 DE 5 · USO ACTUAL DE IA</span>
             <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-              <div><label class="grc-label">¿Cómo usan la IA en tu empresa? *</label>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_uso_ia" value="no_usa"><div style="font-size: 0.9rem; font-weight: 600; color: white; margin-top: 4px;">No la usamos</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_uso_ia" value="libre"><div style="font-size: 0.9rem; font-weight: 600; color: white; margin-top: 4px;">Sí, libremente</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_uso_ia" value="guiado"><div style="font-size: 0.9rem; font-weight: 600; color: white; margin-top: 4px;">Sí, con guías</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_uso_ia" value="regulado"><div style="font-size: 0.9rem; font-weight: 600; color: white; margin-top: 4px;">Sí, regulado</div></label>
-                </div>
-              </div>
-              <div><label class="grc-label">¿En qué áreas se usa IA hoy? *</label>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="operaciones"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Operaciones</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="ventas"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Ventas</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="rrhh"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">RH</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="legal"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Legal</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="finanzas"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Finanzas</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="produccion"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Producción</div></label>
-                </div>
-              </div>
-              <div><label class="grc-label">% de procesos manuales en tu operación *</label>
-                <select id="rs_porcentaje_manual" class="grc-select">
-                  <option value="">Selecciona...</option>
-                  <option value="0-25">0% a 25% (casi todo automatizado)</option>
-                  <option value="25-50">25% a 50%</option>
-                  <option value="50-75">50% a 75%</option>
-                  <option value="75-100">75% a 100% (casi todo manual)</option>
-                </select>
-              </div>
+              <div><label class="grc-label">¿Cómo usan la IA en tu empresa? *</label><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;"><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_uso_ia" value="no_usa"><div style="font-size: 0.9rem; font-weight: 600; color: white; margin-top: 4px;">No la usamos</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_uso_ia" value="libre"><div style="font-size: 0.9rem; font-weight: 600; color: white; margin-top: 4px;">Sí, libremente</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_uso_ia" value="guiado"><div style="font-size: 0.9rem; font-weight: 600; color: white; margin-top: 4px;">Sí, con guías</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_uso_ia" value="regulado"><div style="font-size: 0.9rem; font-weight: 600; color: white; margin-top: 4px;">Sí, regulado</div></label></div></div>
+              <div><label class="grc-label">¿En qué áreas se usa IA hoy? *</label><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;"><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="operaciones"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Operaciones</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="ventas"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Ventas</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="rrhh"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">RH</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="legal"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Legal</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="finanzas"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Finanzas</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="checkbox" name="rs_areas" value="produccion"><div style="font-size: 0.85rem; color: white; margin-top: 4px;">Producción</div></label></div></div>
+              <div><label class="grc-label">% de procesos manuales *</label><select id="rs_porcentaje_manual" class="grc-select"><option value="">Selecciona...</option><option value="0-25">0% a 25%</option><option value="25-50">25% a 50%</option><option value="50-75">50% a 75%</option><option value="75-100">75% a 100%</option></select></div>
             </div>
-            <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-              <button type="button" onclick="rs_prevStep(1)" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button>
-              <button type="button" onclick="rs_nextStep(3)" class="btn-primary" style="border: none; cursor: pointer;">Siguiente →</button>
-            </div>
+            <div style="margin-top: 2rem; display: flex; justify-content: space-between;"><button type="button" onclick="rs_prevStep(1)" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button><button type="button" onclick="rs_nextStep(3)" class="btn-primary" style="border: none; cursor: pointer;">Siguiente →</button></div>
             <div class="rs-error" id="rs-error-2" style="display: none; margin-top: 1rem; color: #f87171; text-align: center; font-size: 0.9rem;"></div>
           </div>
 
           <div class="rs-step" id="rs-step-3" style="display: none;">
             <span class="rs-step-label">PASO 3 DE 5 · GOBERNANZA</span>
             <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-              <div><label class="grc-label">¿Tienen una política formal de uso de IA? *</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_politica" value="true"><div style="color: white; margin-top: 4px;">Sí</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_politica" value="false"><div style="color: white; margin-top: 4px;">No</div></label>
-                </div>
-              </div>
-              <div><label class="grc-label">¿Tienen un inventario de sistemas de IA? *</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_inventario" value="no"><div style="color: white; margin-top: 4px;">No</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_inventario" value="parcial"><div style="color: white; margin-top: 4px;">Parcial</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_inventario" value="si"><div style="color: white; margin-top: 4px;">Sí</div></label>
-                </div>
-              </div>
-              <div><label class="grc-label">¿Tienen un responsable de gobernanza de IA? *</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_responsable" value="true"><div style="color: white; margin-top: 4px;">Sí</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_responsable" value="false"><div style="color: white; margin-top: 4px;">No</div></label>
-                </div>
-              </div>
+              <div><label class="grc-label">¿Tienen una política formal de uso de IA? *</label><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_politica" value="true"><div style="color: white; margin-top: 4px;">Sí</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_politica" value="false"><div style="color: white; margin-top: 4px;">No</div></label></div></div>
+              <div><label class="grc-label">¿Tienen un inventario de sistemas de IA? *</label><div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;"><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_inventario" value="no"><div style="color: white; margin-top: 4px;">No</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_inventario" value="parcial"><div style="color: white; margin-top: 4px;">Parcial</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_inventario" value="si"><div style="color: white; margin-top: 4px;">Sí</div></label></div></div>
+              <div><label class="grc-label">¿Tienen un responsable de gobernanza de IA? *</label><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_responsable" value="true"><div style="color: white; margin-top: 4px;">Sí</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_tiene_responsable" value="false"><div style="color: white; margin-top: 4px;">No</div></label></div></div>
             </div>
-            <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-              <button type="button" onclick="rs_prevStep(2)" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button>
-              <button type="button" onclick="rs_nextStep(4)" class="btn-primary" style="border: none; cursor: pointer;">Siguiente →</button>
-            </div>
+            <div style="margin-top: 2rem; display: flex; justify-content: space-between;"><button type="button" onclick="rs_prevStep(2)" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button><button type="button" onclick="rs_nextStep(4)" class="btn-primary" style="border: none; cursor: pointer;">Siguiente →</button></div>
             <div class="rs-error" id="rs-error-3" style="display: none; margin-top: 1rem; color: #f87171; text-align: center; font-size: 0.9rem;"></div>
           </div>
 
           <div class="rs-step" id="rs-step-4" style="display: none;">
             <span class="rs-step-label">PASO 4 DE 5 · CONTEXTO</span>
             <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-              <div><label class="grc-label">¿Algún cliente enterprise te ha pedido información sobre tu uso de IA? *</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_cliente_pidio" value="true"><div style="color: white; margin-top: 4px;">Sí</div></label>
-                  <label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_cliente_pidio" value="false"><div style="color: white; margin-top: 4px;">No (todavía)</div></label>
-                </div>
-              </div>
-              <div><label class="grc-label">¿Cuándo necesitas tener resuelta tu gobernanza de IA? *</label>
-                <select id="rs_urgencia" class="grc-select">
-                  <option value="">Selecciona...</option>
-                  <option value="3_meses">En los próximos 3 meses</option>
-                  <option value="6_meses">En 6 meses</option>
-                  <option value="12_meses">En 12 meses</option>
-                  <option value="sin_urgencia">Sin urgencia específica</option>
-                </select>
-              </div>
-              <div><label class="grc-label">¿Qué proceso te duele más hoy? (opcional)</label>
-                <input type="text" id="rs_proceso_doloroso" placeholder="Ej. Facturación, conciliación de pagos..." class="grc-input"></div>
+              <div><label class="grc-label">¿Algún cliente enterprise te ha pedido información sobre tu uso de IA? *</label><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_cliente_pidio" value="true"><div style="color: white; margin-top: 4px;">Sí</div></label><label style="cursor:pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="rs_cliente_pidio" value="false"><div style="color: white; margin-top: 4px;">No (todavía)</div></label></div></div>
+              <div><label class="grc-label">¿Cuándo necesitas tener resuelta tu gobernanza de IA? *</label><select id="rs_urgencia" class="grc-select"><option value="">Selecciona...</option><option value="3_meses">En los próximos 3 meses</option><option value="6_meses">En 6 meses</option><option value="12_meses">En 12 meses</option><option value="sin_urgencia">Sin urgencia específica</option></select></div>
+              <div><label class="grc-label">¿Qué proceso te duele más hoy? (opcional)</label><input type="text" id="rs_proceso_doloroso" placeholder="Ej. Facturación, conciliación de pagos..." class="grc-input"></div>
             </div>
-            <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-              <button type="button" onclick="rs_prevStep(3)" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button>
-              <button type="button" onclick="rs_nextStep(5)" class="btn-primary" style="border: none; cursor: pointer;">Siguiente →</button>
-            </div>
+            <div style="margin-top: 2rem; display: flex; justify-content: space-between;"><button type="button" onclick="rs_prevStep(3)" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button><button type="button" onclick="rs_nextStep(5)" class="btn-primary" style="border: none; cursor: pointer;">Siguiente →</button></div>
             <div class="rs-error" id="rs-error-4" style="display: none; margin-top: 1rem; color: #f87171; text-align: center; font-size: 0.9rem;"></div>
           </div>
 
@@ -648,35 +629,16 @@
               <div><label class="grc-label">Correo corporativo *</label><input type="email" id="rs_email" placeholder="tu@empresa.com" class="grc-input" required></div>
               <div><label class="grc-label">Teléfono (opcional)</label><input type="tel" id="rs_telefono" placeholder="Ej. 5512345678" class="grc-input"></div>
             </div>
-            <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-              <button type="button" onclick="rs_prevStep(4)" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button>
-              <button type="button" id="rs_submitBtn" onclick="rs_submit()" class="btn-primary" style="border: none; cursor: pointer;">Ver mi diagnóstico →</button>
-            </div>
+            <div style="margin-top: 2rem; display: flex; justify-content: space-between;"><button type="button" onclick="rs_prevStep(4)" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button><button type="button" id="rs_submitBtn" onclick="rs_submit()" class="btn-primary" style="border: none; cursor: pointer;">Ver mi diagnóstico →</button></div>
             <div class="rs-error" id="rs-error-5" style="display: none; margin-top: 1rem; color: #f87171; text-align: center; font-size: 0.9rem;"></div>
           </div>
 
           <div id="rs-result" style="display: none; margin-top: 2rem;">
-            <div style="text-align: center; margin-bottom: 1.5rem;">
-              <h3 style="color: white; font-size: 1.4rem; margin-bottom: 0.5rem;">✅ Tu diagnóstico completo</h3>
-              <p style="color: #94a3b8; font-size: 0.9rem;">Un consultor de BehaviorLab te contactará para profundizar.</p>
-            </div>
+            <div style="text-align: center; margin-bottom: 1.5rem;"><h3 style="color: white; font-size: 1.4rem; margin-bottom: 0.5rem;">✅ Tu diagnóstico completo</h3><p style="color: #94a3b8; font-size: 0.9rem;">Un consultor de BehaviorLab te contactará para profundizar.</p></div>
             <div id="rs-scores-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;"></div>
-            <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;">
-              <h4 style="color: white; font-size: 1rem; margin-bottom: 0.8rem;">🎯 Tus 3 prioridades inmediatas</h4>
-              <ol id="rs-priorities" style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.8; padding-left: 1.3rem; margin: 0;"></ol>
-            </div>
-            <div style="background: rgba(0, 242, 254, 0.06); padding: 1.5rem; border-radius: 10px; border-left: 4px solid #00f2fe; margin-bottom: 1.5rem;">
-              <h4 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">🤖 Producto recomendado</h4>
-              <p id="rs-recommended-product" style="color: #00f2fe; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;"></p>
-              <p id="rs-recommendation-reason" style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 0;"></p>
-            </div>
-            <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
-              <p style="color: white; font-weight: 600; margin-bottom: 0.8rem;">¿Convertimos este diagnóstico en un roadmap ejecutivo?</p>
-              <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <a href="#contacto" class="hero-cta-primary">Agendar llamada de 30 min</a>
-                <a href="#rutas" class="hero-cta-secondary">Ver las 3 rutas</a>
-              </div>
-            </div>
+            <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;"><h4 style="color: white; font-size: 1rem; margin-bottom: 0.8rem;">🎯 Tus 3 prioridades inmediatas</h4><ol id="rs-priorities" style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.8; padding-left: 1.3rem; margin: 0;"></ol></div>
+            <div style="background: rgba(0, 242, 254, 0.06); padding: 1.5rem; border-radius: 10px; border-left: 4px solid #00f2fe; margin-bottom: 1.5rem;"><h4 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">🤖 Producto recomendado</h4><p id="rs-recommended-product" style="color: #00f2fe; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;"></p><p id="rs-recommendation-reason" style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 0;"></p></div>
+            <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;"><p style="color: white; font-weight: 600; margin-bottom: 0.8rem;">¿Convertimos este diagnóstico en un roadmap ejecutivo?</p><div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;"><a href="#contacto" class="hero-cta-primary">Agendar llamada de 30 min</a><a href="#rutas" class="hero-cta-secondary">Ver las 3 rutas</a></div></div>
           </div>
         </div>
       </div>
@@ -699,7 +661,6 @@
             <p>AI Governance + Agentes de IA para la industria mediana. Assessment AIGOS, deploy de agentes, monitoreo continuo.</p>
             <span class="eco-badge">Estás aquí</span>
           </a>
-
           <a href="https://gokulab.mx" target="_blank" rel="noopener" class="eco-card">
             <span class="eco-icon">🎓</span>
             <h3>GōkuLab.mx</h3>
@@ -707,7 +668,6 @@
             <p>Formación tech para niños, jóvenes y adultos. Robótica, Python, IA, diseño digital, videojuegos, idiomas.</p>
             <span class="eco-badge">Formación</span>
           </a>
-
           <a href="https://gokulab.mx" target="_blank" rel="noopener" class="eco-card">
             <span class="eco-icon">🏢</span>
             <h3>Corporate Academy</h3>
@@ -715,7 +675,6 @@
             <p>AI Sprint + Corporate Academy. Formación ejecutiva en IA aplicada, liderazgo, pensamiento crítico.</p>
             <span class="eco-badge">Corporativo</span>
           </a>
-
           <a href="https://gokulab.mx" target="_blank" rel="noopener" class="eco-card">
             <span class="eco-icon">💼</span>
             <h3>Emprender + ScaleUp</h3>
@@ -723,7 +682,6 @@
             <p>"Querer, poder y saber emprender" (Claudia Sierra) + ScaleUp para redes comerciales, distribuidores y pymes.</p>
             <span class="eco-badge">Emprendimiento</span>
           </a>
-
           <a href="https://test.gokulab.mx" target="_blank" rel="noopener" class="eco-card">
             <span class="eco-icon">🧪</span>
             <h3>Test.gokulab.mx</h3>
@@ -733,9 +691,7 @@
           </a>
         </div>
 
-        <div style="text-align: center; margin-top: 2.5rem;">
-          <a href="https://test.gokulab.mx" target="_blank" rel="noopener" class="hero-cta-secondary">🧪 Ver todos los tests gratuitos →</a>
-        </div>
+        <div style="text-align: center; margin-top: 2.5rem;"><a href="https://test.gokulab.mx" target="_blank" rel="noopener" class="hero-cta-secondary">🧪 Ver todos los tests gratuitos →</a></div>
       </div>
     </section>
 
@@ -749,9 +705,7 @@
         </div>
         <div class="comp-wrap glass">
           <table class="comp-table">
-            <thead>
-              <tr><th>Criterio</th><th>Enfoque tradicional</th><th class="hl">BehAvIorLab</th></tr>
-            </thead>
+            <thead><tr><th>Criterio</th><th>Enfoque tradicional</th><th class="hl">BehAvIorLab</th></tr></thead>
             <tbody>
               <tr><td>Punto de partida</td><td class="mute">Certificación / Framework</td><td class="hl">Diagnóstico ejecutivo en semanas</td></tr>
               <tr><td>Tiempo al primer resultado</td><td class="mute">3-6 meses</td><td class="hl">2-6 semanas</td></tr>
@@ -775,26 +729,10 @@
           <p class="section-sub-big" style="margin-left: auto; margin-right: auto;">Proveedor automotriz, 800 empleados, 2 plantas, clientes Ford y GM, facturación ~$1,200M MXN anual.</p>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem;">
-          <div style="padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-            <span style="display: inline-block; font-size: 0.7rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem;">01 · EL TRIGGER</span>
-            <h3 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">Ford les pidió AI governance</h3>
-            <p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.6; margin: 0;">En la auditoría de supply chain 2025, Ford incluyó un cuestionario de AI governance. La empresa no sabía qué responder.</p>
-          </div>
-          <div style="padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-            <span style="display: inline-block; font-size: 0.7rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem;">02 · EL MIEDO</span>
-            <h3 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">Un Big 4 cobraba $3M MXN</h3>
-            <p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.6; margin: 0;">La propuesta era inviable: $3M MXN + 8 meses. Riesgo real de perder la cuenta con Ford por no responder a tiempo.</p>
-          </div>
-          <div style="padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-            <span style="display: inline-block; font-size: 0.7rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem;">03 · LA SOLUCIÓN</span>
-            <h3 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">Assessment + Immersion</h3>
-            <p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.6; margin: 0;">Assessment AIGOS™ Exprés (2 sem) + programa de capacitación (6 sem) + política + comité. Entregado en 8 semanas.</p>
-          </div>
-          <div style="padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-            <span style="display: inline-block; font-size: 0.7rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem;">04 · EL RESULTADO</span>
-            <h3 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">Pasaron la auditoría</h3>
-            <p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.6; margin: 0;">Respondieron el cuestionario de Ford con evidencia. Renovaron el contrato 3 años más. Camino abierto a Deploy de agentes.</p>
-          </div>
+          <div style="padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);"><span style="display: inline-block; font-size: 0.7rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem;">01 · EL TRIGGER</span><h3 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">Ford les pidió AI governance</h3><p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.6; margin: 0;">En la auditoría de supply chain 2025, Ford incluyó un cuestionario de AI governance. La empresa no sabía qué responder.</p></div>
+          <div style="padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);"><span style="display: inline-block; font-size: 0.7rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem;">02 · EL MIEDO</span><h3 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">Un Big 4 cobraba $3M MXN</h3><p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.6; margin: 0;">La propuesta era inviable: $3M MXN + 8 meses. Riesgo real de perder la cuenta con Ford por no responder a tiempo.</p></div>
+          <div style="padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);"><span style="display: inline-block; font-size: 0.7rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem;">03 · LA SOLUCIÓN</span><h3 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">Assessment + Immersion</h3><p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.6; margin: 0;">Assessment AIGOS™ Exprés (2 sem) + programa de capacitación (6 sem) + política + comité. Entregado en 8 semanas.</p></div>
+          <div style="padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);"><span style="display: inline-block; font-size: 0.7rem; letter-spacing: 1.5px; font-weight: 700; color: var(--accent); margin-bottom: 0.6rem;">04 · EL RESULTADO</span><h3 style="color: white; font-size: 1rem; margin-bottom: 0.5rem;">Pasaron la auditoría</h3><p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.6; margin: 0;">Respondieron el cuestionario de Ford con evidencia. Renovaron el contrato 3 años más. Camino abierto a Deploy de agentes.</p></div>
         </div>
       </div>
     </section>
@@ -803,11 +741,7 @@
     <section class="contact anchor-offset" id="calculadora" style="padding-top: 4rem;">
       <div class="container">
         <div class="contact-box glass" style="max-width: 1000px; margin: 0 auto; text-align: left;">
-          <div style="text-align: center; margin-bottom: 2rem;">
-            <span class="services-badge">Evaluación Preliminar</span>
-            <h2 style="font-size: 2rem; margin-top: 1rem; color: white;">Calculadora de Riesgo de IA</h2>
-            <p style="color: #a0aec0;">Descubre el nivel de exposición de tu empresa en 3 simples pasos.</p>
-          </div>
+          <div style="text-align: center; margin-bottom: 2rem;"><span class="services-badge">Evaluación Preliminar</span><h2 style="font-size: 2rem; margin-top: 1rem; color: white;">Calculadora de Riesgo de IA</h2><p style="color: #a0aec0;">Descubre el nivel de exposición de tu empresa en 3 simples pasos.</p></div>
           <form id="riskForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
             <div><label class="grc-label">1. Sector Operativo de tu Empresa</label><select id="sector" class="grc-select"><option value="servicios">Servicios / Retail / Logística</option><option value="alimentos">Alimentos y Consumo Masivo</option><option value="salud">Cuidado Personal / Salud / Biotecnología</option></select></div>
             <div><label class="grc-label">2. ¿Los colaboradores usan IA Generativa?</label><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;"><label style="cursor: pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="shadow_ai" value="alto" checked style="accent-color: #00f2fe;"><div style="font-size: 0.9rem; font-weight: bold; color: white; margin-top: 4px;">Sí, libremente</div></label><label style="cursor: pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="shadow_ai" value="medio" style="accent-color: #00f2fe;"><div style="font-size: 0.9rem; font-weight: bold; color: white; margin-top: 4px;">Sí, con guías</div></label><label style="cursor: pointer; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><input type="radio" name="shadow_ai" value="bajo" style="accent-color: #00f2fe;"><div style="font-size: 0.9rem; font-weight: bold; color: white; margin-top: 4px;">Sí, regulado</div></label></div></div>
@@ -824,11 +758,7 @@
     <section class="contact anchor-offset" id="assessment" style="padding-top: 2rem; padding-bottom: 4rem;">
       <div class="container">
         <div class="contact-box glass" style="max-width: 1000px; margin: 0 auto; text-align: left;">
-          <div style="text-align: center; margin-bottom: 2rem;">
-            <span class="services-badge" style="background: rgba(0, 242, 254, 0.2); color: #00f2fe;">Diagnóstico de Automatización</span>
-            <h2 style="font-size: 2rem; margin-top: 1rem; color: white;">Descubre tu Índice de Automatización</h2>
-            <p style="color: #a0aec0;">Evalúa un proceso crítico y obtén un ROI estimado en menos de 2 minutos.</p>
-          </div>
+          <div style="text-align: center; margin-bottom: 2rem;"><span class="services-badge" style="background: rgba(0, 242, 254, 0.2); color: #00f2fe;">Diagnóstico de Automatización</span><h2 style="font-size: 2rem; margin-top: 1rem; color: white;">Descubre tu Índice de Automatización</h2><p style="color: #a0aec0;">Evalúa un proceso crítico y obtén un ROI estimado en menos de 2 minutos.</p></div>
           <div id="wizard-step-1">
             <div style="display: flex; flex-direction: column; gap: 1.5rem;">
               <div><label class="grc-label">1. Nombre del Proceso</label><input type="text" id="wa_processName" placeholder="Ej. Facturación" class="grc-input" required></div>
@@ -846,17 +776,11 @@
               <div><label class="grc-label">Correo Corporativo</label><input type="email" id="wa_email" placeholder="tu@empresa.com" class="grc-input" required></div>
               <div><label class="grc-label">Teléfono (Opcional)</label><input type="tel" id="wa_telefono" placeholder="Ej. 5512345678" class="grc-input"></div>
             </div>
-            <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-              <button type="button" onclick="wa_prevStep()" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button>
-              <button type="button" id="wa_submitBtn" onclick="wa_submit()" class="btn-primary" style="border: none; cursor: pointer;">Calcular mi ROI →</button>
-            </div>
+            <div style="margin-top: 2rem; display: flex; justify-content: space-between;"><button type="button" onclick="wa_prevStep()" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">← Volver</button><button type="button" id="wa_submitBtn" onclick="wa_submit()" class="btn-primary" style="border: none; cursor: pointer;">Calcular mi ROI →</button></div>
           </div>
           <div id="wizard-result" style="display: none; margin-top: 2rem; padding: 1.5rem; background: rgba(0, 242, 254, 0.05); border: 1px solid #00f2fe; border-radius: 12px;">
             <h3 style="color: white; font-size: 1.2rem; margin-bottom: 1rem;">✅ Tu Diagnóstico de Automatización</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-              <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; text-align: center;"><p style="color: #a0aec0; font-size: 0.8rem; text-transform: uppercase;">Índice</p><p id="res_index" style="color: #00f2fe; font-size: 2rem; font-weight: bold;">0%</p></div>
-              <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; text-align: center;"><p style="color: #a0aec0; font-size: 0.8rem; text-transform: uppercase;">Ahorro</p><p id="res_roi" style="color: #00f2fe; font-size: 2rem; font-weight: bold;">0 hrs/mes</p></div>
-            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;"><div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; text-align: center;"><p style="color: #a0aec0; font-size: 0.8rem; text-transform: uppercase;">Índice</p><p id="res_index" style="color: #00f2fe; font-size: 2rem; font-weight: bold;">0%</p></div><div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; text-align: center;"><p style="color: #a0aec0; font-size: 0.8rem; text-transform: uppercase;">Ahorro</p><p id="res_roi" style="color: #00f2fe; font-size: 2rem; font-weight: bold;">0 hrs/mes</p></div></div>
             <p style="color: white; font-weight: bold; margin-bottom: 0.5rem;">🤖 Agente: <span id="res_agent" style="color: #00f2fe;"></span></p>
             <p id="res_desc" style="color: #a0aec0; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem;"></p>
             <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 1rem;"><a href="#contacto" class="btn-primary" style="display: inline-block; font-size: 0.9rem;">Agendar Reunión</a></div>
@@ -887,27 +811,28 @@
 
   </div>
 
-  <!-- Modales (intactos, del index original) -->
-  <div class="arch-modal" id="modal-gob-diagnostico"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>⚖️ Diagnóstico y Triaje</h3><p>Evaluamos madurez y clasificamos riesgo de todos tus sistemas de IA (incluyendo Shadow AI).</p><ul><li><strong>Inventario:</strong> Cada algoritmo, herramienta o API.</li><li><strong>Semáforo de Riesgo:</strong> Bajo, Medio, Alto, Inaceptable.</li><li><strong>Madurez:</strong> Frente a controles ISO 42001.</li></ul></div></div>
-  <div class="arch-modal" id="modal-gob-hub"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🏢 Modelo Hub & Spoke</h3><p>Gobernanza organizacional para grupos multiempresa.</p><ul><li><strong>Hub:</strong> Políticas, apetito de riesgo, marco ético.</li><li><strong>Spokes:</strong> Implementación por unidad de negocio.</li><li><strong>Roles:</strong> Oficial de IA, auditor, aprobador.</li></ul></div></div>
-  <div class="arch-modal" id="modal-gob-compliance"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🛡️ Cumplimiento (GRC)</h3><p>Preparación para auditorías regulatorias.</p><ul><li><strong>ISO/IEC 42001:</strong> AIMS.</li><li><strong>COFEPRIS / SaMD:</strong> Software como dispositivo médico.</li><li><strong>LFPDPPP:</strong> Protección de datos personales.</li></ul></div></div>
-  <div class="arch-modal" id="modal-gob-mlops"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>📊 Monitoreo y MLOps</h3><p>Gobernanza continua post-despliegue.</p><ul><li><strong>Data Drift:</strong> Alertas si los datos cambian.</li><li><strong>Sesgos:</strong> Evaluación periódica.</li><li><strong>Trazabilidad:</strong> Logs inmutables.</li></ul></div></div>
+  <!-- Modales (intactos) -->
+  <div class="arch-modal" id="modal-gob-diagnostico"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>⚖️ Diagnóstico y Triaje</h3><p>Evaluamos madurez y clasificamos riesgo de todos tus sistemas de IA.</p></div></div>
+  <div class="arch-modal" id="modal-gob-hub"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🏢 Hub & Spoke</h3><p>Gobernanza para grupos multiempresa.</p></div></div>
+  <div class="arch-modal" id="modal-gob-compliance"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🛡️ Cumplimiento (GRC)</h3><p>ISO/IEC 42001, COFEPRIS-SaMD, LFPDPPP.</p></div></div>
+  <div class="arch-modal" id="modal-gob-mlops"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>📊 Monitoreo MLOps</h3><p>Data drift, sesgos, trazabilidad.</p></div></div>
   <div class="arch-modal" id="modal-canales"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>📱 Canales</h3><p>Web, app, WhatsApp, correo, call center.</p></div></div>
-  <div class="arch-modal" id="modal-agente"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🧠 Agente IA</h3><p>Comprensión NLP, clasificación, respuesta, resolución.</p></div></div>
-  <div class="arch-modal" id="modal-orquestacion"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>⚙️ Orquestación</h3><p>Reglas, flujos, prioridades, escalamiento a humano.</p></div></div>
-  <div class="arch-modal" id="modal-integracion"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🔗 Integración API</h3><p>CRM, ERP, core, repositorios. OAuth + TLS.</p></div></div>
+  <div class="arch-modal" id="modal-agente"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🧠 Agente IA</h3><p>NLP, clasificación, respuesta, resolución.</p></div></div>
+  <div class="arch-modal" id="modal-orquestacion"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>⚙️ Orquestación</h3><p>Reglas, flujos, prioridades, escalamiento.</p></div></div>
+  <div class="arch-modal" id="modal-integracion"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🔗 Integración API</h3><p>CRM, ERP, core, repositorios.</p></div></div>
   <div class="arch-modal" id="modal-analitica"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>📊 Analítica</h3><p>Supervisión humana, dashboards, mejora continua.</p></div></div>
-  <div class="arch-modal" id="modal-paso1"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🔍 Paso 1: Diagnóstico</h3><p>Mapeamos flujos, identificamos casos de uso, priorizamos.</p></div></div>
-  <div class="arch-modal" id="modal-paso2"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>📐 Paso 2: Diseño</h3><p>Arquitectura, flujos, reglas de negocio.</p></div></div>
-  <div class="arch-modal" id="modal-paso3"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🧪 Paso 3: Entrenamiento</h3><p>Datos reales, fine-tuning, validación.</p></div></div>
-  <div class="arch-modal" id="modal-paso4"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🔗 Paso 4: Integración</h3><p>API bidireccional, pruebas E2E, seguridad.</p></div></div>
-  <div class="arch-modal" id="modal-paso5"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🚀 Paso 5: Despliegue</h3><p>Lanzamiento, monitoreo, mejora continua.</p></div></div>
+  <div class="arch-modal" id="modal-paso1"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🔍 Paso 1</h3><p>Diagnóstico y priorización.</p></div></div>
+  <div class="arch-modal" id="modal-paso2"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>📐 Paso 2</h3><p>Diseño y construcción.</p></div></div>
+  <div class="arch-modal" id="modal-paso3"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🧪 Paso 3</h3><p>Entrenamiento con datos reales.</p></div></div>
+  <div class="arch-modal" id="modal-paso4"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🔗 Paso 4</h3><p>Integración y pruebas E2E.</p></div></div>
+  <div class="arch-modal" id="modal-paso5"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🚀 Paso 5</h3><p>Despliegue y mejora continua.</p></div></div>
 
-  <script src="js/chat-widget.js?v=30" defer></script>
-  <script src="js/main.js?v=30" defer></script>
-  <script src="js/readiness.js?v=2" defer></script>
-  <script src="js/risk-calculator.js?v=2" defer></script>
-  <script src="js/assessment.js?v=2" defer></script>
-  <script src="js/particles.js?v=30" defer></script>
+  <script src="js/chat-widget.js?v=31" defer></script>
+  <script src="js/main.js?v=31" defer></script>
+  <script src="js/advisor.js?v=1" defer></script>
+  <script src="js/readiness.js?v=3" defer></script>
+  <script src="js/risk-calculator.js?v=3" defer></script>
+  <script src="js/assessment.js?v=3" defer></script>
+  <script src="js/particles.js?v=31" defer></script>
 </body>
 </html>
