@@ -1,17 +1,48 @@
 // ================================================================
 // MAIN JS — BehAvIorLab
-// v5 — contadores hardened + 5-question quiz + scrollRestoration off
+// v6 — scrollRestoration + reload detection + all fixes
 // ================================================================
 
 (function() {
   'use strict';
 
-  // ---------- FIX: desactivar scroll restoration del navegador ----------
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
 
-  // ---------- ANIMACIÓN DE CONTADORES ----------
+  // ---------- Forzar scroll al top en carga ----------
+  // Si es RELOAD (F5) → siempre top (ignora hash)
+  // Si es NAVEGACIÓN FRESCA con hash → respeta hash (deep-link)
+  // Si es NAVEGACIÓN FRESCA sin hash → top
+  function forceScrollTopOnLoad() {
+    let isReload = false;
+    try {
+      const navEntries = performance.getEntriesByType('navigation');
+      if (navEntries.length > 0) {
+        isReload = navEntries[0].type === 'reload';
+      }
+    } catch (err) { /* fallback: tratar como navegación fresca */ }
+
+    const hash = window.location.hash;
+
+    // Si es navegación fresca CON hash intencional → respetar
+    if (!isReload && hash && hash !== '#' && hash !== '#hero') {
+      return;
+    }
+
+    const goTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    goTop();
+    setTimeout(goTop, 30);
+    setTimeout(goTop, 100);
+    setTimeout(goTop, 300);
+    setTimeout(goTop, 800);
+  }
+
+  // ---------- CONTADORES ----------
   function animateCounters() {
     const counters = document.querySelectorAll('.stat-number');
     if (!counters.length) return;
@@ -92,7 +123,7 @@
     });
   }
 
-  // ---------- CARRUSEL DE FRASES ----------
+  // ---------- CARRUSEL ----------
   function setupPhraseCarousel() {
     const phrases = [
       "Agentes de IA que entienden procesos, no solo palabras.",
@@ -154,7 +185,6 @@
   function setupFiveQuestions() {
     const submitBtn = document.getElementById('fiveQSubmit');
     if (!submitBtn) return;
-
     const items = document.querySelectorAll('.five-q-item');
     const resultBox = document.getElementById('fiveQResult');
     const scoreNum = document.getElementById('fiveQScoreNum');
@@ -162,7 +192,6 @@
     const resultMsg = document.getElementById('fiveQResultMsg');
     const ctaPrimary = document.getElementById('fiveQCtaPrimary');
     const ctaSecondary = document.getElementById('fiveQCtaSecondary');
-
     const state = { q1: null, q2: null, q3: null, q4: null, q5: null };
 
     items.forEach(item => {
@@ -198,18 +227,15 @@
       const total = Object.values(state).reduce((a, b) => a + b, 0);
       let color = '#34d399', title = '', msg = '', primary = '#readiness';
       if (total <= 1) {
-        color = '#34d399';
-        title = 'Base sólida.';
+        color = '#34d399'; title = 'Base sólida.';
         msg = 'Un diagnóstico completo le dará el respaldo que su consejo y sus clientes pedirán. Es el siguiente paso.';
         primary = '#readiness';
       } else if (total <= 3) {
-        color = '#fbbf24';
-        title = 'Puntos ciegos.';
+        color = '#fbbf24'; title = 'Puntos ciegos.';
         msg = 'Conviene descubrirlos antes de que lo haga un cliente o un auditor. El diagnóstico completo los mapea en 6 minutos.';
         primary = '#readiness';
       } else {
-        color = '#f87171';
-        title = 'Hoy no ve lo que su gente ya usa.';
+        color = '#f87171'; title = 'Hoy no ve lo que su gente ya usa.';
         msg = 'Es exactamente la conversación que debemos tener. Agende 30 minutos y le mostramos el mapa real de la IA en su empresa.';
         primary = '#contacto';
       }
@@ -228,6 +254,7 @@
   // ---------- INIT ----------
   function init() {
     const safe = (fn, name) => { try { fn(); } catch (err) { console.error('[main.js] ' + name + ':', err); } };
+    safe(forceScrollTopOnLoad, 'forceScrollTopOnLoad');
     safe(setupCounterObserver, 'setupCounterObserver');
     safe(setupCounterFallback, 'setupCounterFallback');
     safe(setupRevealObserver, 'setupRevealObserver');
@@ -243,5 +270,5 @@
   } else {
     init();
   }
-
+  window.addEventListener('load', forceScrollTopOnLoad);
 })();

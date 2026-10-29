@@ -6,7 +6,6 @@
   <title>BehAvIorLab · Convierte la IA en capacidad empresarial</title>
   <meta name="description" content="BehAvIorLab ayuda a empresas medianas mexicanas a gobernar, automatizar y desplegar inteligencia artificial. Metodología AIGOS™, ISO 42001, NIST AI RMF." />
   
-  <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.svg">
   <link rel="alternate icon" type="image/jpeg" href="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg">
   <link rel="apple-touch-icon" href="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg">
@@ -18,13 +17,13 @@
     .grc-input, .grc-select { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: white; outline: none; transition: all 0.3s ease; font-family: inherit; font-size: 0.95rem; }
     .grc-input:focus, .grc-select:focus { border-color: var(--accent); background: rgba(255,255,255,0.08); }
     .grc-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #a0aec0; }
-    .anchor-offset { scroll-margin-top: 100px; }
+    .anchor-offset { scroll-margin-top: 180px; }
     .section-eyebrow { display: inline-block; font-size: 0.72rem; letter-spacing: 3px; font-weight: 700; color: var(--accent); margin-bottom: 1rem; text-transform: uppercase; }
     .section-title-big { font-size: clamp(2rem, 4.5vw, 3.2rem); line-height: 1.15; font-weight: 800; color: white; margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; }
     .section-sub-big { font-size: 1.05rem; line-height: 1.7; color: #94a3b8; max-width: 720px; margin-bottom: 2.5rem; }
 
-    /* HERO */
-    .hero-new { min-height: 85vh; display: flex; align-items: center; padding: 6rem 0 4rem; position: relative; overflow: hidden; }
+    /* HERO — padding-top 11rem para clear navbar de ~160px */
+    .hero-new { min-height: 85vh; display: flex; align-items: center; padding: 11rem 0 4rem; position: relative; overflow: hidden; }
     .hero-new::before { content: ''; position: absolute; top: 10%; right: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(0,242,254,0.15) 0%, transparent 70%); pointer-events: none; z-index: 0; }
     .hero-new::after { content: ''; position: absolute; bottom: -20%; left: -10%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(255,176,32,0.08) 0%, transparent 70%); pointer-events: none; z-index: 0; }
     .hero-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 3rem; align-items: center; position: relative; z-index: 2; }
@@ -64,7 +63,7 @@
     .mock-status { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
     .mock-status.warn { background: #fbbf24; } .mock-status.ok { background: #34d399; } .mock-status.alert { background: #f87171; }
 
-    /* QUÉ ES BEHAVIORLAB */
+    /* QUÉ ES */
     .what-is { padding: 6rem 0; background: var(--bg-soft); border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
     .what-header { text-align: center; max-width: 820px; margin: 0 auto 3rem; }
     .what-header h2 { font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1.2; font-weight: 800; color: white; margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; }
@@ -203,7 +202,7 @@
 
     @media (max-width: 900px) {
       .hero-grid { grid-template-columns: 1fr; gap: 2rem; }
-      .hero-new { padding: 4rem 0 3rem; min-height: auto; }
+      .hero-new { padding: 6rem 0 3rem; min-height: auto; }
       .mock-dashboard { max-width: 420px; margin: 0 auto; }
       .q-options { margin-left: 0; grid-template-columns: 1fr; }
       .manifesto { padding: 5rem 0; }
@@ -219,9 +218,9 @@
     <!-- NAVBAR -->
     <nav class="navbar glass">
       <div class="container">
-        <a href="#hero" class="logo" onclick="event.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'});"><img src="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg" alt="BehAvIorLab" class="logo-img"></a>
+        <a href="#hero" class="logo" onclick="event.preventDefault(); if(history.replaceState) history.replaceState(null, '', window.location.pathname + window.location.search); window.scrollTo({top: 0, behavior: 'smooth'});"><img src="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg" alt="BehAvIorLab" class="logo-img"></a>
         <div class="nav-links">
-          <a href="#hero" onclick="event.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'});">Inicio</a>
+          <a href="#hero" onclick="event.preventDefault(); if(history.replaceState) history.replaceState(null, '', window.location.pathname + window.location.search); window.scrollTo({top: 0, behavior: 'smooth'});">Inicio</a>
           <a href="#que-es">Qué es</a>
           <a href="#pains">Dolores</a>
           <a href="#five-q">Diagnóstico</a>
@@ -279,7 +278,7 @@
       </div>
     </section>
 
-    <!-- QUÉ ES BEHAVIORLAB -->
+    <!-- QUÉ ES -->
     <section class="what-is anchor-offset" id="que-es">
       <div class="container">
         <div class="what-header">
@@ -830,7 +829,7 @@
 
   </div>
 
-  <!-- Modales (intactos) -->
+  <!-- Modales -->
   <div class="arch-modal" id="modal-gob-diagnostico"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>⚖️ Diagnóstico y Triaje</h3><p>Evaluamos madurez y clasificamos riesgo de todos tus sistemas de IA.</p></div></div>
   <div class="arch-modal" id="modal-gob-hub"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🏢 Hub & Spoke</h3><p>Gobernanza para grupos multiempresa.</p></div></div>
   <div class="arch-modal" id="modal-gob-compliance"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🛡️ Cumplimiento (GRC)</h3><p>ISO/IEC 42001, COFEPRIS-SaMD, LFPDPPP.</p></div></div>
@@ -846,9 +845,9 @@
   <div class="arch-modal" id="modal-paso4"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🔗 Paso 4</h3><p>Integración y pruebas E2E.</p></div></div>
   <div class="arch-modal" id="modal-paso5"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🚀 Paso 5</h3><p>Despliegue y mejora continua.</p></div></div>
 
-  <script src="js/chat-widget.js?v=33" defer></script>
-  <script src="js/main.js?v=31" defer></script>
-  <script src="js/readiness.js?v=3" defer></script>
+  <script src="js/chat-widget.js?v=34" defer></script>
+  <script src="js/main.js?v=33" defer></script>
+  <script src="js/readiness.js?v=4" defer></script>
   <script src="js/risk-calculator.js?v=3" defer></script>
   <script src="js/assessment.js?v=3" defer></script>
   <script src="js/particles.js?v=31" defer></script>
