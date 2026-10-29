@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BehAvIorLab · Convierte la IA en capacidad empresarial</title>
   <meta name="description" content="BehAvIorLab ayuda a empresas medianas mexicanas a gobernar, automatizar y desplegar inteligencia artificial. Metodología AIGOS™, ISO 42001, NIST AI RMF." />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.svg">
+  <link rel="alternate icon" type="image/jpeg" href="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg">
+  <link rel="apple-touch-icon" href="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg">
+  
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css?v=31" />
   <style>
@@ -31,7 +37,7 @@
     .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 2rem; }
     .hero-cta-primary { padding: 16px 28px; background: var(--accent); color: #050810; border-radius: 10px; font-weight: 700; font-size: 1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 8px 32px rgba(0,242,254,0.3); border: none; cursor: pointer; }
     .hero-cta-primary:hover { background: #00d4e0; transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,242,254,0.4); }
-    .hero-cta-secondary { padding: 16px 24px; background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; font-weight: 600; font-size: 0.95rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .hero-cta-secondary { padding: 16px 24px; background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; font-weight: 600; font-size: 0.95rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; cursor: pointer; }
     .hero-cta-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); }
     .hero-trust { display: flex; gap: 1.5rem; flex-wrap: wrap; color: #64748b; font-size: 0.82rem; }
     .hero-trust span { display: inline-flex; align-items: center; gap: 6px; }
@@ -58,12 +64,11 @@
     .mock-status { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
     .mock-status.warn { background: #fbbf24; } .mock-status.ok { background: #34d399; } .mock-status.alert { background: #f87171; }
 
-    /* QUÉ ES BEHAVIORLAB — SECCIÓN NUEVA */
+    /* QUÉ ES BEHAVIORLAB */
     .what-is { padding: 6rem 0; background: var(--bg-soft); border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
     .what-header { text-align: center; max-width: 820px; margin: 0 auto 3rem; }
     .what-header h2 { font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1.2; font-weight: 800; color: white; margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; }
     .what-header p { font-size: 1.1rem; line-height: 1.7; color: #94a3b8; }
-
     .pillars-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 4rem; }
     .pillar-card { padding: 2.2rem; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; transition: all 0.3s; position: relative; overflow: hidden; }
     .pillar-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), transparent); }
@@ -77,7 +82,6 @@
     .pillar-card .pillar-features li { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; }
     .pillar-card .pillar-features li::before { content: '→'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
     .pillar-card .pillar-product { display: inline-block; font-size: 0.72rem; padding: 5px 12px; background: rgba(0,242,254,0.1); color: var(--accent); border-radius: 100px; font-weight: 600; }
-
     .how-we-work { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 3rem 2rem; margin-top: 2rem; }
     .how-header { text-align: center; margin-bottom: 2.5rem; }
     .how-header h3 { font-size: 1.6rem; color: white; font-weight: 800; margin-bottom: 0.5rem; font-family: 'Space Grotesk', sans-serif; }
@@ -117,7 +121,7 @@
     .pain-cta { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: gap 0.2s; }
     .pain-cta:hover { gap: 10px; }
 
-    /* 5 QUESTIONS */
+    /* FIVE-Q */
     .five-q-section { padding: 5rem 0; background: var(--bg-soft); border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
     .five-q-header { text-align: center; max-width: 760px; margin: 0 auto 3rem; }
     .five-q-confidencial { display: inline-block; font-size: 0.72rem; letter-spacing: 3px; font-weight: 700; color: var(--accent-amber); padding: 6px 16px; background: rgba(255,176,32,0.08); border: 1px solid rgba(255,176,32,0.2); border-radius: 100px; margin-bottom: 1rem; }
@@ -183,6 +187,20 @@
     .comp-table td.mute { color: #94a3b8; }
     .comp-wrap { overflow-x: auto; border-radius: 12px; }
 
+    /* READINESS WIZARD */
+    .rs-progress { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 2rem; overflow: hidden; }
+    .rs-progress-bar { height: 100%; background: #00f2fe; transition: width 0.4s ease; width: 20%; }
+    .rs-step-label { display: inline-block; font-size: 0.72rem; letter-spacing: 2px; font-weight: 700; color: #00f2fe; margin-bottom: 0.6rem; }
+    .rs-scores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .rs-score-card { padding: 1.2rem; border-radius: 10px; background: rgba(0,0,0,0.3); text-align: center; }
+    .rs-score-card p:first-child { color: #a0aec0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.4rem; }
+    .rs-score-value { font-size: 2.2rem; font-weight: 700; font-family: 'Space Grotesk', sans-serif; line-height: 1; }
+    .rs-score-label { font-size: 0.75rem; margin-top: 0.3rem; color: #94a3b8; }
+    .rs-score-vulnerable { color: #f87171; } .rs-score-inicial { color: #fb923c; } .rs-score-basico { color: #fbbf24; } .rs-score-gestionado { color: #34d399; }
+    .rs-score-critico { color: #f87171; } .rs-score-alto { color: #fb923c; } .rs-score-medio { color: #fbbf24; } .rs-score-bajo { color: #34d399; }
+    .rs-score-alta { color: #34d399; } .rs-score-media { color: #fbbf24; } .rs-score-minima { color: #94a3b8; }
+    .rs-score-hot { color: #f87171; } .rs-score-warm { color: #fb923c; } .rs-score-cold { color: #64748b; }
+
     @media (max-width: 900px) {
       .hero-grid { grid-template-columns: 1fr; gap: 2rem; }
       .hero-new { padding: 4rem 0 3rem; min-height: auto; }
@@ -201,8 +219,9 @@
     <!-- NAVBAR -->
     <nav class="navbar glass">
       <div class="container">
-        <a href="#hero" class="logo"><img src="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg" alt="BehAvIorLab" class="logo-img"></a>
+        <a href="#hero" class="logo" onclick="event.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'});"><img src="https://media.gokulab.mx/Behavior_Lab/logobehaviorlab.jpg" alt="BehAvIorLab" class="logo-img"></a>
         <div class="nav-links">
+          <a href="#hero" onclick="event.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'});">Inicio</a>
           <a href="#que-es">Qué es</a>
           <a href="#pains">Dolores</a>
           <a href="#five-q">Diagnóstico</a>
@@ -260,7 +279,7 @@
       </div>
     </section>
 
-    <!-- ¿QUÉ ES BEHAVIORLAB? — NUEVA SECCIÓN -->
+    <!-- QUÉ ES BEHAVIORLAB -->
     <section class="what-is anchor-offset" id="que-es">
       <div class="container">
         <div class="what-header">
@@ -436,7 +455,7 @@
       </div>
     </section>
 
-    <!-- 5 QUESTIONS -->
+    <!-- FIVE-Q -->
     <section class="five-q-section anchor-offset" id="five-q">
       <div class="container">
         <div class="five-q-header">
@@ -564,7 +583,7 @@
       </div>
     </section>
 
-    <!-- FULL WIZARD -->
+    <!-- READINESS WIZARD -->
     <section class="contact anchor-offset" id="readiness" style="padding-top: 4rem; padding-bottom: 4rem;">
       <div class="container">
         <div class="contact-box glass" style="max-width: 1000px; margin: 0 auto; text-align: left;">
@@ -827,7 +846,7 @@
   <div class="arch-modal" id="modal-paso4"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🔗 Paso 4</h3><p>Integración y pruebas E2E.</p></div></div>
   <div class="arch-modal" id="modal-paso5"><div class="arch-modal-content glass"><span class="arch-modal-close">&times;</span><h3>🚀 Paso 5</h3><p>Despliegue y mejora continua.</p></div></div>
 
-  <script src="js/chat-widget.js?v=32" defer></script>
+  <script src="js/chat-widget.js?v=33" defer></script>
   <script src="js/main.js?v=31" defer></script>
   <script src="js/readiness.js?v=3" defer></script>
   <script src="js/risk-calculator.js?v=3" defer></script>
