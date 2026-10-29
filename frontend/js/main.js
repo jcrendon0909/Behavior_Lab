@@ -1,10 +1,15 @@
 // ================================================================
 // MAIN JS — BehAvIorLab
-// v4 — contadores hardened + 5-question quiz + init defensivo
+// v5 — contadores hardened + 5-question quiz + scrollRestoration off
 // ================================================================
 
 (function() {
   'use strict';
+
+  // ---------- FIX: desactivar scroll restoration del navegador ----------
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
 
   // ---------- ANIMACIÓN DE CONTADORES ----------
   function animateCounters() {
@@ -147,11 +152,10 @@
 
   // ---------- 5-QUESTION QUIZ ----------
   function setupFiveQuestions() {
-    const form = document.getElementById('fiveQSubmit');
-    if (!form) return;
+    const submitBtn = document.getElementById('fiveQSubmit');
+    if (!submitBtn) return;
 
     const items = document.querySelectorAll('.five-q-item');
-    const submitBtn = document.getElementById('fiveQSubmit');
     const resultBox = document.getElementById('fiveQResult');
     const scoreNum = document.getElementById('fiveQScoreNum');
     const resultTitle = document.getElementById('fiveQResultTitle');
@@ -161,7 +165,6 @@
 
     const state = { q1: null, q2: null, q3: null, q4: null, q5: null };
 
-    // Bind option selection
     items.forEach(item => {
       const qKey = 'q' + item.dataset.q;
       item.querySelectorAll('.q-option').forEach(opt => {
@@ -193,7 +196,6 @@
 
     submitBtn.addEventListener('click', () => {
       const total = Object.values(state).reduce((a, b) => a + b, 0);
-      // Color by count
       let color = '#34d399', title = '', msg = '', primary = '#readiness';
       if (total <= 1) {
         color = '#34d399';
