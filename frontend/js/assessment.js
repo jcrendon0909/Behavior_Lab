@@ -86,3 +86,18 @@ async function wa_submit() {
     btn.textContent = 'Calcular mi ROI con IA →';
   }
 }
+  // ============================================================
+// HANDOFF desde el chat: pre-llenar campos
+// ============================================================
+window.addEventListener('bl:prefill', (e) => {
+  if (e.detail.target !== 'assessment') return;
+  const data = e.detail.data || {};
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null) el.value = val;
+  };
+  if (data.processName) setVal('wa_processName', data.processName);
+  if (data.volume) setVal('wa_volume', data.volume);
+  // Limpiar sessionStorage
+  try { sessionStorage.removeItem('bl_wizard_prefill'); } catch (err) {}
+});

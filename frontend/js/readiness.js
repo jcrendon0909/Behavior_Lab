@@ -252,5 +252,29 @@
   } else {
     init();
   }
-
+    // ============================================================
+  // HANDOFF desde el chat: pre-llenar campos + actualizar state
+  // ============================================================
+  window.addEventListener('bl:prefill', (e) => {
+    if (e.detail.target !== 'readiness') return;
+    const data = e.detail.data || {};
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && val !== undefined && val !== null) el.value = val;
+    };
+    if (data.empleados) {
+      setVal('rs_empleados', data.empleados);
+      state.empleados = data.empleados;
+    }
+    if (data.uso_ia) {
+      const radio = document.querySelector(`input[name="rs_uso_ia"][value="${data.uso_ia}"]`);
+      if (radio) { radio.checked = true; state.uso_ia = data.uso_ia; }
+    }
+    if (data.cliente_pidio_evidencia !== undefined) {
+      const radio = document.querySelector(`input[name="rs_cliente_pidio"][value="${data.cliente_pidio_evidencia}"]`);
+      if (radio) { radio.checked = true; state.cliente_pidio_evidencia = data.cliente_pidio_evidencia; }
+    }
+    // Limpiar sessionStorage: el prefill ya se aplicó, no necesitamos persistirlo
+    try { sessionStorage.removeItem('bl_wizard_prefill'); } catch (err) {}
+  });
 })();
