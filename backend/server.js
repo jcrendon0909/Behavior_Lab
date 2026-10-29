@@ -53,11 +53,8 @@ const LeadSchema = new mongoose.Schema({
   nombre: String, email: String, empresa: String, telefono: String,
   sector: String, shadow_ai: String, samd: Boolean, risk_level: String,
   proceso: mongoose.Schema.Types.Mixed, resultado: mongoose.Schema.Types.Mixed,
-  // 🆕 Readiness snapshot
   profile: mongoose.Schema.Types.Mixed,
-  leadScore: Number,
-  leadPriority: String,
-  notifyFounder: Boolean,
+  leadScore: Number, leadPriority: String, notifyFounder: Boolean,
   orgIdAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Org' }, companyIdAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
   fuente: String, userAgent: String, ip: String, meta: mongoose.Schema.Types.Mixed,
   name: String, company: String, ts: Date,
@@ -177,7 +174,7 @@ async function callGroq({ messages, temperature = 0.2, maxTokens = 900, timeoutM
       const resp = await fetch(GROQ_URL, {
         method: 'POST', signal: controller.signal,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_KEYS[keyIndex]}` },
-        body: JSON.stringify({ model: GROQ_MODEL, temperature, max_tokens: maxTokens, response_format: { type: 'json_object' }, messages }),
+        body: JSON.stringify({ model: GROQ_MODEL, temperature, max_tokens: maxTokens, messages }),
       });
       clearTimeout(timer);
       if (!resp.ok) { failures.push({ keyIndex, status: resp.status }); continue; }
@@ -233,10 +230,9 @@ function computeRiskLevel({ sector, shadow_ai, samd }) {
 }
 
 // ==========================================
-// 🆕 READINESS SNAPSHOT — Scoring multi-dimensional
+// READINESS SNAPSHOT — Scoring multi-dimensional
 // ==========================================
 function computeReadinessScores(input) {
-  // ---------- READINESS (0-100) ----------
   const politica_pts = input.tiene_politica ? 20 : 0;
   const inventario_pts = input.tiene_inventario === 'si' ? 20 : input.tiene_inventario === 'parcial' ? 10 : 0;
   const responsable_pts = input.tiene_responsable ? 20 : 0;
@@ -246,7 +242,6 @@ function computeReadinessScores(input) {
   const readiness = Math.min(100, politica_pts + inventario_pts + responsable_pts + uso_ia_pts + presion_pts);
   const readinessLevel = readiness < 25 ? 'vulnerable' : readiness < 50 ? 'inicial' : readiness < 75 ? 'basico' : 'gestionado';
 
-  // ---------- GOVERNANCE RISK (0-100, mayor = más riesgo) ----------
   let risk = (100 - readiness) * 0.7;
   const sectorBonus = { 'salud': 25, 'alimentos': 15, 'manufactura': 12, 'logistica': 8, 'servicios': 5 }[input.sector] || 0;
   risk += sectorBonus;
@@ -254,14 +249,12 @@ function computeReadinessScores(input) {
   const governanceRisk = Math.min(100, Math.round(risk));
   const governanceRiskLevel = governanceRisk >= 75 ? 'critico' : governanceRisk >= 50 ? 'alto' : governanceRisk >= 25 ? 'medio' : 'bajo';
 
-  // ---------- AUTOMATION POTENTIAL (0-100) ----------
   const manual_pts = { '0-25': 20, '25-50': 40, '50-75': 65, '75-100': 90 }[input.porcentaje_manual] || 0;
   const areasCount = Array.isArray(input.areas_con_ia) ? input.areas_con_ia.length : 0;
   const areasBonus = Math.min(10, areasCount * 2);
   const automationPotential = Math.min(100, manual_pts + areasBonus);
   const automationPotentialLevel = automationPotential >= 75 ? 'alta' : automationPotential >= 50 ? 'media' : automationPotential >= 25 ? 'baja' : 'minima';
 
-  // ---------- OPPORTUNITY (0-100) ----------
   const readinessGap = (100 - readiness) / 100;
   const urgencyMult = { '3_meses': 1.0, '6_meses': 0.7, '12_meses': 0.4, 'sin_urgencia': 0.2 }[input.urgencia] || 0.2;
   const sizeMult = { '1000+': 1.0, '500-1000': 0.85, '200-500': 0.7, '50-200': 0.5 }[input.empleados] || 0.5;
@@ -269,7 +262,6 @@ function computeReadinessScores(input) {
   const opportunity = Math.min(100, Math.round(readinessGap * urgencyMult * sizeMult * triggerMult * 100));
   const opportunityLevel = opportunity >= 60 ? 'hot' : opportunity >= 35 ? 'warm' : 'cold';
 
-  // ---------- PRIORITIES + RECOMMENDATION ----------
   const priorities = [];
   if (!input.tiene_politica) priorities.push('Formalizar una política de uso aceptable de IA');
   if (input.tiene_inventario === 'no') priorities.push('Hacer inventario de sistemas de IA (incluyendo shadow AI)');
@@ -296,12 +288,9 @@ function computeReadinessScores(input) {
   }
 
   return {
-    readiness, readinessLevel,
-    governanceRisk, governanceRiskLevel,
-    automationPotential, automationPotentialLevel,
-    opportunity, opportunityLevel,
-    priorities,
-    recommendedProduct, recommendationReason,
+    readiness, readinessLevel, governanceRisk, governanceRiskLevel,
+    automationPotential, automationPotentialLevel, opportunity, opportunityLevel,
+    priorities, recommendedProduct, recommendationReason,
     breakdown: { politica_pts, inventario_pts, responsable_pts, uso_ia_pts, presion_pts, manual_pts, areasBonus, sectorBonus }
   };
 }
@@ -325,11 +314,7 @@ async function notifyHotLead(lead) {
     priorities: lead.resultado?.priorities?.slice(0, 3),
     recommendedProduct: lead.resultado?.recommended_product
   };
-
-  // Log estructurado (visible en Render logs)
   console.log('[HOT-LEAD] ' + JSON.stringify(payload));
-
-  // Webhook opcional (Slack/Discord/Teams compatible vía FOUNDER_WEBHOOK_URL)
   const webhookUrl = process.env.FOUNDER_WEBHOOK_URL;
   if (webhookUrl && webhookUrl.startsWith('http')) {
     try {
@@ -344,14 +329,12 @@ async function notifyHotLead(lead) {
                 `Producto recomendado: ${lead.resultado?.recommended_product}`
         })
       });
-    } catch (err) {
-      console.error('[notifyHotLead] Webhook falló:', err.message);
-    }
+    } catch (err) { console.error('[notifyHotLead] Webhook falló:', err.message); }
   }
 }
 
 // ==========================================
-// 🆕 FIX C: HELPERS PARA REEMPLAZO DE EVIDENCIA
+// FIX C: HELPERS PARA REEMPLAZO DE EVIDENCIA
 // ==========================================
 async function replaceRejectedEvidence(companyId, questionId) {
   const result = await Evidence.deleteMany({
@@ -359,9 +342,7 @@ async function replaceRejectedEvidence(companyId, questionId) {
     questionId,
     'validation.valido': false
   });
-  if (result.deletedCount > 0) {
-    console.log(`[replaceRejected] Eliminadas ${result.deletedCount} evidencias rechazadas de ${questionId}`);
-  }
+  if (result.deletedCount > 0) console.log(`[replaceRejected] Eliminadas ${result.deletedCount} evidencias rechazadas de ${questionId}`);
   return result.deletedCount;
 }
 
@@ -469,31 +450,18 @@ app.delete('/gov/evidence/:id', authenticateToken, async (req, res) => {
   try {
     const evidence = await Evidence.findById(req.params.id);
     if (!evidence) return res.status(404).json({ error: 'Evidencia no encontrada' });
-
     const company = await Company.findById(evidence.companyId);
     if (!company) return res.status(404).json({ error: 'Empresa no encontrada' });
-
-    if (req.user.role !== 'superadmin' && company.orgId.toString() !== req.user.orgId.toString()) {
-      return res.status(403).json({ error: 'Sin permisos' });
-    }
-
+    if (req.user.role !== 'superadmin' && company.orgId.toString() !== req.user.orgId.toString()) return res.status(403).json({ error: 'Sin permisos' });
     await Evidence.findByIdAndDelete(req.params.id);
-
     if (evidence.validation?.valido) {
       const lastAssessment = await AssessmentResult.findOne({ companyId: evidence.companyId }).sort({ date: -1 });
       if (lastAssessment) {
-        const updatedAnswers = lastAssessment.answers.map(a =>
-          a.questionCode === evidence.questionId ? { ...a.toObject(), hasEvidence: false } : a
-        );
+        const updatedAnswers = lastAssessment.answers.map(a => a.questionCode === evidence.questionId ? { ...a.toObject(), hasEvidence: false } : a);
         const recomputed = await recomputeAigiFromAnswers(evidence.companyId.toString(), updatedAnswers);
-        await AssessmentResult.findByIdAndUpdate(lastAssessment._id, {
-          answers: updatedAnswers,
-          maturity: recomputed.maturity,
-          aigi: recomputed.aigi
-        });
+        await AssessmentResult.findByIdAndUpdate(lastAssessment._id, { answers: updatedAnswers, maturity: recomputed.maturity, aigi: recomputed.aigi });
       }
     }
-
     res.json({ ok: true, message: 'Evidencia eliminada' });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
@@ -503,16 +471,11 @@ app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async
     const { companyId, questionId } = req.body;
     if (!req.file) return res.status(400).json({ error: 'No se recibió archivo' });
     if (!companyId || !questionId) return res.status(400).json({ error: 'Faltan companyId o questionId' });
-
     const question = await AssessmentQuestion.findOne({ code: questionId });
     if (!question) return res.status(404).json({ error: 'Pregunta no encontrada' });
 
     let pdfText = '';
-    try {
-      const pdf = await getDocumentProxy(new Uint8Array(req.file.buffer));
-      const extracted = await extractText(pdf, { mergePages: true });
-      pdfText = extracted.text || '';
-    } catch (pdfErr) { console.error('[upload-evidence] Error extrayendo texto:', pdfErr.message); }
+    try { const pdf = await getDocumentProxy(new Uint8Array(req.file.buffer)); const extracted = await extractText(pdf, { mergePages: true }); pdfText = extracted.text || ''; } catch (pdfErr) { console.error('[upload-evidence] Error extrayendo texto:', pdfErr.message); }
 
     let validation;
     if (!pdfText || pdfText.trim().length < 50) {
@@ -520,46 +483,29 @@ app.post('/gov/upload-evidence', authenticateToken, upload.single('file'), async
     } else {
       const systemPrompt = `Eres un auditor experto en gobernanza de IA (ISO 42001, NIST AI RMF).
 Evalúa si el DOCUMENTO proporcionado constituye EVIDENCIA VERIFICABLE para la siguiente PREGUNTA:
-
 PREGUNTA: ${question.question}
 EVIDENCIA REQUERIDA: ${question.evidenceRequested}
 DOMINIO: ${question.domain}
 CONTROL: ${question.controlName}
-
 Reglas:
 - VÁLIDO: contiene info específica de la organización que respalda la pregunta.
 - INVÁLIDO: es de otra empresa, genérico sin datos propios, borrador sin aprobar, o no responde.
-
 JSON: { "valido": true|false, "razon": "explicación breve en español" }`;
-
       validation = { valido: false, razon: 'No se pudo validar.' };
       try {
-        const { content } = await callGroq({ messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `DOCUMENTO:\n\n${pdfText.slice(0, 6000)}` }
-        ], temperature: 0.1, maxTokens: 300, timeoutMs: 25000 });
+        const { content } = await callGroq({ messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: `DOCUMENTO:\n\n${pdfText.slice(0, 6000)}` }], temperature: 0.1, maxTokens: 300, timeoutMs: 25000 });
         const parsed = safeParseJSON(content);
         if (parsed && typeof parsed.valido === 'boolean') validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
       } catch (groqErr) { console.error('[upload-evidence] Groq error:', groqErr.message); validation = { valido: false, razon: 'IA no disponible.' }; }
     }
 
-    if (validation.valido) {
-      await replaceRejectedEvidence(companyId, questionId);
-    } else {
-      const existingRejected = await Evidence.find({
-        companyId: new mongoose.Types.ObjectId(companyId),
-        questionId,
-        'validation.valido': false
-      }).sort({ ts: 1 });
-      if (existingRejected.length >= 1) {
-        await Evidence.deleteMany({ _id: { $in: existingRejected.map(e => e._id) } });
-      }
+    if (validation.valido) { await replaceRejectedEvidence(companyId, questionId); }
+    else {
+      const existingRejected = await Evidence.find({ companyId: new mongoose.Types.ObjectId(companyId), questionId, 'validation.valido': false }).sort({ ts: 1 });
+      if (existingRejected.length >= 1) await Evidence.deleteMany({ _id: { $in: existingRejected.map(e => e._id) } });
     }
 
-    const ev = await Evidence.create({
-      companyId: new mongoose.Types.ObjectId(companyId), questionId, fileName: req.file.originalname,
-      r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`, validation
-    });
+    const ev = await Evidence.create({ companyId: new mongoose.Types.ObjectId(companyId), questionId, fileName: req.file.originalname, r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`, validation });
 
     if (validation.valido) {
       const lastAssessment = await AssessmentResult.findOne({ companyId: new mongoose.Types.ObjectId(companyId) }).sort({ date: -1 });
@@ -569,7 +515,6 @@ JSON: { "valido": true|false, "razon": "explicación breve en español" }`;
         await AssessmentResult.findByIdAndUpdate(lastAssessment._id, { answers: updatedAnswers, maturity: recomputed.maturity, aigi: recomputed.aigi });
       }
     }
-
     res.json({ ok: true, evidence: ev, validation });
   } catch (error) { console.error('[upload-evidence] Error:', error); res.status(500).json({ error: error.message }); }
 });
@@ -607,11 +552,8 @@ app.post('/gov/leads/:id/convert', authenticateToken, async (req, res) => {
     if (companyId) { company = await Company.findById(companyId); }
     else if (companyName) { company = await Company.findOne({ orgId: targetOrgId, name: companyName }); if (!company) company = await Company.create({ orgId: targetOrgId, name: companyName, riskProfile: 'operacional', active: true }); }
     else return res.status(400).json({ error: 'Debes seleccionar o crear filial' });
-
     if (lead.tipo_lead === 'riesgo' && lead.resultado) { await Evaluation.create({ orgId: targetOrgId, companyId: company._id, framework: 'LFPDPPP / ISO 42001', answers: {}, score: lead.resultado.score, risk_level: lead.resultado.risk_level, recommendations: { summary: lead.resultado.summary } }); }
     else if (lead.tipo_lead === 'automatizacion' && lead.proceso && lead.resultado) { await ProcessEval.create({ orgId: targetOrgId, companyId: company._id, processName: lead.proceso.processName, volume: lead.proceso.volume, complexity: lead.proceso.complexityLabel || lead.proceso.complexity, dataType: lead.proceso.dataType, hoursSpent: lead.proceso.hoursSpent, score: lead.resultado.automationIndex, agentType: lead.resultado.agentType, recommendation: lead.resultado.agentDescription }); }
-    // tipo_lead 'readiness' no se auto-convierte — requiere intervención manual (se elige producto)
-
     lead.status = 'convertido'; lead.orgIdAsignado = targetOrgId; lead.companyIdAsignado = company._id; await lead.save();
     res.json({ ok: true, companyId: company._id, lead });
   } catch (error) { res.status(500).json({ error: error.message }); }
@@ -691,11 +633,7 @@ app.put('/gov/aigos/drafts/:companyId', authenticateToken, async (req, res) => {
     const { answers } = req.body;
     const company = await Company.findById(req.params.companyId);
     if (!company) return res.status(404).json({ error: 'Empresa no encontrada' });
-    const draft = await AssessmentDraft.findOneAndUpdate(
-      { companyId: req.params.companyId },
-      { $set: { answers, updatedAt: new Date(), orgId: company.orgId, createdBy: req.user.email } },
-      { upsert: true, new: true }
-    );
+    const draft = await AssessmentDraft.findOneAndUpdate({ companyId: req.params.companyId }, { $set: { answers, updatedAt: new Date(), orgId: company.orgId, createdBy: req.user.email } }, { upsert: true, new: true });
     res.json(draft);
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
@@ -713,7 +651,6 @@ app.get('/gov/aigos/pending-evidence/:companyId', authenticateToken, async (req,
   try {
     const lastAssessment = await AssessmentResult.findOne({ companyId: req.params.companyId }).sort({ date: -1 });
     if (!lastAssessment) return res.json({ pending: [], total: 0 });
-
     const pending = [];
     for (const ans of lastAssessment.answers) {
       if (ans.isNA) continue;
@@ -734,17 +671,10 @@ app.post('/gov/aigos/assessments', authenticateToken, async (req, res) => {
     const { companyId, answers } = req.body;
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ error: 'Empresa no encontrada' });
-
     const recomputed = await recomputeAigiFromAnswers(companyId, answers);
     const existingCount = await AssessmentResult.countDocuments({ companyId });
     const version = existingCount + 1;
-
-    const result = await AssessmentResult.create({
-      orgId: company.orgId, companyId, answers,
-      maturity: recomputed.maturity, aigi: recomputed.aigi,
-      version, status: 'enviado'
-    });
-
+    const result = await AssessmentResult.create({ orgId: company.orgId, companyId, answers, maturity: recomputed.maturity, aigi: recomputed.aigi, version, status: 'enviado' });
     await AssessmentDraft.deleteOne({ companyId });
     res.status(201).json(result);
   } catch (error) { res.status(500).json({ error: error.message }); }
@@ -755,16 +685,9 @@ app.patch('/gov/aigos/assessments/:id', authenticateToken, async (req, res) => {
     const { answers } = req.body;
     const original = await AssessmentResult.findById(req.params.id);
     if (!original) return res.status(404).json({ error: 'No encontrado' });
-
     const recomputed = await recomputeAigiFromAnswers(original.companyId, answers);
     const version = original.version + 1;
-
-    const newAssessment = await AssessmentResult.create({
-      orgId: original.orgId, companyId: original.companyId, answers,
-      maturity: recomputed.maturity, aigi: recomputed.aigi,
-      version, status: 'enviado'
-    });
-
+    const newAssessment = await AssessmentResult.create({ orgId: original.orgId, companyId: original.companyId, answers, maturity: recomputed.maturity, aigi: recomputed.aigi, version, status: 'enviado' });
     res.status(201).json(newAssessment);
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
@@ -781,65 +704,120 @@ app.post('/gov/aigos/assessments/:id/evidence', authenticateToken, upload.single
   try {
     const { questionCode } = req.body;
     if (!req.file) return res.status(400).json({ error: 'Sin archivo' });
-
     const assessment = await AssessmentResult.findById(req.params.id);
     if (!assessment) return res.status(404).json({ error: 'Assessment no encontrado' });
-
     const question = await AssessmentQuestion.findOne({ code: questionCode });
     if (!question) return res.status(404).json({ error: 'Pregunta no encontrada' });
-
     let pdfText = '';
     try { const pdf = await getDocumentProxy(new Uint8Array(req.file.buffer)); const ext = await extractText(pdf, { mergePages: true }); pdfText = ext.text || ''; } catch (e) { }
-
     if (!pdfText || pdfText.trim().length < 50) return res.status(400).json({ error: 'No se pudo extraer texto del PDF' });
-
     const systemPrompt = `Auditor de IA (ISO 42001). ¿El documento es evidencia verificable para la pregunta?\n\nPREGUNTA: ${question.question}\nEVIDENCIA: ${question.evidenceRequested}\n\nJSON: { "valido": true|false, "razon": "..." }`;
-
     let validation = { valido: false, razon: 'Error IA' };
     try {
       const { content } = await callGroq({ messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: pdfText.slice(0, 6000) }], temperature: 0.1, maxTokens: 300, timeoutMs: 25000 });
       const parsed = safeParseJSON(content);
       if (parsed && typeof parsed.valido === 'boolean') validation = { valido: parsed.valido, razon: String(parsed.razon || '').slice(0, 300) };
     } catch (e) { }
-
-    if (validation.valido) {
-      await replaceRejectedEvidence(assessment.companyId.toString(), questionCode);
-    } else {
-      const existingRejected = await Evidence.find({
-        companyId: assessment.companyId, questionId: questionCode, 'validation.valido': false
-      }).sort({ ts: 1 });
-      if (existingRejected.length >= 1) {
-        await Evidence.deleteMany({ _id: { $in: existingRejected.map(e => e._id) } });
-      }
+    if (validation.valido) { await replaceRejectedEvidence(assessment.companyId.toString(), questionCode); }
+    else {
+      const existingRejected = await Evidence.find({ companyId: assessment.companyId, questionId: questionCode, 'validation.valido': false }).sort({ ts: 1 });
+      if (existingRejected.length >= 1) await Evidence.deleteMany({ _id: { $in: existingRejected.map(e => e._id) } });
     }
-
-    const ev = await Evidence.create({
-      companyId: assessment.companyId, questionId: questionCode, fileName: req.file.originalname,
-      r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`, validation
-    });
-
+    const ev = await Evidence.create({ companyId: assessment.companyId, questionId: questionCode, fileName: req.file.originalname, r2Url: `https://media.gokulab.mx/demo-${Date.now()}.pdf`, validation });
     if (validation.valido) {
       const updatedAnswers = assessment.answers.map(a => a.questionCode === questionCode ? { ...a.toObject(), hasEvidence: true } : a);
       const recomputed = await recomputeAigiFromAnswers(assessment.companyId.toString(), updatedAnswers);
       await AssessmentResult.findByIdAndUpdate(assessment._id, { answers: updatedAnswers, maturity: recomputed.maturity, aigi: recomputed.aigi });
     }
-
     res.json({ ok: true, evidence: ev, validation });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
 // ==========================================
-// ENDPOINTS PÚBLICOS
+// 🆕 CHAT ADVISOR (Groq)
 // ==========================================
+const CHAT_SYSTEM_PROMPT = `Eres el AI Business Advisor de BehaviorLab, la firma mexicana de AI Governance + Agentes de IA para la industria mediana mexicana (empresas de $200M-$2,000M MXN).
 
-// 🆕 AI READINESS SNAPSHOT
-app.post('/api/public/readiness-snapshot', async (req, res) => {
+PERFIL DEL NEGOCIO:
+- 3 pilares: AI Governance (AIGOS™), AI Automation (ROI Scan), AI Agents (Deploy)
+- Ecosistema GōkuLab: gokulab.mx (formación técnica), test.gokulab.mx (tests gratuitos)
+- Metodología AIGOS™ propia, alineada a ISO/IEC 42001 y NIST AI RMF, cumplimiento mexicano (LFPDPPP, COFEPRIS-SaMD)
+- Diferencial: industria mediana, no Big 4. Diagnóstico en 2 semanas, no 6 meses. Cada producto se contrata por separado.
+
+PRODUCTOS Y RANGOS DE PRECIO (en MXN, + IVA):
+- Executive Briefing: desde $40,000. 1 sesión (2-3h), Consejo firma apetito de riesgo de IA.
+- Assessment AIGOS™ Exprés: desde $95,000. 2 semanas. Inventario, mapa de riesgos, AIGI score, evidencia auditable.
+- Immersion Program: desde $200,000. 4-6 semanas. Política + comité + RACI + capacitación por audiencia.
+- Deploy de Agente Único: desde $300,000. 6-8 semanas. Agente en producción con integración a CRM/ERP.
+- Full Transformation (completo 20-24 sem): desde $850,000. Solo se ofrece después de un primer producto.
+- AI Sprint (GōkuLab): 4 sesiones prácticas de IA por rol.
+- Corporate Academy (GōkuLab): programas continuos de formación.
+
+CTAs DISPONIBLES:
+- "Hacer diagnóstico de 5 preguntas" (60 seg, gratis) — sección #five-q
+- "Diagnóstico completo de readiness" (6 min, gratis) — sección #readiness
+- "Hablar con un experto" (30 min, sin costo) — contacto@gokulab.com
+
+REGLAS ESTRICTAS:
+- Español profesional, cálido, directo. Sin emojis excesivos (1 por mensaje máximo).
+- Máximo 4 oraciones por respuesta. Si necesitas más, sugiere agendar llamada.
+- NUNCA inventes clientes específicos, casos de éxito con nombre, certificaciones o métricas exactas.
+- NUNCA prometas ahorros exactos ni resultados garantizados.
+- Si te preguntan por precios, da el rango ("desde $X MXN") y sugiere contacto para cotización detallada.
+- Si la pregunta es muy específica (años de experiencia, referencias exactas, contratos), sugiere hablar con el equipo.
+- Si la pregunta NO es sobre BehaviorLab/IA empresarial, redirige amablemente al diagnóstico o a hablar con un experto.
+- Termina con una pregunta o CTA cuando sea natural.`;
+
+app.post('/api/public/chat', async (req, res) => {
   const t0 = Date.now();
   try {
     const ip = getClientIP(req); const rl = checkPublicRateLimit(ip);
     setRateLimitHeaders(res, rl);
     if (!rl.allowed) { res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000))); return res.status(429).json({ ok: false, error: `Demasiadas solicitudes. Intenta en ${formatRetryMessage(rl.resetMs)}.` }); }
 
+    const b = req.body || {};
+    const message = typeof b.message === 'string' ? b.message.trim() : '';
+    if (!message || message.length < 1) return res.status(400).json({ ok: false, error: 'Mensaje vacío.' });
+    if (message.length > 1000) return res.status(400).json({ ok: false, error: 'Mensaje demasiado largo (máx 1000 caracteres).' });
+
+    const history = Array.isArray(b.history) ? b.history.slice(-6).filter(h => h && typeof h.role === 'string' && typeof h.content === 'string') : [];
+    const messages = [
+      { role: 'system', content: CHAT_SYSTEM_PROMPT },
+      ...history,
+      { role: 'user', content: message.slice(0, 1000) }
+    ];
+
+    let reply;
+    try {
+      const { content } = await callGroq({ messages, temperature: 0.6, maxTokens: 400, timeoutMs: 20000 });
+      reply = String(content || '').trim();
+    } catch (groqErr) {
+      console.error('[chat] Groq falló:', groqErr.message);
+      return res.json({ ok: true, reply: 'Estoy teniendo un problema técnico en este momento. Mientras lo resolvemos, te recomiendo hacer el diagnóstico de 5 preguntas — toma 60 segundos y te da claridad inmediata sobre tu empresa.', fallback: true, durationMs: Date.now() - t0 });
+    }
+
+    if (!reply || reply.length < 5) {
+      return res.json({ ok: true, reply: 'No tengo una respuesta clara para eso. ¿Te ayudo con un diagnóstico rápido o prefieres agendar una llamada de 30 minutos?', fallback: true, durationMs: Date.now() - t0 });
+    }
+
+    return res.json({ ok: true, reply, durationMs: Date.now() - t0 });
+  } catch (err) {
+    console.error('[chat] Error:', err);
+    return res.status(500).json({ ok: false, error: 'Error interno.' });
+  }
+});
+
+// ==========================================
+// ENDPOINTS PÚBLICOS
+// ==========================================
+
+// READINESS SNAPSHOT
+app.post('/api/public/readiness-snapshot', async (req, res) => {
+  const t0 = Date.now();
+  try {
+    const ip = getClientIP(req); const rl = checkPublicRateLimit(ip);
+    setRateLimitHeaders(res, rl);
+    if (!rl.allowed) { res.set('Retry-After', String(Math.ceil(rl.resetMs / 1000))); return res.status(429).json({ ok: false, error: `Demasiadas solicitudes. Intenta en ${formatRetryMessage(rl.resetMs)}.` }); }
     const b = req.body || {};
     const errors = [];
     if (!b.nombre || b.nombre.trim().length < 2) errors.push('nombre');
@@ -857,74 +835,40 @@ app.post('/api/public/readiness-snapshot', async (req, res) => {
     if (!Array.isArray(b.areas_con_ia)) errors.push('areas_con_ia');
     if (!b.urgencia || !['3_meses', '6_meses', '12_meses', 'sin_urgencia'].includes(b.urgencia)) errors.push('urgencia');
     if (!b.porcentaje_manual || !['0-25', '25-50', '50-75', '75-100'].includes(b.porcentaje_manual)) errors.push('porcentaje_manual');
-
     if (errors.length > 0) return res.status(400).json({ ok: false, error: 'Datos inválidos: ' + errors.join('; ') });
 
     const scores = computeReadinessScores(b);
-
     const profile = {
-      cargo: b.cargo.trim().slice(0, 120),
-      sector: b.sector,
-      empleados: b.empleados,
-      facturacion_estimada: b.facturacion_estimada,
-      uso_ia: b.uso_ia,
-      tiene_politica: b.tiene_politica,
-      tiene_inventario: b.tiene_inventario,
-      tiene_responsable: b.tiene_responsable,
+      cargo: b.cargo.trim().slice(0, 120), sector: b.sector, empleados: b.empleados,
+      facturacion_estimada: b.facturacion_estimada, uso_ia: b.uso_ia,
+      tiene_politica: b.tiene_politica, tiene_inventario: b.tiene_inventario, tiene_responsable: b.tiene_responsable,
       cliente_pidio_evidencia: b.cliente_pidio_evidencia,
       areas_con_ia: b.areas_con_ia.slice(0, 10).map(a => String(a).slice(0, 40)),
-      urgencia: b.urgencia,
-      porcentaje_manual: b.porcentaje_manual,
+      urgencia: b.urgencia, porcentaje_manual: b.porcentaje_manual,
       proceso_doloroso: b.proceso_doloroso ? String(b.proceso_doloroso).slice(0, 200) : '',
     };
-
     const resultado = {
-      readiness_score: scores.readiness,
-      readiness_level: scores.readinessLevel,
-      governance_risk: scores.governanceRisk,
-      governance_risk_level: scores.governanceRiskLevel,
-      automation_potential: scores.automationPotential,
-      automation_potential_level: scores.automationPotentialLevel,
-      opportunity_score: scores.opportunity,
-      opportunity_level: scores.opportunityLevel,
-      breakdown: scores.breakdown,
-      priorities: scores.priorities,
-      recommended_product: scores.recommendedProduct,
-      recommendation_reason: scores.recommendationReason,
+      readiness_score: scores.readiness, readiness_level: scores.readinessLevel,
+      governance_risk: scores.governanceRisk, governance_risk_level: scores.governanceRiskLevel,
+      automation_potential: scores.automationPotential, automation_potential_level: scores.automationPotentialLevel,
+      opportunity_score: scores.opportunity, opportunity_level: scores.opportunityLevel,
+      breakdown: scores.breakdown, priorities: scores.priorities,
+      recommended_product: scores.recommendedProduct, recommendation_reason: scores.recommendationReason,
       source: 'readiness-snapshot'
     };
-
     const lead = await Lead.create({
-      tipo_lead: 'readiness',
-      status: 'nuevo',
-      nombre: b.nombre.trim().slice(0, 120),
-      email: b.email.toLowerCase().slice(0, 160),
-      empresa: b.empresa.trim().slice(0, 160),
-      telefono: b.telefono || '',
-      sector: b.sector,
-      profile,
-      resultado,
-      leadScore: scores.opportunity,
-      leadPriority: scores.opportunityLevel,
+      tipo_lead: 'readiness', status: 'nuevo',
+      nombre: b.nombre.trim().slice(0, 120), email: b.email.toLowerCase().slice(0, 160),
+      empresa: b.empresa.trim().slice(0, 160), telefono: b.telefono || '',
+      sector: b.sector, profile, resultado,
+      leadScore: scores.opportunity, leadPriority: scores.opportunityLevel,
       notifyFounder: scores.opportunity >= 60 || b.cliente_pidio_evidencia === true,
-      fuente: b.source || 'landing_readiness',
-      userAgent: req.headers['user-agent'],
-      ip,
+      fuente: b.source || 'landing_readiness', userAgent: req.headers['user-agent'], ip,
       meta: { durationMs: Date.now() - t0 },
-      name: b.nombre.trim().slice(0, 120),
-      company: b.empresa.trim().slice(0, 160),
-      ts: new Date()
+      name: b.nombre.trim().slice(0, 120), company: b.empresa.trim().slice(0, 160), ts: new Date()
     });
-
-    if (lead.notifyFounder) {
-      notifyHotLead(lead).catch(err => console.error('[notifyHotLead]', err.message));
-    }
-
-    return res.json({
-      ok: true,
-      leadId: lead._id.toString(),
-      profile: resultado
-    });
+    if (lead.notifyFounder) notifyHotLead(lead).catch(err => console.error('[notifyHotLead]', err.message));
+    return res.json({ ok: true, leadId: lead._id.toString(), profile: resultado });
   } catch (err) {
     console.error('[readiness-snapshot] Error:', err);
     return res.status(500).json({ ok: false, error: 'Error interno.' });
@@ -982,6 +926,9 @@ app.post('/api/public/automation-assessment', async (req, res) => {
     return res.json({ ok: true, assessment: { automationIndex: resultado.automationIndex, roiHoursPerMonth: resultado.roiHoursPerMonth, agentType: resultado.agentType, agentDescription: resultado.agentDescription, roiExplanation: resultado.roiExplanation }, leadId: lead._id.toString() });
   } catch (err) { return res.status(500).json({ ok: false, error: 'Error interno.' }); }
 });
+
+// Health check
+app.get('/', (req, res) => res.json({ ok: true, service: 'behavior-lab-api', version: '1.1.0-chat' }));
 
 let server;
 async function startServer() {
